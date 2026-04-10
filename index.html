@@ -142,17 +142,17 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 .cad-hdr-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
 .cad-period{font-family:var(--fm);font-size:8px;color:var(--sub);letter-spacing:1px;}
 .cad-table{width:100%;border-collapse:collapse;}
-.cad-table th{background:var(--surf);color:var(--acc);font-family:var(--fm);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
-.cad-table td{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;vertical-align:middle;}
+.cad-table th{background:var(--surf);color:var(--acc);font-family:var(--fm);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.cad-table td{padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
 .cad-table tr:hover td{background:rgba(255,255,255,.02);}
-.cad-table .cad-name{font-size:14px;font-weight:600;color:var(--white);}
-.cad-table .cad-part{font-family:var(--fm);font-size:11px;color:var(--sub);}
-.cad-table .cad-val{font-family:var(--ff);font-size:20px;letter-spacing:.5px;}
-.cad-table .cad-ant{font-family:var(--fm);font-size:12px;color:var(--sub);}
+.cad-name{font-size:14px;font-weight:600;color:var(--white);}
+.cad-part{font-family:var(--fm);font-size:11px;color:var(--sub);}
+.cad-val{font-family:var(--ff);font-size:20px;letter-spacing:.5px;}
+.cad-ant{font-family:var(--fm);font-size:12px;color:var(--sub);}
 .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
-.dot.ok{background:var(--pos);box-shadow:0 0 6px rgba(13,183,91,.5);}
-.dot.warn{background:var(--acc);box-shadow:0 0 6px rgba(245,200,0,.5);}
-.dot.crit{background:var(--neg);box-shadow:0 0 6px rgba(229,25,44,.5);}
+.dot.ok{background:#0DB75B;box-shadow:0 0 6px rgba(13,183,91,.5);}
+.dot.warn{background:#F5C800;box-shadow:0 0 6px rgba(245,200,0,.5);}
+.dot.crit{background:#E5192C;box-shadow:0 0 6px rgba(229,25,44,.5);}
 </style>
 </head>
 <body>
@@ -301,7 +301,10 @@ async function safeJson(url){
   const txt=await res.text();
   if(txt.trim().startsWith('<'))
     throw new Error(`${url.split('?')[0]} devolvió HTML. Verifica que el archivo esté en el repositorio.`);
-  return JSON.parse(txt);
+  // NaN e Infinity no son JSON válido (los produce pandas al exportar).
+  // Los reemplazamos por null antes de parsear.
+  const clean=txt.replace(/:\s*NaN/g,':null').replace(/:\s*Infinity/g,':null').replace(/:\s*-Infinity/g,':null');
+  return JSON.parse(clean);
 }
 
 async function loadDet(cat,year){
@@ -344,13 +347,13 @@ async function load(){
     const app=document.getElementById('app');
     app.style.display='flex'; app.style.flexDirection='column';
     renderDashboard();
-    // Preload remaining categories in background
+    // Precarga HOGAR y FERRETERÍA en background para tabla cadenas
     setTimeout(async()=>{
       for(const c of ['HOGAR','FERRETERIA']){
         await loadDet(c,2026); await loadDet(c,2025);
       }
       if(CUR_PAGE==='dashboard') renderDashboard();
-    },500);
+    },800);
   }catch(e){
     const el=document.getElementById('ld-msg');
     el.style.cssText='color:#E5192C;max-width:460px;text-align:center;line-height:1.7;font-size:11px;';
@@ -466,10 +469,10 @@ function getCadenas(){
     const d25=(DET[`${cat}_2025`]||[]).filter(r=>selMeses.size===0||selMeses.has(r.M));
     d26.forEach(r=>{const c=r.C||'SIN CADENA';
       if(!m26[c])m26[c]={cad:c,v:0,u:0,inv:0};
-      m26[c].v+=r.V||0;m26[c].u+=r.U||0;m26[c].inv+=r.I||0;});
+      m26[c].v+=r.V||0; m26[c].u+=r.U||0; m26[c].inv+=r.I||0;});
     d25.forEach(r=>{const c=r.C||'SIN CADENA';
       if(!m25[c])m25[c]={v:0,u:0};
-      m25[c].v+=r.V||0;m25[c].u+=r.U||0;});
+      m25[c].v+=r.V||0; m25[c].u+=r.U||0;});
   });
   const tot=Object.values(m26).reduce((s,x)=>s+x.v,0);
   return Object.values(m26).map(c=>({...c,
@@ -534,39 +537,38 @@ function renderDashboard(){
   const periodoLbl=selMeses.size===0?'ACUMULADO':
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · ');
 
-  const cadenasH=!cadenas.length?'':
-    `<div class="cad-wrap">
-      <div class="cad-hdr">
-        <span class="cad-hdr-title">🏪 RESUMEN CADENAS</span>
-        <span class="cad-period">${periodoLbl}</span>
-      </div>
-      <div style="overflow-x:auto">
-      <table class="cad-table">
-        <thead><tr>
-          <th style="width:160px">CADENA</th>
-          <th style="text-align:right">PART%</th>
-          <th style="text-align:right">VALOR AÑO ACT.</th>
-          <th style="text-align:right">VALOR AÑO ANT.</th>
-          <th style="text-align:center">VAR% VALOR</th>
-          <th style="text-align:right">UNDS AÑO ACT.</th>
-          <th style="text-align:right">UNDS AÑO ANT.</th>
-          <th style="text-align:center">VAR% UNDS</th>
-          <th style="text-align:center">STATUS</th>
-        </tr></thead>
-        <tbody>${cadenas.map(c=>`<tr>
-          <td class="cad-name">${c.cad}</td>
-          <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
-          <td class="cad-val" style="text-align:right;color:${a}">${fmtM(c.v)}</td>
-          <td class="cad-ant" style="text-align:right">${fmtM(c.v25)}</td>
-          <td style="text-align:center"><span class="pill ${c.var>=0?'pos':'neg'}">${sg(c.var)}${c.var.toFixed(1)}%</span></td>
-          <td class="mono" style="text-align:right;color:var(--text)">${fmtK(c.u)}</td>
-          <td class="cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
-          <td style="text-align:center"><span class="pill ${c.varu>=0?'pos':'neg'}">${sg(c.varu)}${c.varu.toFixed(1)}%</span></td>
-          <td style="text-align:center"><span class="dot ${dotCls(c.var)}"></span></td>
-        </tr>`).join('')}</tbody>
-      </table>
-      </div>
-    </div>`;
+  const cadenasH=!cadenas.length?'':`<div class="cad-wrap">
+    <div class="cad-hdr">
+      <span class="cad-hdr-title">🏪 RESUMEN CADENAS</span>
+      <span class="cad-period">${periodoLbl}</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="cad-table">
+      <thead><tr>
+        <th style="width:160px">CADENA</th>
+        <th style="text-align:right">PART%</th>
+        <th style="text-align:right">VALOR AÑO ACT.</th>
+        <th style="text-align:right">VALOR AÑO ANT.</th>
+        <th style="text-align:center">VAR% VALOR</th>
+        <th style="text-align:right">UNDS AÑO ACT.</th>
+        <th style="text-align:right">UNDS AÑO ANT.</th>
+        <th style="text-align:center">VAR% UNDS</th>
+        <th style="text-align:center">STATUS</th>
+      </tr></thead>
+      <tbody>${cadenas.map(c=>`<tr>
+        <td class="cad-name">${c.cad}</td>
+        <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
+        <td class="cad-val" style="text-align:right;color:${a}">${fmtM(c.v)}</td>
+        <td class="cad-ant" style="text-align:right">${fmtM(c.v25)}</td>
+        <td style="text-align:center"><span class="pill ${c.var>=0?'pos':'neg'}">${sg(c.var)}${c.var.toFixed(1)}%</span></td>
+        <td class="mono" style="text-align:right;color:var(--text);font-size:12px">${fmtK(c.u)}</td>
+        <td class="cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
+        <td style="text-align:center"><span class="pill ${c.varu>=0?'pos':'neg'}">${sg(c.varu)}${c.varu.toFixed(1)}%</span></td>
+        <td style="text-align:center"><span class="dot ${dotCls(c.var)}"></span></td>
+      </tr>`).join('')}</tbody>
+    </table>
+    </div>
+  </div>`;
 
   document.getElementById('d-body').innerHTML=kpiH+trendsH+cadenasH+segH;
   setTimeout(()=>buildDCharts(trend,a),0);
