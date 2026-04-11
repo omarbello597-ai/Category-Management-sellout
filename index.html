@@ -556,8 +556,19 @@ function buildMesButtons(meses){
           document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
           this.classList.add('active');
         }
+      } else if(CUR_PAGE==='dashboard'){
+        // En DASHBOARD: igual que CÓMO VAMOS — clic = solo ese mes
+        if(selMeses.size===1&&selMeses.has(mes)){
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
       } else {
-        // En otras páginas: comportamiento toggle normal
+        // PDV Explorer, Segmentos: toggle normal
         this.classList.toggle('active');
         if(selMeses.has(mes)) selMeses.delete(mes);
         else selMeses.add(mes);
