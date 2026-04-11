@@ -807,24 +807,58 @@ function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
   </div>`;
 }
 
-function cvRecoText(cad,soGap,siGap,cumplSO,ddi){
+function getTop5Segs(cad,mesFil){
+  // Obtener top 5 segmentos de esta cadena desde los archivos de detalle
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const segMap={};
+  cats.forEach(cat=>{
+    const det=DET[cat+'_2026']||[];
+    det.filter(r=>r.C===cad&&(mesFil?r.M===mesFil:true)).forEach(r=>{
+      if(!r.G) return;
+      if(!segMap[r.G])segMap[r.G]={v26:0,u26:0,inv:0};
+      segMap[r.G].v26+=r.V||0; segMap[r.G].u26+=r.U||0; segMap[r.G].inv+=r.I||0;
+    });
+  });
+  return Object.entries(segMap).sort((a,b)=>b[1].v26-a[1].v26).slice(0,5);
+}
+
+function cvRecoText(cad,soGap,siGap,cumplSO,ddi,mesFil){
   const pct=cumplSO.toFixed(0);
-  if(ddi!==null&&ddi<25) return{
-    txt:`DDI crítico de ${ddi}d. Riesgo real de quiebre de stock. Priorizar reposición inmediata en Refrigerantes y Tapetes. Sin acción el sell out caerá adicionalmente.`,
-    chip:'Reposición urgente',color:'var(--neg)'
-  };
-  if(cumplSO>=95) return{
-    txt:`Canal en línea con el presupuesto (${pct}% cumpl. proy.). Capitalizar el momentum ampliando portafolio en segmentos con mayor inventario disponible.`,
-    chip:'Ampliar portafolio',color:'var(--pos)'
-  };
-  if(soGap>-0.1e9) return{
-    txt:`Gap manejable. Activar bundles multisegmento y visibilidad POP en puntos con mayor tráfico para cerrar los ${fmtM(Math.abs(soGap))} restantes.`,
-    chip:'Bundle + POP',color:'#F5C800'
-  };
-  return{
-    txt:`Gap de ${fmtM(Math.abs(soGap))} requiere acción inmediata. Activar exhibiciones adicionales en segmentos con inventario disponible y negociar espacio en puntos clave.`,
-    chip:'Exhibición + negociación',color:'var(--neg)'
-  };
+  const top5=getTop5Segs(cad,mesFil);
+  // Generar texto de los 5 segmentos top
+  const segsHtml=top5.length?top5.map(([seg,d],i)=>{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    // comparar vs 2025
+    const segMap25={};
+    cats.forEach(cat=>{
+      const det25=DET[cat+'_2025']||[];
+      det25.filter(r=>r.C===cad&&(mesFil?r.M===mesFil:true)&&r.G===seg).forEach(r=>{
+        segMap25[seg]=(segMap25[seg]||0)+(r.V||0);
+      });
+    });
+    const v25=segMap25[seg]||0;
+    const varPct=v25>0?((d.v26/v25)-1)*100:0;
+    const varStr=(varPct>=0?'+':'')+varPct.toFixed(1)+'%';
+    const status=d.v26===0?'⚠ Sin ventas':varPct<-10?'↓ Caída':varPct>5?'↑ Creciendo':'→ Estable';
+    return `${i+1}. ${seg} ${fmtM(d.v26)} (${varStr}) ${status}`;
+  }).join(' | '):'Sin datos de detalle';
+
+  // Acción principal según performance
+  let accion,chip,color;
+  if(ddi!==null&&ddi<25){
+    accion=`Reposición urgente (DDI ${ddi}d). Top segs: ${segsHtml}`;
+    chip='Reposición urgente'; color='var(--neg)';
+  } else if(cumplSO>=90){
+    accion=`Canal en línea (${pct}%). Capitalizar momentum. Top segs: ${segsHtml}`;
+    chip='Ampliar portafolio'; color='var(--pos)';
+  } else if(soGap>-50e6){
+    accion=`Gap manejable ${fmtM(Math.abs(soGap))}. Activar POP. Top segs: ${segsHtml}`;
+    chip='Bundle + POP'; color='#F5C800';
+  } else {
+    accion=`Gap ${fmtM(Math.abs(soGap))} — acción inmediata. Top segs: ${segsHtml}`;
+    chip='Exhibición + negociación'; color='var(--neg)';
+  }
+  return{txt:accion,chip,color};
 }
 
 function renderComoVamos(){
@@ -935,7 +969,10 @@ function renderComoVamos(){
   </div>`;
 
   // ── Cadenas grid ──────────────────────────────────────────────────────
-  const cadenas=[...new Set(ppAll.map(r=>r.CADENA))].sort();
+  // Ordenar cadenas por valor de SO_REAL_2026 descendente
+  const cadenasMap={};
+  ppAll.forEach(r=>{if(r.CADENA)cadenasMap[r.CADENA]=(cadenasMap[r.CADENA]||0)+(r.SO_REAL_2026||0);});
+  const cadenas=Object.keys(cadenasMap).sort((a,b)=>cadenasMap[b]-cadenasMap[a]);
   const cadH=`<div>
     <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
     <div class="cv-cad-grid">${cadenas.map(cad=>{
@@ -997,7 +1034,7 @@ function renderComoVamos(){
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
       const ddiCad=calcDDI(invCad,uCad);
-      const reco=cvRecoText(cad,soGap,siGap,cumplSO,ddiCad);
+      const reco=cvRecoText(cad,soGap,siGap,cumplSO,ddiCad,mesFiltro);
       const borderColor=reco.color;
       return`<div class="cv-reco" style="border-color:${borderColor};background:${borderColor==='var(--pos)'?'rgba(13,183,91,.04)':borderColor==='var(--neg)'?'rgba(229,25,44,.04)':'rgba(245,200,0,.04)'}">
         <div class="cv-reco-top">
