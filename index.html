@@ -243,35 +243,9 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 :root.light .cad-hdr-title{color:var(--blue);font-weight:700;}
 :root.light .seg-hdr{background:#edf0f7;}
 :root.light .seg-hdr-title{color:var(--blue);font-weight:700;}
-
-/* ── SEGMENT CARDS MATRIX ──────────────────────────────────────────────────*/
-.seg-cards-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:2px;}
-.seg-cards-hdr{padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.seg-cards-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:700;white-space:nowrap;}
-.seg-cards-table{border-collapse:collapse;min-width:100%;}
-.seg-cards-table td{border:1px solid var(--border);}
-.seg-corner{background:var(--surf);width:180px;min-width:180px;padding:6px 10px;}
-.seg-col-hdr{background:var(--surf);text-align:center;padding:6px 4px;min-width:130px;}
-.seg-col-hdr-name{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.3px;}
-.seg-col-hdr-part{font-family:var(--fm);font-size:8px;margin-top:2px;}
-.seg-label-cell{background:var(--surf);padding:8px 10px;vertical-align:top;min-width:180px;max-width:180px;}
-.seg-label-name{font-size:11px;font-weight:700;color:var(--white);line-height:1.2;}
-.seg-label-part{font-family:var(--fm);font-size:8px;margin-top:2px;}
-.seg-card-cell{padding:5px;vertical-align:top;background:var(--card);}
-.seg-card{background:var(--surf);border-radius:5px;padding:6px 7px;min-width:118px;}
-.seg-card-pills{display:flex;gap:3px;flex-wrap:wrap;}
-.seg-card-pill{font-family:var(--fm);font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;}
-.seg-card-pill.pos{background:var(--posL);color:var(--pos);}
-.seg-card-pill.neg{background:var(--negL);color:var(--neg);}
-/* Period KPI */
-.kpi-card.periodo .kpi-val{font-family:var(--fb);font-size:12px;line-height:1.4;font-weight:600;letter-spacing:.3px;}
-/* Light mode overrides */
 :root.light .seg-cards-hdr{background:#edf0f7;}
 :root.light .seg-cards-title{color:var(--blue);font-weight:700;}
 :root.light .seg-col-hdr{background:#edf0f7;}
-:root.light .seg-corner{background:#edf0f7;}
-:root.light .seg-label-cell{background:#f5f7fc;}
-:root.light .seg-card{background:#f5f7fc;}
 :root.light .seg-col-hdr-name{color:var(--blue);}
 :root.light .seg-col-hdr-part{color:var(--blue);opacity:.7;}
 :root.light .seg-corner{background:#edf0f7;}
@@ -361,12 +335,8 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
   <!-- DASHBOARD -->
   <div class="page" id="page-dashboard">
     <div class="d-filters">
-      <span class="flabel">Cadena</span>
-      <select id="d-cad-sel" onchange="dSelCad=this.value;renderDashboard()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
-        <option value="">Todas las cadenas</option>
-      </select>
+      <span class="flabel">Período</span>
       <div class="badge" id="d-periodo">—</div>
-      <div class="badge" id="d-val-badge" style="margin-left:auto;">—</div>
     </div>
     <div class="d-body" id="d-body"></div>
   </div>
@@ -450,8 +420,6 @@ const sg=v=>v>=0?'+':'';
 const sp=(a,b)=>b>0&&isFinite(a/b)?Math.round((a/b-1)*1000)/10:0;
 const fmtM=v=>{const a=Math.abs(v),s=v<0?'-':'';
   return s+'$'+(a/1e9).toFixed(3)+'M';};
-const fmtD=v=>{const a=Math.abs(v),s=v<0?'-':'';
-  return a>=1e9?s+'$'+(a/1e9).toFixed(1)+'B':a>=1e6?s+'$'+(a/1e6).toFixed(0)+'M':s+'$'+Math.round(a/1e3)+'K';};
 const fmtK=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':r0(v)+'';
 const ddiClr=d=>d===null||d===undefined?'na':d<30?'crit':d<60?'warn':'ok';
 const ddiLbl=d=>d===null||d===undefined?'—':r0(d)+'d';
@@ -462,7 +430,7 @@ let DET={};
 let CUR_CAT='AUTOS',CUR_PAGE='dashboard';
 let selMeses=new Set();
 let eAllRows=[],eFiltered=[],eSelPdv=null,selSeg=null;
-let dCharts={},rCanal='SO',dSelSubcat='TODAS',dSelCad='';
+let dCharts={},rCanal='SO',dSelSubcat='TODAS';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
 async function safeJson(url){
@@ -1174,170 +1142,27 @@ function renderComoVamos(){
   document.getElementById('cv-body').innerHTML=heroH+proyH+cadH+recoH;
 }
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
-function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
-
-function getCadenas(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const m26={},m25={};
-  cats.forEach(cat=>{
-    (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)).forEach(r=>{
-      if(!m26[r.CADENA])m26[r.CADENA]={cad:r.CADENA,v26:0,u26:0};
-      m26[r.CADENA].v26+=r.VENTA||0;m26[r.CADENA].u26+=r.UNIDADES||0;
-    });
-    (CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)).forEach(r=>{
-      if(!m25[r.CADENA])m25[r.CADENA]={v25:0,u25:0};
-      m25[r.CADENA].v25+=r.VENTA||0;m25[r.CADENA].u25+=r.UNIDADES||0;
-    });
-  });
-  const tot=Object.values(m26).reduce((s,x)=>s+x.v26,0);
-  return Object.values(m26).map(c=>({...c,
-    v25:m25[c.cad]?.v25||0,u25:m25[c.cad]?.u25||0,
-    varV:sp(c.v26,m25[c.cad]?.v25||1),varU:sp(c.u26,m25[c.cad]?.u25||1),
-    part:tot>0?c.v26/tot*100:0
-  })).sort((a,b)=>b.v26-a.v26);
-}
-
-function getDetSeg(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const m26={},m25={};
-  cats.forEach(cat=>{
-    const d26=(DET[cat+'_2026']||[]).filter(r=>(selMeses.size===0||selMeses.has(r.M))&&(!dSelCad||r.C===dSelCad)&&(dSelSubcat==='TODAS'||r.S===dSelSubcat));
-    const d25=(DET[cat+'_2025']||[]).filter(r=>(selMeses.size===0||selMeses.has(r.M))&&(!dSelCad||r.C===dSelCad)&&(dSelSubcat==='TODAS'||r.S===dSelSubcat));
-    d26.forEach(r=>{const k=r.C+'|||'+r.G;
-      if(!m26[k])m26[k]={cad:r.C,seg:r.G,v:0,u:0};m26[k].v+=r.V||0;m26[k].u+=r.U||0;});
-    d25.forEach(r=>{const k=r.C+'|||'+r.G;
-      if(!m25[k])m25[k]={v:0,u:0};m25[k].v+=r.V||0;m25[k].u+=r.U||0;});
-  });
-  return{m26,m25};
-}
-
-function getSegsForSubcat(){
-  if(dSelSubcat==='TODAS') return null;
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const vs=new Set();
-  cats.forEach(cat=>{
-    (DET[cat+'_2026']||[]).forEach(r=>{if(r.S===dSelSubcat&&r.G)vs.add(r.G);});
-    (DET[cat+'_2025']||[]).forEach(r=>{if(r.S===dSelSubcat&&r.G)vs.add(r.G);});
-  });
-  return vs;
-}
-
-function buildSegCards(segs,cadenas,a){
-  const{m26,m25}=getDetSeg();
-  const validSegs=getSegsForSubcat();
-  const filteredSegs=validSegs?segs.filter(s=>validSegs.has(s.seg)):segs;
-  const totalV26=filteredSegs.reduce((s,x)=>s+x.v26,0);
-
-  // Subcategoría selector
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const subcats=new Set(['TODAS']);
-  cats.forEach(cat=>(DET[cat+'_2026']||[]).forEach(r=>{if(r.S)subcats.add(r.S);}));
-  const subcatSel=`<select onchange="dSelSubcat=this.value;renderDashboard()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;cursor:pointer;">
-    ${[...subcats].map(s=>`<option value="${s}" ${s===dSelSubcat?'selected':''}>${s==='TODAS'?'Todas las subcategorías':s}</option>`).join('')}
-  </select>`;
-
-  let html=`<div class="seg-cards-wrap"><div class="seg-cards-hdr">
-    <span class="seg-cards-title">⚡ RESUMEN POR SEGMENTO</span>
-    ${subcatSel}
-  </div><div style="overflow-x:auto"><table class="seg-cards-table">
-  <thead><tr><td class="seg-corner"></td>`;
-
-  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
-  cadFiltered.forEach(c=>{
-    html+=`<td class="seg-col-hdr">
-      <div class="seg-col-hdr-name">${c.cad.split(' ').slice(0,2).join(' ')}</div>
-      <div class="seg-col-hdr-part" style="color:${a}">${c.part.toFixed(1)}%</div>
-    </td>`;
-  });
-  html+='</tr></thead><tbody>';
-
-  filteredSegs.forEach(seg=>{
-    const partSeg=totalV26>0?seg.v26/totalV26*100:0;
-    html+=`<tr><td class="seg-label-cell">
-      <div class="seg-label-name">${seg.seg}</div>
-      <div class="seg-label-part">${partSeg.toFixed(1)}%</div>
-      <div class="seg-card-pills" style="margin-top:4px">
-        <span class="seg-card-pill ${seg.var>=0?'pos':'neg'}">${sg(seg.var)}${seg.var.toFixed(1)}%</span>
-        <span class="seg-card-pill ${seg.varu>=0?'pos':'neg'}">${sg(seg.varu)}${seg.varu.toFixed(1)}%U</span>
-      </div>
-      <div style="margin-top:3px;font-family:var(--fm);font-size:8px;color:var(--muted)">DDI: <span class="ddi ${ddiClr(seg.ddi)}">${ddiLbl(seg.ddi)}</span></div>
-    </td>`;
-    cadFiltered.forEach(cad=>{
-      const k=cad.cad+'|||'+seg.seg;
-      const d26=m26[k]||{v:0,u:0};
-      const d25=m25[k]||{v:0,u:0};
-      const varV=sp(d26.v,d25.v||1);
-      const varU=sp(d26.u,d25.u||1);
-      const totCad=Object.values(m26).filter(x=>x.cad===cad.cad).reduce((s,x)=>s+x.v,0);
-      const partCad=totCad>0?d26.v/totCad*100:0;
-      html+=`<td class="seg-card-cell"><div class="seg-card">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:4px;font-family:var(--fm);font-size:7.5px;color:var(--muted)">
-          <span>VALOR (M)</span><span>UNDS (K)</span>
-          <span style="color:var(--sub)">2025: ${fmtD(d25.v)}</span><span style="color:var(--sub)">${fmtK(d25.u)}</span>
-          <span style="color:${a};font-weight:700">2026: ${fmtD(d26.v)}</span><span style="color:${a};font-weight:700">${fmtK(d26.u)}</span>
-        </div>
-        <div class="seg-card-pills">
-          <span class="seg-card-pill ${varV>=0?'pos':'neg'}">${sg(varV)}${varV.toFixed(0)}%</span>
-          <span class="seg-card-pill ${varU>=0?'pos':'neg'}">${sg(varU)}${varU.toFixed(0)}%</span>
-        </div>
-        <div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:3px">Part. ${partCad.toFixed(1)}%</div>
-      </div></td>`;
-    });
-    html+='</tr>';
-  });
-  return html+'</tbody></table></div></div>';
-}
-
 function renderDashboard(){
-  const a=ac();
+  const t=getTotals(),segs=getSegs(),trend=getTrend(),a=ac();
   const mLbl=selMeses.size===0?'Acumulado':
-    MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
-  const nMeses=selMeses.size||4;
-
-  // Filter by cadena if selected
-  const r26all=resFilter(RES26);
-  const r25all=resFilter(RES25);
-  const r26=dSelCad?r26all.filter(r=>{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
-    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
-  }):r26all;
-
-  const t=getTotals(),segs=getSegs(),trend=getTrend();
-  const cadenas=getCadenas();
-
-  // Populate CADENA dropdown
-  const sel=document.getElementById('d-cad-sel');
-  if(sel){
-    const current=sel.value;
-    sel.innerHTML='<option value="">Todas las cadenas</option>'+
-      cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
-    if(!cadenas.find(c=>c.cad===dSelCad)) dSelCad='';
-  }
-
-  // Value badge
-  const badge=document.getElementById('d-val-badge');
-  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+    MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(', ');
   document.getElementById('d-periodo').textContent=mLbl;
 
-  // ── KPI row ──────────────────────────────────────────────────────────
-  const periodTxt='ACUMULADO · '+
-    (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
   const kpis=[
-    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
-    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
-    {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
-    {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
-    {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
-    {l:'Período',           v:periodTxt, s:nMeses+' mes(es)', c:'var(--acc)', ex:'periodo'},
+    {l:'Valor Año Actual',v:fmtM(t.v26),s:'Ant: '+fmtM(t.v25),neg:t.varV<0},
+    {l:'VAR% Valor',v:sg(t.varV)+t.varV.toFixed(1)+'%',s:'Dif: '+sg(t.v26-t.v25)+fmtM(t.v26-t.v25),neg:t.varV<0,c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Unidades Actual',v:fmtK(t.u26),s:'Ant: '+fmtK(t.u25)},
+    {l:'VAR% Unds',v:sg(t.varU)+t.varU.toFixed(1)+'%',s:'Dif: '+sg(t.u26-t.u25)+fmtK(Math.abs(t.u26-t.u25)),neg:t.varU<0,c:t.varU>=0?'var(--pos)':'var(--neg)'},
+    {l:'Segmentos',v:t.segs,s:segs.filter(s=>s.var<0).length+' en caída'},
+    {l:'DDI Promedio',v:ddiLbl(t.ddi),s:'Stock: '+fmtM(t.inv),
+     c:t.ddi===null?'var(--muted)':t.ddi<30?'var(--neg)':t.ddi<60?'#F5C800':'var(--pos)',ex:'inv'},
   ];
   const kpiH='<div class="kpi-row">'+kpis.map(k=>`<div class="kpi-card${k.neg?' neg':''}${k.ex?' '+k.ex:''}">
     <div class="kpi-label">${k.l}</div>
-    <div class="kpi-val" style="color:${k.c||a};${k.ex==='periodo'?'font-size:13px;line-height:1.3;':'''}">${k.v}</div>
+    <div class="kpi-val" style="color:${k.c||a}">${k.v}</div>
     <div class="kpi-sub">${k.s||''}</div>
   </div>`).join('')+'</div>';
 
-  // ── Trend charts ──────────────────────────────────────────────────────
   const trendsH=`<div class="trend-row">
     <div class="cbox"><div class="cbox-label">📈 TENDENCIA VALOR ($M)</div>
       <div style="position:relative;height:150px"><canvas id="d-cv"></canvas></div></div>
@@ -1345,42 +1170,28 @@ function renderDashboard(){
       <div style="position:relative;height:150px"><canvas id="d-cu"></canvas></div></div>
   </div>`;
 
-  // ── Cadenas table ─────────────────────────────────────────────────────
-  const cadPeriod='RESUMEN CADENAS — '+mLbl.toUpperCase();
-  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
-  const cadTableH=`<div class="cad-wrap"><div class="cad-hdr">
-    <span class="cad-hdr-title">⚡ ${cadPeriod}</span>
-  </div>
-  <table class="cad-table"><thead><tr>
-    <th style="width:200px">CADENA</th>
-    <th style="text-align:right">PART%</th>
-    <th style="text-align:right">VALOR AÑO ACT.</th>
-    <th style="text-align:right">VALOR AÑO ANT.</th>
-    <th style="text-align:center">VAR% VALOR</th>
-    <th style="text-align:right">UNDS AÑO ACT.</th>
-    <th style="text-align:right">UNDS AÑO ANT.</th>
-    <th style="text-align:center">VAR% UNDS</th>
-    <th style="text-align:center">STATUS</th>
-  </tr></thead><tbody>
-  ${cadFiltered.map(c=>`<tr>
-    <td class="cad-name">${c.cad}</td>
-    <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
-    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtD(c.v26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtD(c.v25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
-    <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
-    <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
-  </tr>`).join('')}
-  </tbody></table></div>`;
+  const segH='<div class="seg-wrap"><div class="seg-hdr">'+
+    `<span class="seg-hdr-title">🗂 RESUMEN POR SEGMENTO · ${mLbl}</span>`+
+    `<span class="badge">${segs.length} segmentos</span></div>`+
+    '<div style="overflow-x:auto"><table class="seg-table"><thead><tr>'+
+    '<th style="width:26px">#</th><th style="width:190px">SEGMENTO</th>'+
+    '<th style="text-align:right">VALOR 2026</th><th style="text-align:right">VALOR 2025</th>'+
+    '<th style="text-align:center">VAR%</th><th style="text-align:right">UNDS 2026</th>'+
+    '<th style="text-align:center">VAR% U</th><th style="text-align:center">DDI</th>'+
+    '</tr></thead><tbody>'+
+    segs.map((s,i)=>`<tr class="${s.var<-5?'nr':''}">
+      <td class="mono" style="color:var(--muted);font-size:9px">${i+1}</td>
+      <td style="color:${s.var<-5?'var(--neg)':'var(--text)'}" title="${s.seg}">${s.seg}</td>
+      <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtM(s.v26)}</td>
+      <td class="mono" style="text-align:right;color:var(--muted)">${fmtM(s.v25)}</td>
+      <td style="text-align:center"><span class="pill ${s.var>=0?'pos':'neg'}">${sg(s.var)}${s.var.toFixed(1)}%</span></td>
+      <td class="mono" style="text-align:right;color:var(--sub)">${fmtK(s.u26)}</td>
+      <td style="text-align:center"><span class="pill ${s.varu>=0?'pos':'neg'}">${sg(s.varu)}${s.varu.toFixed(1)}%</span></td>
+      <td style="text-align:center"><span class="ddi ${ddiClr(s.ddi)}">${ddiLbl(s.ddi)}</span></td>
+    </tr>`).join('')+
+    '</tbody></table></div></div>';
 
-  // ── Segment matrix ────────────────────────────────────────────────────
-  const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
-    ?buildSegCards(segs,cadenas,a)
-    :'<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:9px;">Cargando detalle de segmentos…</div>';
-
-  document.getElementById('d-body').innerHTML=kpiH+trendsH+cadTableH+segMatrixH;
+  document.getElementById('d-body').innerHTML=kpiH+trendsH+segH;
   setTimeout(()=>buildDCharts(trend,a),0);
 }
 
