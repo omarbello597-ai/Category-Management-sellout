@@ -875,20 +875,30 @@ function renderComoVamos(){
   const ppAllCat=cvPptoFilter(CUR_CAT);
 
   // ── Determinar mes(es) a mostrar ─────────────────────────────────────
-  // Un mes seleccionado → solo ese mes
-  // Varios o ninguno → mes actual detectado por FECHA/fallback
-  let mesFiltro, ppAll, mesLabel, esMesActual;
-  if(selMeses.size===1){
-    mesFiltro=[...selMeses][0];
+  // Si hay exactamente 1 mes seleccionado → mostrar ese mes
+  // Si no hay ninguno → mostrar mes actual (detectado por FECHA)
+  // Si hay múltiples → mostrar acumulado de esos meses
+  let mesFiltro, ppAll, mesLabel, esMesActual, esMultiMes=false;
+  const mesesSel=MES_ORD.filter(m=>selMeses.has(m)); // en orden cronológico
+  if(mesesSel.length===1){
+    // Un solo mes seleccionado
+    mesFiltro=mesesSel[0];
     ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
     mesLabel=MES_LBL[mesFiltro]||mesFiltro;
     esMesActual=(mesFiltro===mesInfo.mes);
-  } else {
-    // Sin filtro o múltiples → mostrar mes actual
+  } else if(mesesSel.length===0){
+    // Sin filtro → mes actual
     mesFiltro=mesInfo.mes;
     ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
     mesLabel=MES_LBL[mesFiltro]||mesFiltro;
     esMesActual=true;
+  } else {
+    // Múltiples meses → acumulado
+    esMultiMes=true;
+    mesFiltro=mesesSel[mesesSel.length-1]; // último mes seleccionado
+    ppAll=ppAllCat.filter(r=>mesesSel.includes(r.MES));
+    mesLabel=mesesSel.map(m=>MES_LBL[m]).join('·');
+    esMesActual=mesesSel.includes(mesInfo.mes);
   }
 
   // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
@@ -913,19 +923,30 @@ function renderComoVamos(){
   const siRealMes=ppAll.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
   const soPptoMes=ppAll.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   const siPptoMes=ppAll.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
-  // Días del mes filtrado (no del mes actual)
+  // Días para proyección
   const diasPorMes2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   const keyFiltro=mesFiltro.replace('.','');
   const diasDelMesFiltro=diasPorMes2[keyFiltro]||30;
-  // Si es mes en curso → usar días transcurridos del mesInfo
-  // Si es mes pasado → mes completo (todos los días)
-  const soDiasT = diasDelMesFiltro;
-  const siDiasT = diasDelMesFiltro;
-  const soDias  = esMesActual ? mesInfo.soDaysElapsed : diasDelMesFiltro;
-  const siDias  = esMesActual ? mesInfo.siDaysElapsed : diasDelMesFiltro;
-  const pctTransc = Math.round(soDias/soDiasT*100);
-  const soProyMes = cvCalcProy(soRealMes,soDias,soDiasT);
-  const siProyMes = cvCalcProy(siRealMes,siDias,siDiasT);
+  let soDiasT, siDiasT, soDias, siDias;
+  if(esMultiMes){
+    // Acumulado de varios meses: días totales = suma, días transcurridos incluye parcial del último
+    const diasTotales=mesesSel.reduce((s,m)=>s+(diasPorMes2[m.replace('.','')]||30),0);
+    const diasTransc=esMesActual
+      ? mesesSel.slice(0,-1).reduce((s,m)=>s+(diasPorMes2[m.replace('.','')]||30),0)+mesInfo.soDaysElapsed
+      : diasTotales;
+    soDiasT=siDiasT=diasTotales;
+    soDias=siDias=diasTransc;
+  } else if(esMesActual){
+    soDiasT=mesInfo.soDaysTotal; siDiasT=mesInfo.siDaysTotal;
+    soDias=mesInfo.soDaysElapsed; siDias=mesInfo.siDaysElapsed;
+  } else {
+    // Mes pasado completo
+    soDiasT=siDiasT=diasDelMesFiltro;
+    soDias=siDias=diasDelMesFiltro;
+  }
+  const pctTransc=Math.round(soDias/soDiasT*100);
+  const soProyMes=cvCalcProy(soRealMes,soDias,soDiasT);
+  const siProyMes=cvCalcProy(siRealMes,siDias,siDiasT);
 
   // ── Hero brand section ────────────────────────────────────────────────
   const heroH=`<div class="cv-brand-hero">
@@ -961,7 +982,7 @@ function renderComoVamos(){
 
   // ── Proyección total SO + SI ──────────────────────────────────────────
   const proyH=`<div>
-    <div class="cv-section-lbl">${brand.name} · ${esMesActual?'Proyección cierre':'Resultado'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: día '+soDias+'/'+soDiasT+' · SI: día '+siDias+'/'+siDiasT:'Mes completo'}</span></div>
+    <div class="cv-section-lbl">${brand.name} · ${esMultiMes?'Acumulado':esMesActual?'Proyección cierre':'Resultado'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: día '+soDias+'/'+soDiasT+' · SI: día '+siDias+'/'+siDiasT:'Mes completo'}</span></div>
     <div class="cv-proy-row">
       ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fmtFechaCorte(mesInfo.fechaSOStr))}
       ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fmtFechaCorte(mesInfo.fechaSIStr))}
