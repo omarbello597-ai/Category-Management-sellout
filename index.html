@@ -651,26 +651,45 @@ function cvGetMesActual(){
   // SI: buscar fila con FECHA_SI_ACTUAL definida
   const filaSI=PPTO.find(r=>r.FECHA_SI_ACTUAL&&r.SI_DIAS_TRANSCURRIDOS&&r.SI_DIAS_DEL_MES);
   const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  // Fallback: último mes con real
+  // Fallback: detectar mes actual por ratio real/ppto
   function fallback(){
     const porMes={};
     MES_ORD.forEach(m=>{
       const rows=PPTO.filter(r=>r.MES===m);
       if(!rows.length) return;
       const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-      porMes[m]={hasReal:soReal>0};
+      const soPpto=rows.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      // Mes parcial: tiene real pero < 70% del ppto
+      porMes[m]={soReal,soPpto,hasReal:soReal>0,
+        isPartial:soReal>0&&soPpto>0&&(soReal/soPpto)<0.7};
     });
     const mesesConReal=MES_ORD.filter(m=>porMes[m]?.hasReal);
-    if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15};
+    if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15,
+      soDaysElapsed:15,soDaysTotal:31,siDaysElapsed:15,siDaysTotal:31};
     const lastReal=mesesConReal[mesesConReal.length-1];
-    const nextIdx=MES_ORD.indexOf(lastReal)+1;
-    const nextMes=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
-    const key=nextMes.replace('.','');
-    const today=new Date();
-    return{mes:nextMes,label:MES_LBL[nextMes]||nextMes,
-           daysTotal:diasPorMes[key]||30,daysElapsed:today.getDate(),
-           soDaysElapsed:today.getDate(),soDaysTotal:diasPorMes[key]||30,
-           siDaysElapsed:today.getDate(),siDaysTotal:diasPorMes[key]||30};
+    // Si el último mes tiene real parcial → ese ES el mes actual
+    let mesCurrent;
+    if(porMes[lastReal]?.isPartial){
+      mesCurrent=lastReal;
+    } else {
+      // Todos completos → el siguiente es el mes actual
+      const nextIdx=MES_ORD.indexOf(lastReal)+1;
+      mesCurrent=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
+    }
+    const key=mesCurrent.replace('.','');
+    const dT=diasPorMes[key]||30;
+    // Estimar días transcurridos por ratio
+    let dE;
+    if(porMes[mesCurrent]?.isPartial){
+      const ratio=porMes[mesCurrent].soPpto>0?porMes[mesCurrent].soReal/porMes[mesCurrent].soPpto:0;
+      dE=Math.max(1,Math.round(ratio*dT));
+    } else {
+      dE=new Date().getDate();
+    }
+    return{mes:mesCurrent,label:MES_LBL[mesCurrent]||mesCurrent,
+           daysTotal:dT,daysElapsed:dE,
+           soDaysElapsed:dE,soDaysTotal:dT,
+           siDaysElapsed:dE,siDaysTotal:dT};
   }
   if(!filaSO) return fallback();
   const mes=filaSO.MES;
@@ -820,41 +839,47 @@ function renderComoVamos(){
   const brand=CV_BRAND[CUR_CAT]||CV_BRAND.AUTOS;
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   const mesInfo=cvGetMesActual();
-  const{mes,label:mesLabel,daysTotal,daysElapsed}=mesInfo;
-  const pctTransc=daysTotal>0?Math.round(daysElapsed/daysTotal*100):0;
+  const ppAllCat=cvPptoFilter(CUR_CAT);
 
-  // ── Totales acumulados (meses anteriores al actual) ───────────────────
-  const ppAll=cvPptoFilter(CUR_CAT);
-  const mesesAnt=MES_ORD.filter(m=>m!==mes&&ppAll.some(r=>r.MES===m&&r.SO_REAL_2026>0));
-  const ppAnt=ppAll.filter(r=>mesesAnt.includes(r.MES));
-  const totSOReal26=ppAnt.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const totSOPpto26=ppAnt.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  const totSOReal25=ppAnt.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
-  const totSIReal26=ppAnt.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+  // ── Determinar mes a mostrar ──────────────────────────────────────────
+  // Prioridad: 1) selMeses con 1 mes, 2) mes actual detectado por FECHA
+  const mesFiltro = selMeses.size===1 ? [...selMeses][0] : mesInfo.mes;
+  const esMesActual = mesFiltro===mesInfo.mes;
+  const mesLabel = MES_LBL[mesFiltro]||mesFiltro;
+
+  // ppAll SIEMPRE filtrado por el mes seleccionado
+  const ppAll = ppAllCat.filter(r=>r.MES===mesFiltro);
+
+  // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
+  const mesesConReal=MES_ORD.filter(m=>ppAllCat.some(r=>r.MES===m&&r.SO_REAL_2026>0));
+  const ppAcum=ppAllCat.filter(r=>mesesConReal.includes(r.MES));
+  const totSOReal26=ppAcum.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const totSOPpto26=ppAcum.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const totSOReal25=ppAcum.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  const totSIReal26=ppAcum.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
   const cumplAcum=totSOPpto26>0?totSOReal26/totSOPpto26*100:0;
   const varVs25=sp(totSOReal26,totSOReal25||1);
+  const mesesAnt=mesesConReal;
 
-  // KPIs resumen sell out acumulado
-  const cats2=cats; // for inv
-  const invTotal=cats2.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0);
   // DDI total
+  const invTotal=cats.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0);
   const r26tot=resFilter(RES26);
   const u26tot=r26tot.reduce((s,r)=>s+(r.UNIDADES||0),0);
   const ddiTot=calcDDI(invTotal,u26tot);
 
-  // ── Mes actual totals ─────────────────────────────────────────────────
-  const ppMes=ppAll.filter(r=>r.MES===mes);
-  const mesSORealAll=ppMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const mesSIPptoAll=ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
-  const mesSIRealAll=ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
-  const mesSOPptoAll=ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  // Use real if partial month, else use projection from previous month pace
-  const soRealMes=mesSORealAll>0?mesSORealAll:totSOReal26/(mesesAnt.length||1);
-  const siRealMes=mesSIRealAll>0?mesSIRealAll:totSIReal26/(mesesAnt.length||1);
-  const soPptoMes=mesSOPptoAll>0?mesSOPptoAll:totSOPpto26/(mesesAnt.length||1);
-  const siPptoMes=mesSIPptoAll>0?mesSIPptoAll:totSIReal26/(mesesAnt.length||1)*1.05;
-  const soProyMes=cvCalcProy(soRealMes,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
-  const siProyMes=cvCalcProy(siRealMes,mesInfo.siDaysElapsed,mesInfo.siDaysTotal);
+  // ── Datos del mes filtrado (proyección solo si es mes en curso) ───────
+  const soRealMes=ppAll.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const siRealMes=ppAll.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+  const soPptoMes=ppAll.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const siPptoMes=ppAll.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+  // Si es mes en curso → proyectar; si es mes pasado → proy = real (100% transcurrido)
+  const soDias  = esMesActual ? mesInfo.soDaysElapsed : mesInfo.soDaysTotal;
+  const soDiasT = mesInfo.soDaysTotal;
+  const siDias  = esMesActual ? mesInfo.siDaysElapsed : mesInfo.siDaysTotal;
+  const siDiasT = mesInfo.siDaysTotal;
+  const pctTransc = Math.round(soDias/soDiasT*100);
+  const soProyMes = cvCalcProy(soRealMes,soDias,soDiasT);
+  const siProyMes = cvCalcProy(siRealMes,siDias,siDiasT);
 
   // ── Hero brand section ────────────────────────────────────────────────
   const heroH=`<div class="cv-brand-hero">
@@ -863,7 +888,7 @@ function renderComoVamos(){
       <div>
         <div class="cv-bh-brand" style="color:${brand.color}">${brand.name} · ${brand.cat}</div>
         <div class="cv-bh-val">${fmtM(totSOReal26)}</div>
-        <div class="cv-bh-sub"><span class="pill ${varVs25>=0?'pos':'neg'}">${sg(varVs25)}${varVs25.toFixed(1)}% vs 2025</span><span style="font-size:9px;color:var(--muted)">Acum. ${mesesAnt.map(m=>MES_LBL[m]).join('·')}</span></div>
+        <div class="cv-bh-sub"><span class="pill ${varVs25>=0?'pos':'neg'}">${sg(varVs25)}${varVs25.toFixed(1)}% vs 2025</span><span style="font-size:9px;color:var(--muted)">${selMeses.size>0?MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · '):mesesConReal.map(m=>MES_LBL[m]).join(' · ')}</span></div>
       </div>
     </div>
     <div class="cv-kpi" style="border-top:2px solid ${brand.color}">
@@ -874,7 +899,7 @@ function renderComoVamos(){
     <div class="cv-kpi" style="border-top:2px solid #6699ff">
       <div class="cv-kpi-l">Sell In Acum.</div>
       <div class="cv-kpi-v" style="color:#6699ff">${fmtM(totSIReal26)}</div>
-      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">Acumulado ${mesesAnt.length} meses</div>
+      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">Acumulado ${mesesConReal.length} meses</div>
     </div>
     <div class="cv-kpi" style="border-top:2px solid var(--pos)">
       <div class="cv-kpi-l">DDI Promedio</div>
@@ -890,34 +915,34 @@ function renderComoVamos(){
 
   // ── Proyección total SO + SI ──────────────────────────────────────────
   const proyH=`<div>
-    <div class="cv-section-lbl">${brand.name} · Proyección cierre ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">SO: corte día ${mesInfo.soDaysElapsed}/${mesInfo.soDaysTotal} · SI: día ${mesInfo.siDaysElapsed}/${mesInfo.siDaysTotal}</span></div>
+    <div class="cv-section-lbl">${brand.name} · ${esMesActual?'Proyección cierre':'Resultado'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: corte día '+mesInfo.soDaysElapsed+'/'+mesInfo.soDaysTotal+' · SI: día '+mesInfo.siDaysElapsed+'/'+mesInfo.siDaysTotal:'Mes completo'}</span></div>
     <div class="cv-proy-row">
-      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,mesInfo.soDaysElapsed,mesInfo.soDaysTotal,fmtFechaCorte(mesInfo.fechaSOStr))}
-      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,mesInfo.siDaysElapsed,mesInfo.siDaysTotal,fmtFechaCorte(mesInfo.fechaSIStr))}
+      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fmtFechaCorte(mesInfo.fechaSOStr))}
+      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fmtFechaCorte(mesInfo.fechaSIStr))}
     </div>
   </div>`;
 
   // ── Cadenas grid ──────────────────────────────────────────────────────
   const cadenas=[...new Set(ppAll.map(r=>r.CADENA))].sort();
   const cadH=`<div>
-    <div class="cv-section-lbl">Sell Out · Sell In por cadena · Proyección ${mesLabel} 2026</div>
+    <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
     <div class="cv-cad-grid">${cadenas.map(cad=>{
       const ppC=ppAll.filter(r=>r.CADENA===cad);
       // Acumulado
-      const ppCAnt=ppC.filter(r=>mesesAnt.includes(r.MES));
-      const totSORCad=ppCAnt.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-      const totSOPCad=ppCAnt.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      const partPct=totSOPpto26>0?totSORCad/totSOReal26*100:0;
-      const varC=ppCAnt.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+      // Acumulado de todos los meses con real para esta cadena (header)
+      const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
+      const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
+      const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
       const varPct=sp(totSORCad,varC||1);
       // Mes actual
-      const ppCMes=ppC.filter(r=>r.MES===mes);
-      const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)||totSORCad/(mesesAnt.length||1);
-      const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)||totSOPCad/(mesesAnt.length||1);
-      const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/(mesesAnt.length||1));
-      const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/(mesesAnt.length||1));
-      const soP=cvCalcProy(csOR,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
-      const siP=cvCalcProy(csiR,mesInfo.siDaysElapsed,mesInfo.siDaysTotal);
+      const ppCMes=ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
+      const siP=cvCalcProy(csiR,siDias,siDiasT);
       // DDI para esta cadena
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
@@ -948,16 +973,15 @@ function renderComoVamos(){
     <div class="cv-section-lbl">Recomendaciones por cadena · Acelerar Sell Out ${mesLabel}</div>
     <div class="cv-reco-grid">${cadenas.map(cad=>{
       const ppC=ppAll.filter(r=>r.CADENA===cad);
-      const ppCMes=ppC.filter(r=>r.MES===mes);
-      const ppCAnt=ppC.filter(r=>mesesAnt.includes(r.MES));
-      const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)/(mesesAnt.length||1));
-      const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/(mesesAnt.length||1));
-      const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/(mesesAnt.length||1));
-      const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/(mesesAnt.length||1));
-      const soP=cvCalcProy(csOR,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
+      const ppCMesR=ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMesR.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMesR.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMesR.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMesR.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
       const cumplSO=csOP>0?soP/csOP*100:0;
       const soGap=soP-csOP;
-      const siGap=cvCalcProy(csiR,daysElapsed,daysTotal)-csiP;
+      const siGap=cvCalcProy(csiR,siDias,siDiasT)-csiP;
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
       const ddiCad=calcDDI(invCad,uCad);
