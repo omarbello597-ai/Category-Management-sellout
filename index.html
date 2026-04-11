@@ -1190,11 +1190,14 @@ function getCadenas(){
     });
   });
   const tot=Object.values(m26).reduce((s,x)=>s+x.v26,0);
+  const cats2=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   return Object.values(m26).map(c=>({...c,
     v25:m25[c.cad]?.v25||0,u25:m25[c.cad]?.u25||0,
     varV:sp(c.v26,m25[c.cad]?.v25||1),varU:sp(c.u26,m25[c.cad]?.u25||1),
-    part:tot>0?c.v26/tot*100:0
-  })).sort((a,b)=>b.v26-a.v26);
+    part:tot>0?c.v26/tot*100:0,
+    invUnds:cats2.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0)
+  })).map(c=>({...c,ddi:calcDDI(c.invUnds,c.u26)}))
+  .sort((a,b)=>b.v26-a.v26);
 }
 
 function getDetSeg(){
@@ -1270,6 +1273,9 @@ function buildSegCards(segs,cadenas,a){
       const varU=sp(d26.u,d25.u||1);
       const totCad=Object.values(m26).filter(x=>x.cad===cad.cad).reduce((s,x)=>s+x.v,0);
       const partCad=totCad>0?d26.v/totCad*100:0;
+      // DDI por cadena x segmento
+      const invCS=INV.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.CADENA===cad.cad&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const ddiCS=calcDDI(invCS,d26.u);
       html+=`<td class="seg-card-cell"><div class="seg-card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:4px;font-family:var(--fm);font-size:7.5px;color:var(--muted)">
           <span>VALOR (M)</span><span>UNDS (K)</span>
@@ -1280,7 +1286,10 @@ function buildSegCards(segs,cadenas,a){
           <span class="seg-card-pill ${varV>=0?'pos':'neg'}">${sg(varV)}${varV.toFixed(0)}%</span>
           <span class="seg-card-pill ${varU>=0?'pos':'neg'}">${sg(varU)}${varU.toFixed(0)}%</span>
         </div>
-        <div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:3px">Part. ${partCad.toFixed(1)}%</div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-family:var(--fm);font-size:7px;color:var(--muted)">
+          <span>Part. ${partCad.toFixed(1)}%</span>
+          <span>DDI: <span class="ddi ${ddiClr(ddiCS)}">${ddiLbl(ddiCS)}</span></span>
+        </div>
       </div></td>`;
     });
     html+='</tr>';
@@ -1360,6 +1369,7 @@ function renderDashboard(){
     <th style="text-align:right">UNDS AÑO ACT.</th>
     <th style="text-align:right">UNDS AÑO ANT.</th>
     <th style="text-align:center">VAR% UNDS</th>
+    <th style="text-align:center">DDI</th>
     <th style="text-align:center">STATUS</th>
   </tr></thead><tbody>
   ${cadFiltered.map(c=>`<tr>
@@ -1371,6 +1381,7 @@ function renderDashboard(){
     <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
     <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
     <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
+    <td style="text-align:center"><span class="ddi ${ddiClr(c.ddi)}">${ddiLbl(c.ddi)}</span></td>
     <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
   </tr>`).join('')}
   </tbody></table></div>`;
