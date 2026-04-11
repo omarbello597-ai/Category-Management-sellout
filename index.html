@@ -300,8 +300,8 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
     <div class="brand">Category Management</div>
     <div class="nav-sep"></div>
     <div class="main-tabs">
-      <div class="main-tab active" onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
-      <div class="main-tab"        onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
+      <div class="main-tab active" onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
+      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
       <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
       <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
     </div>
@@ -314,8 +314,8 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
     </div>
     <div style="flex:1"></div>
     <div class="badge" id="data-badge">—</div>
-    <button id="theme-btn" onclick="toggleTheme()" title="Cambiar tema" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;">
-      <span id="theme-icon">☀️</span><span id="theme-txt">MODO CLARO</span>
+    <button id="theme-btn" onclick="toggleTheme()" title="Cambiar tema" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <span id="theme-icon" style="font-size:12px;">☀️</span><span id="theme-txt">MODO CLARO</span>
     </button>
   </nav>
 
@@ -328,12 +328,12 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 
 
   <!-- COMO VAMOS -->
-  <div class="page" id="page-comovamos">
+  <div class="page active" id="page-comovamos">
     <div class="cv-body" id="cv-body"></div>
   </div>
 
   <!-- DASHBOARD -->
-  <div class="page active" id="page-dashboard">
+  <div class="page" id="page-dashboard">
     <div class="d-filters">
       <span class="flabel">Período</span>
       <div class="badge" id="d-periodo">—</div>
@@ -483,7 +483,8 @@ async function load(){
     document.getElementById('loading-screen').style.display='none';
     const app=document.getElementById('app');
     app.style.display='flex';app.style.flexDirection='column';
-    renderDashboard();
+    CUR_PAGE='comovamos';
+    renderComoVamos();
     initTheme();
     setTimeout(async()=>{
       for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
@@ -508,8 +509,10 @@ function buildMesButtons(meses){
     btn.className='mes-btn'+(has&&selMeses.has(m)?' active':'');
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
+      const mes=this.dataset.mes;
       this.classList.toggle('active');
-      selMeses[this.classList.contains('active')?'add':'delete'](m);
+      if(selMeses.has(mes)) selMeses.delete(mes);
+      else selMeses.add(mes);
       refreshAll();
     });
     wrap.appendChild(btn);
@@ -614,6 +617,7 @@ function toggleTheme(){
   try{localStorage.setItem('cv_theme',isLight?'light':'dark');}catch(e){}
   // Redraw charts if on dashboard
   if(CUR_PAGE==='dashboard') setTimeout(()=>renderDashboard(),50);
+  else if(CUR_PAGE==='comovamos') setTimeout(()=>renderComoVamos(),50);
 }
 function initTheme(){
   try{
