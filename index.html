@@ -931,6 +931,34 @@ function renderComoVamos(){
     esMesActual=esMesParcial(mesFiltro);
   }
 
+  // ── Fecha de corte del mes filtrado ──────────────────────────────────
+  // Buscar en ppAll (ya filtrado por mes) la fecha de corte
+  // Si no existe en JSON, construir con el último día del mes o días transcurridos
+  const filaFechaSO=ppAll.find(r=>r.FECHA_SO_ACTUAL);
+  const filaFechaSI=ppAll.find(r=>r.FECHA_SI_ACTUAL);
+  let fechaSOStr=null, fechaSIStr=null;
+  if(filaFechaSO){
+    fechaSOStr=filaFechaSO.FECHA_SO_ACTUAL;
+  } else if(esMesActual&&mesInfo.fechaSOStr){
+    fechaSOStr=mesInfo.fechaSOStr;
+  } else if(!esMesActual){
+    // Mes pasado: mostrar último día del mes
+    const diasPM={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+    const kk=mesFiltro.replace('.','');
+    const añoMes=2026;
+    const mNum={ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',jul:'07',ago:'08',sep:'09',oct:'10',nov:'11',dic:'12'};
+    fechaSOStr=añoMes+'-'+mNum[kk]+'-'+(diasPM[kk]||30).toString().padStart(2,'0');
+  }
+  if(filaFechaSI){
+    fechaSIStr=filaFechaSI.FECHA_SI_ACTUAL;
+  } else if(esMesActual&&mesInfo.fechaSIStr){
+    fechaSIStr=mesInfo.fechaSIStr;
+  } else {
+    fechaSIStr=fechaSOStr; // usar misma fecha de corte
+  }
+  const fechaSOMostrar=fmtFechaCorte(fechaSOStr);
+  const fechaSIMostrar=fmtFechaCorte(fechaSIStr);
+
   // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
   const mesesConReal=MES_ORD.filter(m=>ppAllCat.some(r=>r.MES===m&&r.SO_REAL_2026>0));
   const ppAcum=ppAllCat.filter(r=>mesesConReal.includes(r.MES));
@@ -1026,8 +1054,8 @@ function renderComoVamos(){
   const proyH=`<div>
     <div class="cv-section-lbl">${brand.name} · ${esMultiMes?'Acumulado':esMesActual?'Proyección cierre':'Resultado completo'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: día '+soDias+'/'+soDiasT+' · SI: día '+siDias+'/'+siDiasT:esMultiMes?'':'Mes cerrado'}</span></div>
     <div class="cv-proy-row">
-      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fmtFechaCorte(mesInfo.fechaSOStr))}
-      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fmtFechaCorte(mesInfo.fechaSIStr))}
+      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fechaSOMostrar)}
+      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fechaSIMostrar)}
     </div>
   </div>`;
 
@@ -1072,8 +1100,8 @@ function renderComoVamos(){
           <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;">${sg(varPct)}${varPct.toFixed(1)}%</span>
         </div>
         <div class="cv-cad-body">
-          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fmtFechaCorte(mesInfo.fechaSOStr))}
-          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fmtFechaCorte(mesInfo.fechaSIStr))}
+          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
+          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
         </div>
       </div>`;
     }).join('')}
