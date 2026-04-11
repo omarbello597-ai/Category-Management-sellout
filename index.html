@@ -898,25 +898,37 @@ function renderComoVamos(){
   // 2+ activos → acumulado de esos meses
   const mesesSel=MES_ORD.filter(m=>selMeses.has(m));
   let mesFiltro, ppAll, mesLabel, esMesActual, esMultiMes=false;
+
+  // Helper: un mes es "en curso" si tiene FECHA_SO_ACTUAL en el JSON
+  // o si su ratio real/ppto es < 85% (no está cerrado)
+  function esMesParcial(mes){
+    // Primero verificar si hay FECHA_SO_ACTUAL para este mes
+    const filaFecha=PPTO.find(r=>r.MES===mes&&r.FECHA_SO_ACTUAL);
+    if(filaFecha) return true;
+    // Si no, usar ratio: si real < 85% del ppto → mes parcial/en curso
+    const rowsMes=ppAllCat.filter(r=>r.MES===mes);
+    const soR=rowsMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+    const soP=rowsMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+    if(soR===0) return false; // sin datos = no es el mes actual
+    return soP>0 && (soR/soP)<0.85;
+  }
+
   if(mesesSel.length===0){
-    // Sin filtro → mes actual
     mesFiltro=mesInfo.mes;
     ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
     mesLabel=MES_LBL[mesFiltro]||mesFiltro;
     esMesActual=true;
   } else if(mesesSel.length===1){
-    // Un solo mes
     mesFiltro=mesesSel[0];
     ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
     mesLabel=MES_LBL[mesFiltro]||mesFiltro;
-    esMesActual=(mesFiltro===mesInfo.mes);
+    esMesActual=esMesParcial(mesFiltro);
   } else {
-    // Múltiples → acumulado
     esMultiMes=true;
     mesFiltro=mesesSel[mesesSel.length-1];
     ppAll=ppAllCat.filter(r=>mesesSel.includes(r.MES));
     mesLabel=mesesSel.map(m=>MES_LBL[m]).join('·');
-    esMesActual=mesesSel.includes(mesInfo.mes);
+    esMesActual=esMesParcial(mesFiltro);
   }
 
   // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
@@ -955,13 +967,22 @@ function renderComoVamos(){
     soDiasT=siDiasT=diasTotales;
     soDias=diasTransc; siDias=diasTranscSI;
   } else if(esMesActual){
-    // Mes en curso — usar días transcurridos exactos de mesInfo
-    soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
-    siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
-    soDias=mesInfo.soDaysElapsed||1;
-    siDias=mesInfo.siDaysElapsed||1;
+    // Mes en curso — usar días de mesInfo si coincide, sino calcular por ratio
+    if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+      soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
+      siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
+      soDias=mesInfo.soDaysElapsed;
+      siDias=mesInfo.siDaysElapsed||mesInfo.soDaysElapsed;
+    } else {
+      // Calcular días transcurridos por ratio real/ppto directamente
+      const ratioSO=soPptoMes>0?soRealMes/soPptoMes:0;
+      const ratioSI=siPptoMes>0?siRealMes/siPptoMes:0;
+      soDiasT=siDiasT=diasDelMesFiltro;
+      soDias=Math.min(diasDelMesFiltro,Math.max(1,Math.round(ratioSO*diasDelMesFiltro)));
+      siDias=Math.min(diasDelMesFiltro,Math.max(1,Math.round(ratioSI*diasDelMesFiltro)));
+    }
   } else {
-    // Mes pasado completamente cerrado
+    // Mes pasado completamente cerrado → proy = real
     soDiasT=siDiasT=diasDelMesFiltro;
     soDias=siDias=diasDelMesFiltro;
   }
