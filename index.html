@@ -1333,7 +1333,7 @@ function renderDashboard(){
   ];
   const kpiH='<div class="kpi-row">'+kpis.map(k=>`<div class="kpi-card${k.neg?' neg':''}${k.ex?' '+k.ex:''}">
     <div class="kpi-label">${k.l}</div>
-    <div class="kpi-val" style="color:${k.c||a};${k.ex==='periodo'?'font-size:13px;line-height:1.3;':'''}">${k.v}</div>
+    <div class="kpi-val" style="color:${k.c||a}">${k.v}</div>
     <div class="kpi-sub">${k.s||''}</div>
   </div>`).join('')+'</div>';
 
