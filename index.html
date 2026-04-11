@@ -916,13 +916,13 @@ function renderComoVamos(){
     <div class="cv-kpi" style="border-top:2px solid var(--neg)">
       <div class="cv-kpi-l">Proyección mes</div>
       <div class="cv-kpi-v" style="color:${soProyMes/soPptoMes>=.9?'var(--pos)':soProyMes/soPptoMes>=.75?'#F5C800':'var(--neg)'}">${(soPptoMes>0?soProyMes/soPptoMes*100:0).toFixed(0)}%</div>
-      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">${mesLabel} · día ${daysElapsed} de ${daysTotal}</div>
+      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">${mesLabel} · día ${soDias} de ${soDiasT}</div>
     </div>
   </div>`;
 
   // ── Proyección total SO + SI ──────────────────────────────────────────
   const proyH=`<div>
-    <div class="cv-section-lbl">${brand.name} · ${esMesActual?'Proyección cierre':'Resultado'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: corte día '+mesInfo.soDaysElapsed+'/'+mesInfo.soDaysTotal+' · SI: día '+mesInfo.siDaysElapsed+'/'+mesInfo.siDaysTotal:'Mes completo'}</span></div>
+    <div class="cv-section-lbl">${brand.name} · ${esMesActual?'Proyección cierre':'Resultado'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: día '+soDias+'/'+soDiasT+' · SI: día '+siDias+'/'+siDiasT:'Mes completo'}</span></div>
     <div class="cv-proy-row">
       ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fmtFechaCorte(mesInfo.fechaSOStr))}
       ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fmtFechaCorte(mesInfo.fechaSIStr))}
