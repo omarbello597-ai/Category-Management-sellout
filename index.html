@@ -874,16 +874,21 @@ function renderComoVamos(){
   const u26tot=r26tot.reduce((s,r)=>s+(r.UNIDADES||0),0);
   const ddiTot=calcDDI(invTotal,u26tot);
 
-  // ── Datos del mes filtrado (proyección solo si es mes en curso) ───────
+  // ── Datos del mes filtrado ───────────────────────────────────────────
   const soRealMes=ppAll.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
   const siRealMes=ppAll.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
   const soPptoMes=ppAll.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   const siPptoMes=ppAll.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
-  // Si es mes en curso → proyectar; si es mes pasado → proy = real (100% transcurrido)
-  const soDias  = esMesActual ? mesInfo.soDaysElapsed : mesInfo.soDaysTotal;
-  const soDiasT = mesInfo.soDaysTotal;
-  const siDias  = esMesActual ? mesInfo.siDaysElapsed : mesInfo.siDaysTotal;
-  const siDiasT = mesInfo.siDaysTotal;
+  // Días del mes filtrado (no del mes actual)
+  const diasPorMes2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+  const keyFiltro=mesFiltro.replace('.','');
+  const diasDelMesFiltro=diasPorMes2[keyFiltro]||30;
+  // Si es mes en curso → usar días transcurridos del mesInfo
+  // Si es mes pasado → mes completo (todos los días)
+  const soDiasT = diasDelMesFiltro;
+  const siDiasT = diasDelMesFiltro;
+  const soDias  = esMesActual ? mesInfo.soDaysElapsed : diasDelMesFiltro;
+  const siDias  = esMesActual ? mesInfo.siDaysElapsed : diasDelMesFiltro;
   const pctTransc = Math.round(soDias/soDiasT*100);
   const soProyMes = cvCalcProy(soRealMes,soDias,soDiasT);
   const siProyMes = cvCalcProy(siRealMes,siDias,siDiasT);
