@@ -510,9 +510,26 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      this.classList.toggle('active');
-      if(selMeses.has(mes)) selMeses.delete(mes);
-      else selMeses.add(mes);
+      if(CUR_PAGE==='comovamos'){
+        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
+        // Si ya es el único activo → deseleccionar (ver todos)
+        if(selMeses.size===1&&selMeses.has(mes)){
+          // Deseleccionar → volver a mostrar mes actual
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          // Seleccionar solo este mes
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
+      } else {
+        // En otras páginas: comportamiento toggle normal
+        this.classList.toggle('active');
+        if(selMeses.has(mes)) selMeses.delete(mes);
+        else selMeses.add(mes);
+      }
       refreshAll();
     });
     wrap.appendChild(btn);
@@ -875,27 +892,28 @@ function renderComoVamos(){
   const ppAllCat=cvPptoFilter(CUR_CAT);
 
   // ── Determinar mes(es) a mostrar ─────────────────────────────────────
-  // Si hay exactamente 1 mes seleccionado → mostrar ese mes
-  // Si no hay ninguno → mostrar mes actual (detectado por FECHA)
-  // Si hay múltiples → mostrar acumulado de esos meses
+  // mesesSel = meses activos en orden cronológico
+  // 0 activos  → mes actual (detectado por FECHA/fallback)
+  // 1 activo   → solo ese mes
+  // 2+ activos → acumulado de esos meses
+  const mesesSel=MES_ORD.filter(m=>selMeses.has(m));
   let mesFiltro, ppAll, mesLabel, esMesActual, esMultiMes=false;
-  const mesesSel=MES_ORD.filter(m=>selMeses.has(m)); // en orden cronológico
-  if(mesesSel.length===1){
-    // Un solo mes seleccionado
-    mesFiltro=mesesSel[0];
-    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
-    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
-    esMesActual=(mesFiltro===mesInfo.mes);
-  } else if(mesesSel.length===0){
+  if(mesesSel.length===0){
     // Sin filtro → mes actual
     mesFiltro=mesInfo.mes;
     ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
     mesLabel=MES_LBL[mesFiltro]||mesFiltro;
     esMesActual=true;
+  } else if(mesesSel.length===1){
+    // Un solo mes
+    mesFiltro=mesesSel[0];
+    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
+    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
+    esMesActual=(mesFiltro===mesInfo.mes);
   } else {
-    // Múltiples meses → acumulado
+    // Múltiples → acumulado
     esMultiMes=true;
-    mesFiltro=mesesSel[mesesSel.length-1]; // último mes seleccionado
+    mesFiltro=mesesSel[mesesSel.length-1];
     ppAll=ppAllCat.filter(r=>mesesSel.includes(r.MES));
     mesLabel=mesesSel.map(m=>MES_LBL[m]).join('·');
     esMesActual=mesesSel.includes(mesInfo.mes);
