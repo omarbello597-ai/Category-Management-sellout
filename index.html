@@ -637,42 +637,35 @@ function cvPptoFilter(cat){
 }
 
 function cvGetMesActual(){
-  // Encuentra el primer mes del año con presupuesto pero sin real completo
-  // o el mes siguiente al último con real
-  const all=PPTO;
+  // Buscar la fila del presupuesto que tiene FECHA_SO_ACTUAL definida
+  // Esa fila identifica el mes en curso y sus días exactos
+  const filaConFecha=PPTO.find(r=>r.FECHA_SO_ACTUAL&&r.DIAS_TRANSCURRIDOS&&r.DIAS_DEL_MES);
+  if(filaConFecha){
+    const mes=filaConFecha.MES;
+    const dE=filaConFecha.DIAS_TRANSCURRIDOS;
+    const dT=filaConFecha.DIAS_DEL_MES;
+    return{mes,label:MES_LBL[mes]||mes,daysTotal:dT,daysElapsed:dE,
+           fechaStr:filaConFecha.FECHA_SO_ACTUAL};
+  }
+  // Fallback: último mes con real < ppto (estimación)
   const porMes={};
   MES_ORD.forEach(m=>{
-    const rows=all.filter(r=>r.MES===m);
+    const rows=PPTO.filter(r=>r.MES===m);
     if(!rows.length) return;
     const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
     const soPpto=rows.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-    porMes[m]={soReal,soPpto,hasReal:soReal>0,hasPartial:soReal>0&&soReal<soPpto*.8};
+    porMes[m]={soReal,soPpto,hasReal:soReal>0};
   });
-  // Último mes con real = mes más reciente que tiene datos
   const mesesConReal=MES_ORD.filter(m=>porMes[m]?.hasReal);
-  if(!mesesConReal.length) return {mes:'ene.',label:'Enero',daysTotal:31,daysElapsed:15};
+  if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15};
   const lastReal=mesesConReal[mesesConReal.length-1];
-  // Si el último mes tiene real significativamente menor al ppto → es el mes en curso
-  if(porMes[lastReal]?.hasPartial){
-    const dias={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-    const key=lastReal.replace('.','');
-    const dT=dias[key]||30;
-    // Estimar días transcurridos: si real/ppto_diario ≈ días
-    const soR=porMes[lastReal].soReal, soP=porMes[lastReal].soPpto;
-    const pctMes=soP>0?soR/soP:0;
-    const dE=Math.max(1,Math.round(pctMes*dT));
-    return{mes:lastReal,label:MES_LBL[lastReal]||lastReal,daysTotal:dT,daysElapsed:dE};
-  }
-  // Mes en curso = siguiente al último con real
+  const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   const nextIdx=MES_ORD.indexOf(lastReal)+1;
   const nextMes=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
-  const dias2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  const key2=nextMes.replace('.','');
-  // Usar fecha actual para días transcurridos
+  const key=nextMes.replace('.','');
   const today=new Date();
-  const dE2=today.getDate();
-  const dT2=dias2[key2]||30;
-  return{mes:nextMes,label:MES_LBL[nextMes]||nextMes,daysTotal:dT2,daysElapsed:dE2};
+  return{mes:nextMes,label:MES_LBL[nextMes]||nextMes,
+         daysTotal:diasPorMes[key]||30,daysElapsed:today.getDate()};
 }
 
 function cvCalcProy(real,daysElapsed,daysTotal){
@@ -863,7 +856,7 @@ function renderComoVamos(){
 
   // ── Proyección total SO + SI ──────────────────────────────────────────
   const proyH=`<div>
-    <div class="cv-section-lbl">${brand.name} · Proyección cierre ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">Día ${daysElapsed} de ${daysTotal} · ${pctTransc}% transcurrido</span></div>
+    <div class="cv-section-lbl">${brand.name} · Proyección cierre ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">Día ${daysElapsed} de ${daysTotal} · ${pctTransc}% transcurrido${mesInfo.fechaStr?' · Corte: '+mesInfo.fechaStr:''}</span></div>
     <div class="cv-proy-row">
       ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel)}
       ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel)}
