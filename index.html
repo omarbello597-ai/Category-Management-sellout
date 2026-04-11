@@ -653,43 +653,42 @@ function cvGetMesActual(){
   const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   // Fallback: detectar mes actual por ratio real/ppto
   function fallback(){
-    const porMes={};
+    // Estrategia: el mes en curso es el último que tiene SO_REAL_2026 > 0
+    // comparado con su presupuesto. El mes con menor ratio real/ppto es el parcial.
+    const resumen={};
     MES_ORD.forEach(m=>{
       const rows=PPTO.filter(r=>r.MES===m);
       if(!rows.length) return;
       const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const soPpto=rows.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      // Mes parcial: tiene real pero < 70% del ppto
-      porMes[m]={soReal,soPpto,hasReal:soReal>0,
-        isPartial:soReal>0&&soPpto>0&&(soReal/soPpto)<0.7};
+      const siReal=rows.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const siPpto=rows.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      resumen[m]={soReal,soPpto,siReal,siPpto,
+        hasSOReal:soReal>0, hasSIReal:siReal>0,
+        soRatio:soPpto>0?soReal/soPpto:0,
+        siRatio:siPpto>0?siReal/siPpto:0};
     });
-    const mesesConReal=MES_ORD.filter(m=>porMes[m]?.hasReal);
-    if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15,
+    // Mes en curso SO = último mes con SO real > 0
+    const mesesConSOReal=MES_ORD.filter(m=>resumen[m]?.hasSOReal);
+    // Mes en curso SI = último mes con SI real > 0
+    const mesesConSIReal=MES_ORD.filter(m=>resumen[m]?.hasSIReal);
+    if(!mesesConSOReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15,
       soDaysElapsed:15,soDaysTotal:31,siDaysElapsed:15,siDaysTotal:31};
-    const lastReal=mesesConReal[mesesConReal.length-1];
-    // Si el último mes tiene real parcial → ese ES el mes actual
-    let mesCurrent;
-    if(porMes[lastReal]?.isPartial){
-      mesCurrent=lastReal;
-    } else {
-      // Todos completos → el siguiente es el mes actual
-      const nextIdx=MES_ORD.indexOf(lastReal)+1;
-      mesCurrent=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
-    }
-    const key=mesCurrent.replace('.','');
-    const dT=diasPorMes[key]||30;
-    // Estimar días transcurridos por ratio
-    let dE;
-    if(porMes[mesCurrent]?.isPartial){
-      const ratio=porMes[mesCurrent].soPpto>0?porMes[mesCurrent].soReal/porMes[mesCurrent].soPpto:0;
-      dE=Math.max(1,Math.round(ratio*dT));
-    } else {
-      dE=new Date().getDate();
-    }
-    return{mes:mesCurrent,label:MES_LBL[mesCurrent]||mesCurrent,
-           daysTotal:dT,daysElapsed:dE,
-           soDaysElapsed:dE,soDaysTotal:dT,
-           siDaysElapsed:dE,siDaysTotal:dT};
+    const mesActualSO=mesesConSOReal[mesesConSOReal.length-1];
+    const mesActualSI=mesesConSIReal.length?mesesConSIReal[mesesConSIReal.length-1]:mesActualSO;
+    const keySO=mesActualSO.replace('.','');
+    const keySI=mesActualSI.replace('.','');
+    const dTSO=diasPorMes[keySO]||30;
+    const dTSI=diasPorMes[keySI]||30;
+    // Estimar días transcurridos por ratio real/ppto
+    const ratioSO=resumen[mesActualSO]?.soRatio||0;
+    const ratioSI=resumen[mesActualSI]?.siRatio||0;
+    const dESO=Math.min(dTSO,Math.max(1,Math.round(ratioSO*dTSO)));
+    const dESI=Math.min(dTSI,Math.max(1,Math.round(ratioSI*dTSI)));
+    return{mes:mesActualSO,label:MES_LBL[mesActualSO]||mesActualSO,
+           daysTotal:dTSO,daysElapsed:dESO,
+           soDaysElapsed:dESO,soDaysTotal:dTSO,
+           siDaysElapsed:dESI,siDaysTotal:dTSI};
   }
   if(!filaSO) return fallback();
   const mes=filaSO.MES;
@@ -841,14 +840,22 @@ function renderComoVamos(){
   const mesInfo=cvGetMesActual();
   const ppAllCat=cvPptoFilter(CUR_CAT);
 
-  // ── Determinar mes a mostrar ──────────────────────────────────────────
-  // Prioridad: 1) selMeses con 1 mes, 2) mes actual detectado por FECHA
-  const mesFiltro = selMeses.size===1 ? [...selMeses][0] : mesInfo.mes;
-  const esMesActual = mesFiltro===mesInfo.mes;
-  const mesLabel = MES_LBL[mesFiltro]||mesFiltro;
-
-  // ppAll SIEMPRE filtrado por el mes seleccionado
-  const ppAll = ppAllCat.filter(r=>r.MES===mesFiltro);
+  // ── Determinar mes(es) a mostrar ─────────────────────────────────────
+  // Un mes seleccionado → solo ese mes
+  // Varios o ninguno → mes actual detectado por FECHA/fallback
+  let mesFiltro, ppAll, mesLabel, esMesActual;
+  if(selMeses.size===1){
+    mesFiltro=[...selMeses][0];
+    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
+    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
+    esMesActual=(mesFiltro===mesInfo.mes);
+  } else {
+    // Sin filtro o múltiples → mostrar mes actual
+    mesFiltro=mesInfo.mes;
+    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
+    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
+    esMesActual=true;
+  }
 
   // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
   const mesesConReal=MES_ORD.filter(m=>ppAllCat.some(r=>r.MES===m&&r.SO_REAL_2026>0));
