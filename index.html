@@ -135,6 +135,36 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── RESULTADOS ── */
+.r-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.r-kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
+.r-kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.r-kpi.yellow::after{background:var(--acc);}
+.r-kpi.green::after{background:var(--pos);}
+.r-kpi.red::after{background:var(--neg);}
+.r-kpi.blue::after{background:var(--blue);}
+.r-kpi-label{font-family:var(--fm);font-size:7.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.r-kpi-val{font-family:var(--ff);font-size:22px;letter-spacing:.5px;line-height:1;}
+.r-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.r-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.r-section{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.r-section-hdr{padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.r-section-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.prog-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.03);}
+.prog-row:last-child{border-bottom:none;}
+.prog-name{font-size:12px;font-weight:500;color:var(--text);width:170px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prog-bar-bg{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.prog-nums{font-family:var(--fm);font-size:9px;color:var(--sub);width:160px;text-align:right;flex-shrink:0;}
+.prog-pct{font-family:var(--fm);font-size:11px;font-weight:700;width:42px;text-align:right;flex-shrink:0;}
+.r-mes-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;padding:10px 14px 6px;}
+.r-mes-cell{text-align:center;}
+.r-mes-name{font-family:var(--fm);font-size:7px;color:var(--muted);margin-bottom:3px;letter-spacing:.5px;}
+.r-mes-bars{height:55px;display:flex;align-items:flex-end;justify-content:center;gap:2px;}
+.r-mes-bar{width:7px;border-radius:2px 2px 0 0;}
+.r-mes-pct{font-family:var(--fm);font-size:7.5px;margin-top:2px;}
+
 /* ── CADENAS TABLE ── */
 .cad-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
 .cad-hdr{padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -172,6 +202,7 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
     <div class="nav-sep"></div>
     <div class="main-tabs">
       <div class="main-tab active" onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
+      <div class="main-tab"        onclick="showPage('resultados',this)">🎯 RESULTADOS</div>
       <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
       <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
     </div>
@@ -191,6 +222,24 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
     <div id="mes-wrap" style="display:flex;gap:3px;flex:1;"></div>
     <button class="btn" onclick="selAllMeses()">✓ TODOS</button>
     <button class="btn red" onclick="clearMeses()">✕ LIMPIAR</button>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="page" id="page-resultados">
+    <div class="e-filters">
+      <span class="flabel">Canal</span>
+      <div style="display:flex;gap:3px;background:var(--bg);border-radius:6px;padding:2px;" id="r-canal-tabs">
+        <div class="main-tab active" onclick="rSetCanal('SO',this)" style="font-size:9px;padding:4px 12px;">SELL OUT</div>
+        <div class="main-tab"        onclick="rSetCanal('SI',this)" style="font-size:9px;padding:4px 12px;">SELL IN</div>
+        <div class="main-tab"        onclick="rSetCanal('BOTH',this)" style="font-size:9px;padding:4px 12px;">AMBOS</div>
+      </div>
+      <div class="nav-sep"></div>
+      <span class="flabel">Cadena</span>
+      <select id="r-cadena" onchange="renderResultados()" style="max-width:200px;font-size:11px;"></select>
+      <div style="flex:1"></div>
+      <div class="badge" id="r-periodo">—</div>
+    </div>
+    <div class="d-body" id="r-body" style="overflow-y:auto;"></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -286,16 +335,15 @@ const ddiClr=d=>d===null||d===undefined?'na':d<30?'crit':d<60?'warn':'ok';
 const ddiLbl=d=>d===null||d===undefined?'—':r0(d)+'d';
 
 // ── STATE ───────────────────────────────────────────────────────────────────
-// RES25/RES26: arrays combinados de todas las categorías (resumen_CAT_YEAR.json)
-// CAD25/CAD26: objeto por categoría (cadenas_CAT_YEAR.json)
-// DET: cache detalle para PDV Explorer
 let RES25=[], RES26=[];
 let CAD25={}, CAD26={};
+let PPTO=[];
 let DET={};
 let CUR_CAT='AUTOS', CUR_PAGE='dashboard';
 let selMeses=new Set();
 let eAllRows=[], eFiltered=[], eSelPdv=null, selSeg=null;
 let dCharts={};
+let rCanal='SO';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
 async function safeJson(url){
@@ -320,56 +368,41 @@ async function load(){
   const fill=document.getElementById('ld-fill');
   const msg=document.getElementById('ld-msg');
   try{
-    // Cargar resúmenes por categoría
     let step=0, total=CATS.length*2;
     for(const cat of CATS){
-      msg.textContent=`Cargando resumen ${cat} 2025…`; fill.style.width=`${10+((++step/total)*50)}%`;
-      try{ const d=await safeJson(`resumen_${cat.toLowerCase()}_2025.json?v=`+Date.now());
-           RES25=[...RES25,...d]; }
+      msg.textContent=`Cargando resumen ${cat} 2025…`; fill.style.width=`${10+((++step/total)*40)}%`;
+      try{ const d=await safeJson(`resumen_${cat.toLowerCase()}_2025.json?v=`+Date.now()); RES25=[...RES25,...d]; }
       catch(e){ console.warn('resumen 2025',cat,e.message); }
-
-      msg.textContent=`Cargando resumen ${cat} 2026…`; fill.style.width=`${10+((++step/total)*50)}%`;
-      try{ const d=await safeJson(`resumen_${cat.toLowerCase()}_2026.json?v=`+Date.now());
-           RES26=[...RES26,...d]; }
+      msg.textContent=`Cargando resumen ${cat} 2026…`; fill.style.width=`${10+((++step/total)*40)}%`;
+      try{ const d=await safeJson(`resumen_${cat.toLowerCase()}_2026.json?v=`+Date.now()); RES26=[...RES26,...d]; }
       catch(e){ console.warn('resumen 2026',cat,e.message); }
     }
-
-    // Cargar cadenas por categoría
-    msg.textContent='Cargando datos de cadenas…'; fill.style.width='65%';
+    msg.textContent='Cargando cadenas…'; fill.style.width='55%';
     for(const cat of CATS){
-      try{ CAD25[cat]=await safeJson(`cadenas_${cat.toLowerCase()}_2025.json?v=`+Date.now()); }
-      catch(e){ CAD25[cat]=[]; }
-      try{ CAD26[cat]=await safeJson(`cadenas_${cat.toLowerCase()}_2026.json?v=`+Date.now()); }
-      catch(e){ CAD26[cat]=[]; }
+      try{ CAD25[cat]=await safeJson(`cadenas_${cat.toLowerCase()}_2025.json?v=`+Date.now()); } catch(e){ CAD25[cat]=[]; }
+      try{ CAD26[cat]=await safeJson(`cadenas_${cat.toLowerCase()}_2026.json?v=`+Date.now()); } catch(e){ CAD26[cat]=[]; }
     }
+    msg.textContent='Cargando presupuesto…'; fill.style.width='68%';
+    try{ PPTO=await safeJson('presupuesto.json?v='+Date.now()); }
+    catch(e){ console.warn('presupuesto no disponible'); PPTO=[]; }
 
-    // Cargar detalle AUTOS para PDV Explorer inicial
     msg.textContent='Cargando detalle AUTOS…'; fill.style.width='80%';
     await loadDet('AUTOS',2026); await loadDet('AUTOS',2025);
 
     msg.textContent='Preparando app…'; fill.style.width='90%';
-
     const mesesDisp=MES_ORD.filter(m=>RES26.some(r=>r.MES===m));
     buildMesButtons(mesesDisp);
     selMeses=new Set(mesesDisp);
-
-    document.getElementById('data-badge').textContent=
-      (RES26.length+RES25.length).toLocaleString()+' filas resumen';
-
+    document.getElementById('data-badge').textContent=(RES26.length+RES25.length).toLocaleString()+' filas resumen';
     fill.style.width='100%';
     await new Promise(r=>setTimeout(r,300));
     document.getElementById('loading-screen').style.display='none';
     const app=document.getElementById('app');
     app.style.display='flex'; app.style.flexDirection='column';
     renderDashboard();
-
-    // Precarga resto de detalles en background
     setTimeout(async()=>{
-      for(const c of ['HOGAR','FERRETERIA']){
-        await loadDet(c,2026); await loadDet(c,2025);
-      }
+      for(const c of ['HOGAR','FERRETERIA']){ await loadDet(c,2026); await loadDet(c,2025); }
     },800);
-
   }catch(e){
     const el=document.getElementById('ld-msg');
     el.style.cssText='color:#E5192C;max-width:460px;text-align:center;line-height:1.7;font-size:11px;';
@@ -416,17 +449,190 @@ function showPage(page,el){
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   if(page==='dashboard') renderDashboard();
+  else if(page==='resultados') initResultados();
   else if(page==='explorer') initExplorer();
   else if(page==='segmentos') renderSegmentos();
+}
+
+function rSetCanal(canal,el){
+  rCanal=canal;
+  document.querySelectorAll('#r-canal-tabs .main-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderResultados();
+}
+
+function initResultados(){
+  // Poblar filtro de cadenas
+  const cadenas=['TODAS',...new Set(PPTO.map(r=>r.CADENA))].filter(Boolean);
+  const sel=document.getElementById('r-cadena');
+  sel.innerHTML=cadenas.map(c=>`<option value="${c}">${c==='TODAS'?'Todas las cadenas':c}</option>`).join('');
+  renderResultados();
+}
+
+function pFilter(arr){
+  const cat=CUR_CAT, cad=document.getElementById('r-cadena')?.value||'TODAS';
+  return arr.filter(r=>{
+    if(cat!=='TOTAL'&&r.CATEGORIA!==cat) return false;
+    if(cad!=='TODAS'&&r.CADENA!==cad) return false;
+    if(selMeses.size>0&&!selMeses.has(r.MES)) return false;
+    return true;
+  });
+}
+
+function cumplColor(pct){
+  if(pct>=90) return 'var(--pos)';
+  if(pct>=75) return '#F5C800';
+  return 'var(--neg)';
+}
+function cumplDot(pct){return pct>=90?'ok':pct>=75?'warn':'crit';}
+
+function renderResultados(){
+  const a=ac();
+  const mesesActivos=MES_ORD.filter(m=>selMeses.has(m));
+  const periodoLbl=selMeses.size===0?'ACUMULADO':mesesActivos.map(m=>MES_LBL[m].toUpperCase()).join(' · ');
+  document.getElementById('r-periodo').textContent=periodoLbl;
+
+  const isSO=rCanal!=='SI', isSI=rCanal!=='SO';
+  const pp=pFilter(PPTO);
+
+  const soReal=pp.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const soPpto=pp.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const soReal25=pp.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  const siReal=pp.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+  const siPpto=pp.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+  const siReal25=pp.reduce((s,r)=>s+(r.SI_REAL_2025||0),0);
+
+  const soCumpl=soPpto>0?soReal/soPpto*100:0;
+  const siCumpl=siPpto>0?siReal/siPpto*100:0;
+  const soGap=soReal-soPpto;
+  const siGap=siReal-siPpto;
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  let kpisH='<div class="r-kpi-grid">';
+  if(isSO){
+    kpisH+=`
+    <div class="r-kpi yellow">
+      <div class="r-kpi-label">Real Sell Out</div>
+      <div class="r-kpi-val" style="color:${a}">${fmtM(soReal)}</div>
+      <div class="r-kpi-sub">Ant: ${fmtM(soReal25)} · ${sg(sp(soReal,soReal25||1))}${sp(soReal,soReal25||1).toFixed(1)}%</div>
+    </div>
+    <div class="r-kpi ${soCumpl>=90?'green':soCumpl>=75?'':'red'}">
+      <div class="r-kpi-label">Ppto Sell Out</div>
+      <div class="r-kpi-val" style="color:${cumplColor(soCumpl)}">${fmtM(soPpto)}</div>
+      <div class="r-kpi-sub">Meta ${periodoLbl}</div>
+    </div>
+    <div class="r-kpi ${soCumpl>=90?'green':soCumpl>=75?'yellow':'red'}">
+      <div class="r-kpi-label">Cumplimiento SO</div>
+      <div class="r-kpi-val" style="color:${cumplColor(soCumpl)}">${soCumpl.toFixed(1)}%</div>
+      <div class="r-kpi-sub">Gap ${sg(soGap)}${fmtM(soGap)}</div>
+    </div>`;
+  }
+  if(isSI){
+    kpisH+=`
+    <div class="r-kpi blue">
+      <div class="r-kpi-label">Real Sell In</div>
+      <div class="r-kpi-val" style="color:#6699ff">${fmtM(siReal)}</div>
+      <div class="r-kpi-sub">Ant: ${fmtM(siReal25)} · ${sg(sp(siReal,siReal25||1))}${sp(siReal,siReal25||1).toFixed(1)}%</div>
+    </div>
+    <div class="r-kpi ${siCumpl>=90?'green':siCumpl>=75?'yellow':'red'}">
+      <div class="r-kpi-label">Cumplimiento SI</div>
+      <div class="r-kpi-val" style="color:${cumplColor(siCumpl)}">${siCumpl.toFixed(1)}%</div>
+      <div class="r-kpi-sub">Gap ${sg(siGap)}${fmtM(siGap)}</div>
+    </div>`;
+  }
+  kpisH+='</div>';
+
+  // ── BARRAS POR CADENA ─────────────────────────────────────────────────────
+  const cadenas=[...new Set(pp.map(r=>r.CADENA))].sort();
+  function cadBlock(tipo){
+    const isSOt=tipo==='SO';
+    const title=isSOt?'SELL OUT POR CADENA':'SELL IN POR CADENA';
+    const color=isSOt?a:'#6699ff';
+    const rows=cadenas.map(c=>{
+      const cp=pp.filter(r=>r.CADENA===c);
+      const real=cp.reduce((s,r)=>s+(isSOt?r.SO_REAL_2026:r.SI_REAL_2026)||0,0);
+      const ppto=cp.reduce((s,r)=>s+(isSOt?r.SO_PPTO_2026:r.SI_PPTO_2026)||0,0);
+      const pct=ppto>0?real/ppto*100:0;
+      return{c,real,ppto,pct};
+    }).filter(r=>r.ppto>0).sort((a,b)=>b.real-a.real);
+    const maxPpto=Math.max(...rows.map(r=>r.ppto),1);
+    return`<div class="r-section">
+      <div class="r-section-hdr">
+        <span class="r-section-title">${title}</span>
+        <span style="font-family:var(--fm);font-size:8px;color:var(--sub)">REAL vs PPTO ${periodoLbl}</span>
+      </div>
+      ${rows.map(r=>`<div class="prog-row">
+        <span class="prog-name" title="${r.c}">${r.c}</span>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${Math.min(r.pct,100)}%;background:${cumplColor(r.pct)};"></div></div>
+        <span class="prog-nums">${fmtM(r.real)} / ${fmtM(r.ppto)}</span>
+        <span class="prog-pct" style="color:${cumplColor(r.pct)}">${r.pct.toFixed(0)}%</span>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  let cadH='';
+  if(rCanal==='BOTH') cadH=`<div class="r-two-col">${cadBlock('SO')}${cadBlock('SI')}</div>`;
+  else if(isSO) cadH=`<div class="r-two-col">${cadBlock('SO')}<div></div></div>`;
+  else cadH=`<div class="r-two-col">${cadBlock('SI')}<div></div></div>`;
+
+  // ── EVOLUCION MENSUAL ─────────────────────────────────────────────────────
+  function mesChart(tipo){
+    const isSOt=tipo==='SO';
+    const color=isSOt?a:'#6699ff';
+    const allMeses=MES_ORD.filter(m=>PPTO.some(r=>r.MES===m));
+    const pAll=pFilter(PPTO.map(r=>({...r,MES:r.MES})));// sin filtro de mes
+    const pAllNoMes=PPTO.filter(r=>{
+      const cat=CUR_CAT,cad=document.getElementById('r-cadena')?.value||'TODAS';
+      if(cat!=='TOTAL'&&r.CATEGORIA!==cat) return false;
+      if(cad!=='TODAS'&&r.CADENA!==cad) return false;
+      return true;
+    });
+    const mesData=allMeses.map(m=>{
+      const mp=pAllNoMes.filter(r=>r.MES===m);
+      const real=mp.reduce((s,r)=>s+(isSOt?r.SO_REAL_2026:r.SI_REAL_2026)||0,0);
+      const ppto=mp.reduce((s,r)=>s+(isSOt?r.SO_PPTO_2026:r.SI_PPTO_2026)||0,0);
+      const pct=ppto>0?real/ppto*100:0;
+      const hasReal=real>0;
+      return{m,real,ppto,pct,hasReal};
+    });
+    const maxVal=Math.max(...mesData.map(r=>Math.max(r.real,r.ppto)),1);
+    return`<div class="r-section">
+      <div class="r-section-hdr">
+        <span class="r-section-title">${isSOt?'EVOLUCIÓN SELL OUT':'EVOLUCIÓN SELL IN'} — REAL vs PPTO</span>
+        <div style="display:flex;gap:10px;font-size:8px;color:var(--sub)">
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:${color};border-radius:2px;display:inline-block"></span>Real 2026</span>
+          <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:var(--border);border-radius:2px;display:inline-block"></span>Ppto</span>
+        </div>
+      </div>
+      <div class="r-mes-grid">
+        ${mesData.map(d=>`<div class="r-mes-cell">
+          <div class="r-mes-name">${MES_LBL[d.m]||d.m}</div>
+          <div class="r-mes-bars">
+            <div class="r-mes-bar" style="height:${d.hasReal?Math.max(d.real/maxVal*50,2):0}px;background:${d.hasReal?color:'transparent'};"></div>
+            <div class="r-mes-bar" style="height:${Math.max(d.ppto/maxVal*50,2)}px;background:${d.hasReal?'var(--border)':'rgba(255,255,255,.1)'};"></div>
+          </div>
+          <div class="r-mes-pct" style="color:${d.hasReal?cumplColor(d.pct):'var(--muted)'}">${d.hasReal?d.pct.toFixed(0)+'%':'—'}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  let mesH='';
+  if(rCanal==='BOTH') mesH=`<div style="display:grid;gap:10px">${mesChart('SO')}${mesChart('SI')}</div>`;
+  else mesH=mesChart(rCanal);
+
+  document.getElementById('r-body').innerHTML=kpisH+cadH+mesH;
 }
 function setCat(cat,el){
   CUR_CAT=cat; eSelPdv=null; selSeg=null;
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
-  refreshAll();
+  if(CUR_PAGE==='resultados') initResultados();
+  else refreshAll();
 }
 function refreshAll(){
   if(CUR_PAGE==='dashboard') renderDashboard();
+  else if(CUR_PAGE==='resultados') renderResultados();
   else if(CUR_PAGE==='explorer') initExplorer();
   else if(CUR_PAGE==='segmentos') renderSegmentos();
 }
@@ -451,7 +657,7 @@ function getTotals(){
   const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
   const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
   const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
-  const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
+  const inv=r26.reduce((s,r)=>s+(r.INVENTARIO||0),0);
   return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
     ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
 }
@@ -459,7 +665,7 @@ function getSegs(){
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
-    m[r.SEGMENTO].v26+=r.VENTA||0;m[r.SEGMENTO].u26+=r.UNIDADES||0;m[r.SEGMENTO].inv+=r.INV_UNDS||0;});
+    m[r.SEGMENTO].v26+=r.VENTA||0;m[r.SEGMENTO].u26+=r.UNIDADES||0;m[r.SEGMENTO].inv+=r.INVENTARIO||0;});
   r25.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
     m[r.SEGMENTO].v25+=r.VENTA||0;m[r.SEGMENTO].u25+=r.UNIDADES||0;});
   return Object.values(m).map(s=>({...s,
@@ -476,8 +682,7 @@ function getTrend(){
   });
 }
 
-// ── CADENAS ──────────────────────────────────────────────────────────────────
-// Usa cadenas_CAT_YEAR.json — misma fuente que ventas, cuadra exacto con KPIs
+// ── CADENAS HELPER ───────────────────────────────────────────────────────────
 function getCadenas(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   const m26={}, m25={};
@@ -551,24 +756,15 @@ function renderDashboard(){
     '</tbody></table></div></div>';
 
   const cadenas=getCadenas();
-  const periodoLbl=selMeses.size===0?'ACUMULADO':
-    MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · ');
-
+  const periodoLbl2=selMeses.size===0?'ACUMULADO':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · ');
   const cadenasH=!cadenas.length?'':`<div class="cad-wrap">
-    <div class="cad-hdr">
-      <span class="cad-hdr-title">🏪 RESUMEN CADENAS</span>
-      <span class="cad-period">${periodoLbl}</span>
-    </div>
+    <div class="cad-hdr"><span class="cad-hdr-title">🏪 RESUMEN CADENAS</span><span class="cad-period">${periodoLbl2}</span></div>
     <div style="overflow-x:auto"><table class="cad-table">
       <thead><tr>
-        <th style="width:180px">CADENA</th>
-        <th style="text-align:right">PART%</th>
-        <th style="text-align:right">VALOR AÑO ACT.</th>
-        <th style="text-align:right">VALOR AÑO ANT.</th>
-        <th style="text-align:center">VAR% VALOR</th>
-        <th style="text-align:right">UNDS AÑO ACT.</th>
-        <th style="text-align:right">UNDS AÑO ANT.</th>
-        <th style="text-align:center">VAR% UNDS</th>
+        <th style="width:180px">CADENA</th><th style="text-align:right">PART%</th>
+        <th style="text-align:right">VALOR AÑO ACT.</th><th style="text-align:right">VALOR AÑO ANT.</th>
+        <th style="text-align:center">VAR% VALOR</th><th style="text-align:right">UNDS AÑO ACT.</th>
+        <th style="text-align:right">UNDS AÑO ANT.</th><th style="text-align:center">VAR% UNDS</th>
         <th style="text-align:center">STATUS</th>
       </tr></thead>
       <tbody>${cadenas.map(c=>`<tr>
@@ -584,7 +780,6 @@ function renderDashboard(){
       </tr>`).join('')}</tbody>
     </table></div>
   </div>`;
-
   document.getElementById('d-body').innerHTML=kpiH+trendsH+cadenasH+segH;
   setTimeout(()=>buildDCharts(trend,a),0);
 }
