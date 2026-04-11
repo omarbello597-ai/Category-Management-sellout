@@ -636,36 +636,56 @@ function cvPptoFilter(cat){
   return PPTO.filter(r=>cats.includes(r.CATEGORIA));
 }
 
+
+function fmtFechaCorte(fechaStr){
+  if(!fechaStr) return null;
+  try{
+    const d=new Date(fechaStr+'T12:00:00');
+    const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return String(d.getDate()).padStart(2,'0')+' '+meses[d.getMonth()]+' '+d.getFullYear();
+  }catch(e){return fechaStr;}
+}
 function cvGetMesActual(){
-  // Buscar la fila del presupuesto que tiene FECHA_SO_ACTUAL definida
-  // Esa fila identifica el mes en curso y sus días exactos
-  const filaConFecha=PPTO.find(r=>r.FECHA_SO_ACTUAL&&r.DIAS_TRANSCURRIDOS&&r.DIAS_DEL_MES);
-  if(filaConFecha){
-    const mes=filaConFecha.MES;
-    const dE=filaConFecha.DIAS_TRANSCURRIDOS;
-    const dT=filaConFecha.DIAS_DEL_MES;
-    return{mes,label:MES_LBL[mes]||mes,daysTotal:dT,daysElapsed:dE,
-           fechaStr:filaConFecha.FECHA_SO_ACTUAL};
-  }
-  // Fallback: último mes con real < ppto (estimación)
-  const porMes={};
-  MES_ORD.forEach(m=>{
-    const rows=PPTO.filter(r=>r.MES===m);
-    if(!rows.length) return;
-    const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-    const soPpto=rows.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-    porMes[m]={soReal,soPpto,hasReal:soReal>0};
-  });
-  const mesesConReal=MES_ORD.filter(m=>porMes[m]?.hasReal);
-  if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15};
-  const lastReal=mesesConReal[mesesConReal.length-1];
+  // SO: buscar fila con FECHA_SO_ACTUAL definida
+  const filaSO=PPTO.find(r=>r.FECHA_SO_ACTUAL&&r.SO_DIAS_TRANSCURRIDOS&&r.SO_DIAS_DEL_MES);
+  // SI: buscar fila con FECHA_SI_ACTUAL definida
+  const filaSI=PPTO.find(r=>r.FECHA_SI_ACTUAL&&r.SI_DIAS_TRANSCURRIDOS&&r.SI_DIAS_DEL_MES);
   const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  const nextIdx=MES_ORD.indexOf(lastReal)+1;
-  const nextMes=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
-  const key=nextMes.replace('.','');
-  const today=new Date();
-  return{mes:nextMes,label:MES_LBL[nextMes]||nextMes,
-         daysTotal:diasPorMes[key]||30,daysElapsed:today.getDate()};
+  // Fallback: último mes con real
+  function fallback(){
+    const porMes={};
+    MES_ORD.forEach(m=>{
+      const rows=PPTO.filter(r=>r.MES===m);
+      if(!rows.length) return;
+      const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      porMes[m]={hasReal:soReal>0};
+    });
+    const mesesConReal=MES_ORD.filter(m=>porMes[m]?.hasReal);
+    if(!mesesConReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15};
+    const lastReal=mesesConReal[mesesConReal.length-1];
+    const nextIdx=MES_ORD.indexOf(lastReal)+1;
+    const nextMes=nextIdx<MES_ORD.length?MES_ORD[nextIdx]:lastReal;
+    const key=nextMes.replace('.','');
+    const today=new Date();
+    return{mes:nextMes,label:MES_LBL[nextMes]||nextMes,
+           daysTotal:diasPorMes[key]||30,daysElapsed:today.getDate(),
+           soDaysElapsed:today.getDate(),soDaysTotal:diasPorMes[key]||30,
+           siDaysElapsed:today.getDate(),siDaysTotal:diasPorMes[key]||30};
+  }
+  if(!filaSO) return fallback();
+  const mes=filaSO.MES;
+  const soDaysElapsed=filaSO.SO_DIAS_TRANSCURRIDOS;
+  const soDaysTotal=filaSO.SO_DIAS_DEL_MES;
+  const siDaysElapsed=filaSI?filaSI.SI_DIAS_TRANSCURRIDOS:soDaysElapsed;
+  const siDaysTotal=filaSI?filaSI.SI_DIAS_DEL_MES:soDaysTotal;
+  return{
+    mes, label:MES_LBL[mes]||mes,
+    daysTotal:soDaysTotal, daysElapsed:soDaysElapsed,
+    soDaysElapsed, soDaysTotal,
+    siDaysElapsed, siDaysTotal,
+    fechaSOStr:filaSO.FECHA_SO_ACTUAL,
+    fechaSIStr:filaSI?filaSI.FECHA_SI_ACTUAL:null
+  };
 }
 
 function cvCalcProy(real,daysElapsed,daysTotal){
@@ -673,37 +693,46 @@ function cvCalcProy(real,daysElapsed,daysTotal){
   return(real/daysElapsed)*daysTotal;
 }
 
-function cvProyCard(tipo,real,proy,ppto,acento,mesLabel){
+function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fechaCorte){
   const isSO=tipo==='SO';
+  const cumplReal=ppto>0?real/ppto*100:0;
   const cumplProy=ppto>0?proy/ppto*100:0;
   const gap=proy-ppto;
   const isPos=gap>=0;
+  const daysLeft=daysTotal-daysElapsed;
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
   const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
   const cls=isSO?'so':'si';
-  const typeColor=isSO?'#F5C800':'#6699ff';
-  const barColor=isSO?'#F5C800':'#6699ff';
+  const typeColor=isSO?'var(--acc)':'#6699ff';
+  const barColor=isSO?'var(--acc)':'#6699ff';
   return`<div class="cv-proy-card ${cls}">
     <div class="cv-pc-hdr">
-      <span class="cv-pc-type" style="color:${typeColor}">${tipo==='SO'?'Sell Out':'Sell In'}</span>
-      <span class="pill ${isPos?'pos':'neg'}">${isPos?'+':''} ${cumplProy.toFixed(0)}% cumpl. proy.</span>
+      <div>
+        <span class="cv-pc-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:.5px;">Corte: ${fechaCorte}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
+        <span class="pill ${isPos?'pos':'neg'}" style="font-size:9px;">Proy: ${cumplProy.toFixed(1)}%</span>
+      </div>
     </div>
     <div class="cv-pc-metrics">
       <div>
-        <div class="cv-pc-m-l">Real hoy</div>
+        <div class="cv-pc-m-l">Real · Día ${daysElapsed}</div>
         <div class="cv-pc-m-v" style="color:${barColor}">${fmtM(real)}</div>
-        <div class="cv-pc-m-s">${(ppto>0?real/ppto*100:0).toFixed(0)}% del mes</div>
+        <div class="cv-pc-m-s" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% cumpl. actual</div>
       </div>
       <div>
-        <div class="cv-pc-m-l">Proyectado</div>
+        <div class="cv-pc-m-l">Proyectado cierre</div>
         <div class="cv-pc-m-v" style="color:${cumplColor}">${fmtM(proy)}</div>
         <div class="cv-pc-m-s">al ritmo actual</div>
       </div>
       <div>
-        <div class="cv-pc-m-l">Presupuesto</div>
+        <div class="cv-pc-m-l">Presupuesto ${mesLabel}</div>
         <div class="cv-pc-m-v" style="color:var(--muted)">${fmtM(ppto)}</div>
-        <div class="cv-pc-m-s">meta ${mesLabel}</div>
+        <div class="cv-pc-m-s">${daysLeft} días restantes</div>
       </div>
     </div>
     <div class="cv-bar-bg">
@@ -711,33 +740,38 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel){
       <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
     </div>
     <div class="cv-bar-lbls">
-      <span style="color:${barColor}">Real ${barReal.toFixed(0)}%</span>
-      <span style="color:${cumplColor}">Proy. ${barProy.toFixed(0)}%</span>
+      <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
+      <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
       <span>Meta 100%</span>
     </div>
     <div class="cv-gap-box ${isPos?'pos':'neg'}">
       <div>
         <div class="cv-gap-lbl" style="color:${isPos?'var(--pos)':'var(--neg)'}">Gap proyectado cierre</div>
-        <div class="cv-gap-sub">Para llegar al 100% faltan ${fmtM(Math.abs(gap))} en ${30-(new Date().getDate())} días</div>
+        <div class="cv-gap-sub">Faltan ${fmtM(Math.abs(gap))} en ${daysLeft} días · ${daysTotal} días del mes</div>
       </div>
       <div class="cv-gap-val" style="color:${isPos?'var(--pos)':'var(--neg)'}">${isPos?'+':''}${fmtM(gap)}</div>
     </div>
   </div>`;
 }
 
-function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV){
+function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
   const isSO=tipo==='SO';
-  const typeColor=isSO?'#F5C800':'#6699ff';
-  const barColor=isSO?'#F5C800':'#6699ff';
+  const typeColor=isSO?'var(--acc)':'#6699ff';
+  const barColor=isSO?'var(--acc)':'#6699ff';
+  const cumplReal=ppto>0?real/ppto*100:0;
   const cumplProy=ppto>0?proy/ppto*100:0;
   const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
   const gap=proy-ppto;
   return`<div class="cv-mini ${tipo.toLowerCase()}">
     <div class="cv-mini-hdr">
-      <span class="cv-mini-type" style="color:${typeColor}">${tipo==='SO'?'Sell Out':'Sell In'}</span>
-      <span style="font-family:var(--fm);font-size:8px;color:var(--muted)">gap ${gap>=0?'+':''}${fmtM(gap)}</span>
+      <div>
+        <span class="cv-mini-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al ${fechaCorte}</div>`:''}
+      </div>
+      <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:700;">Hoy: ${cumplReal.toFixed(1)}%</span>
     </div>
     <div class="cv-mini-rows">
       <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${typeColor}">${fmtM(real)}</div></div>
@@ -748,9 +782,9 @@ function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV){
       <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
       <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
     </div>
-    <div class="cv-mini-foot">
-      <span class="cv-mini-cumpl-l">Cumpl. proy.</span>
-      <span class="cv-mini-cumpl-v" style="color:${cumplColor}">${cumplProy.toFixed(0)}%</span>
+    <div class="cv-mini-foot" style="display:flex;justify-content:space-between;">
+      <span class="cv-mini-cumpl-l" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
+      <span class="cv-mini-cumpl-v" style="color:${cumplColor}">${cumplProy.toFixed(1)}% proy.</span>
     </div>
   </div>`;
 }
@@ -819,8 +853,8 @@ function renderComoVamos(){
   const siRealMes=mesSIRealAll>0?mesSIRealAll:totSIReal26/(mesesAnt.length||1);
   const soPptoMes=mesSOPptoAll>0?mesSOPptoAll:totSOPpto26/(mesesAnt.length||1);
   const siPptoMes=mesSIPptoAll>0?mesSIPptoAll:totSIReal26/(mesesAnt.length||1)*1.05;
-  const soProyMes=cvCalcProy(soRealMes,daysElapsed,daysTotal);
-  const siProyMes=cvCalcProy(siRealMes,daysElapsed,daysTotal);
+  const soProyMes=cvCalcProy(soRealMes,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
+  const siProyMes=cvCalcProy(siRealMes,mesInfo.siDaysElapsed,mesInfo.siDaysTotal);
 
   // ── Hero brand section ────────────────────────────────────────────────
   const heroH=`<div class="cv-brand-hero">
@@ -856,10 +890,10 @@ function renderComoVamos(){
 
   // ── Proyección total SO + SI ──────────────────────────────────────────
   const proyH=`<div>
-    <div class="cv-section-lbl">${brand.name} · Proyección cierre ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">Día ${daysElapsed} de ${daysTotal} · ${pctTransc}% transcurrido${mesInfo.fechaStr?' · Corte: '+mesInfo.fechaStr:''}</span></div>
+    <div class="cv-section-lbl">${brand.name} · Proyección cierre ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">SO: corte día ${mesInfo.soDaysElapsed}/${mesInfo.soDaysTotal} · SI: día ${mesInfo.siDaysElapsed}/${mesInfo.siDaysTotal}</span></div>
     <div class="cv-proy-row">
-      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel)}
-      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel)}
+      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,mesInfo.soDaysElapsed,mesInfo.soDaysTotal,fmtFechaCorte(mesInfo.fechaSOStr))}
+      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,mesInfo.siDaysElapsed,mesInfo.siDaysTotal,fmtFechaCorte(mesInfo.fechaSIStr))}
     </div>
   </div>`;
 
@@ -882,8 +916,8 @@ function renderComoVamos(){
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)||totSOPCad/(mesesAnt.length||1);
       const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/(mesesAnt.length||1));
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/(mesesAnt.length||1));
-      const soP=cvCalcProy(csOR,daysElapsed,daysTotal);
-      const siP=cvCalcProy(csiR,daysElapsed,daysTotal);
+      const soP=cvCalcProy(csOR,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
+      const siP=cvCalcProy(csiR,mesInfo.siDaysElapsed,mesInfo.siDaysTotal);
       // DDI para esta cadena
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
@@ -901,8 +935,8 @@ function renderComoVamos(){
           <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;">${sg(varPct)}${varPct.toFixed(1)}%</span>
         </div>
         <div class="cv-cad-body">
-          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2)}
-          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2)}
+          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fmtFechaCorte(mesInfo.fechaSOStr))}
+          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fmtFechaCorte(mesInfo.fechaSIStr))}
         </div>
       </div>`;
     }).join('')}
@@ -920,7 +954,7 @@ function renderComoVamos(){
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/(mesesAnt.length||1));
       const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/(mesesAnt.length||1));
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)||(ppCAnt.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/(mesesAnt.length||1));
-      const soP=cvCalcProy(csOR,daysElapsed,daysTotal);
+      const soP=cvCalcProy(csOR,mesInfo.soDaysElapsed,mesInfo.soDaysTotal);
       const cumplSO=csOP>0?soP/csOP*100:0;
       const soGap=soP-csOP;
       const siGap=cvCalcProy(csiR,daysElapsed,daysTotal)-csiP;
