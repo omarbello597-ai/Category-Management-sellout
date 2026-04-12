@@ -643,7 +643,7 @@ function getSegs(){
 function getTrend(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   return MES_ORD.map(m=>{
-    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA));
+    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&(!dSelCad||r.CADENA===dSelCad));
     if(!ppMes.length) return null;
     return{mes:MES_LBL[m]||m,
       soReal26:ppMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)/1e6,
