@@ -643,19 +643,15 @@ function getSegs(){
 function getTrend(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   return MES_ORD.map(m=>{
-    const f=arr=>arr.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
-    const r26=f(RES26),r25=f(RES25);
     const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA));
-    if(!r26.length&&!r25.length&&!ppMes.length) return null;
+    if(!ppMes.length) return null;
     return{mes:MES_LBL[m]||m,
-      v26:r26.length?r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
-      v25:r25.length?r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
-      u26:r26.length?r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
-      u25:r25.length?r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
-      soPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6:null,
-      siReal26:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6:null,
-      siPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6:null,
-      siReal25:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6:null,
+      soReal26:ppMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)/1e6,
+      soReal25:ppMes.reduce((s,r)=>s+(r.SO_REAL_2025||0),0)/1e6,
+      soPpto:ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6,
+      siReal26:ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6,
+      siReal25:ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6,
+      siPpto:ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6,
     };
   }).filter(Boolean);
 }
@@ -1452,8 +1448,8 @@ function buildDCharts(trend,a){
   if(ctxSO){
     if(dCharts.v) dCharts.v.destroy();
     dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SO Real 2025',data:trend.map(t=>t.v25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Real 2026',data:trend.map(t=>t.v26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
       {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
     ]},options:base});
   }
@@ -1462,8 +1458,8 @@ function buildDCharts(trend,a){
   if(ctxSI){
     if(dCharts.u) dCharts.u.destroy();
     dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SI Real 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Real 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Real 2025',data:trend.map(t=>t.siReal25||null),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Real 2026',data:trend.map(t=>t.siReal26||null),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
       {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
     ]},options:base});
   }
