@@ -598,12 +598,35 @@ function resFilter(arr){
     return true;
   });
 }
+// cadFilter: filter CAD arrays by cat+meses+cadena
+function cadFilter(arr){
+  return arr.filter(r=>{
+    if(selMeses.size>0&&!selMeses.has(r.MES)) return false;
+    if(dSelCad&&r.CADENA!==dSelCad) return false;
+    return true;
+  });
+}
 function calcDDI(inv,units){
   if(!units||units<=0) return null;
   const days=selMeses.size>0?selMeses.size*30:120;
   return Math.round(inv/(units/days));
 }
 function getTotals(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  if(dSelCad){
+    // Use CAD data when cadena is selected (has CADENA column)
+    const c26=cats.flatMap(cat=>cadFilter(CAD26[cat]||[]));
+    const c25=cats.flatMap(cat=>cadFilter(CAD25[cat]||[]));
+    const v26=c26.reduce((s,r)=>s+(r.VENTA||0),0);
+    const v25=c25.reduce((s,r)=>s+(r.VENTA||0),0);
+    const u26=c26.reduce((s,r)=>s+(r.UNIDADES||0),0);
+    const u25=c25.reduce((s,r)=>s+(r.UNIDADES||0),0);
+    const inv=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+    // Segs via DET
+    const segsSet=new Set(cats.flatMap(cat=>(DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).map(r=>r.G)).filter(Boolean));
+    return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
+      ddi:calcDDI(inv,u26),segs:segsSet.size};
+  }
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
   const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
@@ -614,6 +637,30 @@ function getTotals(){
     ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
 }
 function getSegs(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  if(dSelCad){
+    // Use DET when cadena selected
+    const m={};
+    cats.forEach(cat=>{
+      (DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).forEach(r=>{
+        if(!r.G)return;
+        if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+        m[r.G].v26+=r.V||0;m[r.G].u26+=r.U||0;
+      });
+      (DET[cat+'_2025']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).forEach(r=>{
+        if(!r.G)return;
+        if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+        m[r.G].v25+=r.V||0;m[r.G].u25+=r.U||0;
+      });
+    });
+    // Add inv per segment for this cadena
+    INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad).forEach(r=>{
+      if(m[r.SEGMENTO])m[r.SEGMENTO].inv+=r.INVENTARIO_UNDS||0;
+    });
+    return Object.values(m).map(s=>({...s,
+      var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
+    })).sort((a,b)=>b.v26-a.v26);
+  }
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
@@ -627,21 +674,27 @@ function getSegs(){
 function getTrend(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   return MES_ORD.map(m=>{
-    const f=(arr)=>arr.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
-    const r26=f(RES26),r25=f(RES25);
-    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA));
-    const hasData=r26.length>0||r25.length>0||ppMes.length>0;
-    if(!hasData) return null;
-    return{mes:MES_LBL[m]||m,
-      v26:r26.length?r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
-      v25:r25.length?r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
-      u26:r26.length?r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
-      u25:r25.length?r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
-      soPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6:null,
-      siReal26:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6:null,
-      siPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6:null,
-      siReal25:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6:null,
-    };
+    // SO data: use CAD if cadena selected, else RES
+    let v26=null,v25=null,u26=null,u25=null;
+    if(dSelCad){
+      const c26=cats.flatMap(cat=>(CAD26[cat]||[]).filter(r=>r.MES===m&&r.CADENA===dSelCad));
+      const c25=cats.flatMap(cat=>(CAD25[cat]||[]).filter(r=>r.MES===m&&r.CADENA===dSelCad));
+      if(c26.length){v26=c26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u26=c26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
+      if(c25.length){v25=c25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u25=c25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
+    } else {
+      const r26=RES26.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
+      const r25=RES25.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
+      if(r26.length){v26=r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
+      if(r25.length){v25=r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
+    }
+    // SI + ppto from PPTO (has cadena)
+    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&(!dSelCad||r.CADENA===dSelCad));
+    const soPpto=ppMes.length?ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6:null;
+    const siReal26=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6:null;
+    const siPpto=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6:null;
+    const siReal25=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6:null;
+    if(v26===null&&v25===null&&soPpto===null) return null;
+    return{mes:MES_LBL[m]||m,v26,v25,u26,u25,soPpto,siReal26,siPpto,siReal25};
   }).filter(Boolean);
 }
 
@@ -1307,15 +1360,6 @@ function renderDashboard(){
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
   const nMeses=selMeses.size||4;
 
-  // Filter by cadena if selected
-  const r26all=resFilter(RES26);
-  const r25all=resFilter(RES25);
-  const r26=dSelCad?r26all.filter(r=>{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
-    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
-  }):r26all;
-
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
 
@@ -1423,12 +1467,13 @@ function buildDCharts(trend,a){
   const isLight=document.documentElement.classList.contains('light');
   const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
   const tickC=isLight?'#7a8499':'#5a5a7a';
+  const fmtChrt=v=>{if(v===null||v===undefined)return'';const a=Math.abs(v);return(v<0?'-':'')+'$'+(a>=1000?(a/1000).toFixed(1)+'B':a>=1?a.toFixed(0)+'M':a.toFixed(0)+'M');};
   const base={responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-      callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+r1(ctx.parsed.y||0)+'M'}}},
+      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtChrt(ctx.parsed.y)}}},
     scales:{
       x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
-      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:v=>'$'+v+'M'},border:{color:gridC}}
+      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:v=>fmtChrt(v)},border:{color:gridC}}
     }};
   const lbs=trend.map(t=>t.mes);
   const ctxSO=document.getElementById('d-cv')?.getContext('2d');
