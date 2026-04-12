@@ -542,10 +542,26 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      // Toggle libre en todas las páginas: clic activa/desactiva
-      this.classList.toggle('active');
-      if(selMeses.has(mes)) selMeses.delete(mes);
-      else selMeses.add(mes);
+      if(CUR_PAGE==='comovamos'){
+        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
+        // Si ya es el único activo → deseleccionar (ver todos)
+        if(selMeses.size===1&&selMeses.has(mes)){
+          // Deseleccionar → volver a mostrar mes actual
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          // Seleccionar solo este mes
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
+      } else {
+        // En otras páginas: comportamiento toggle normal
+        this.classList.toggle('active');
+        if(selMeses.has(mes)) selMeses.delete(mes);
+        else selMeses.add(mes);
+      }
       refreshAll();
     });
     wrap.appendChild(btn);
@@ -598,35 +614,12 @@ function resFilter(arr){
     return true;
   });
 }
-// cadFilter: filter CAD arrays by cat+meses+cadena
-function cadFilter(arr){
-  return arr.filter(r=>{
-    if(selMeses.size>0&&!selMeses.has(r.MES)) return false;
-    if(dSelCad&&r.CADENA!==dSelCad) return false;
-    return true;
-  });
-}
 function calcDDI(inv,units){
   if(!units||units<=0) return null;
   const days=selMeses.size>0?selMeses.size*30:120;
   return Math.round(inv/(units/days));
 }
 function getTotals(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  if(dSelCad){
-    // Use CAD data when cadena is selected (has CADENA column)
-    const c26=cats.flatMap(cat=>cadFilter(CAD26[cat]||[]));
-    const c25=cats.flatMap(cat=>cadFilter(CAD25[cat]||[]));
-    const v26=c26.reduce((s,r)=>s+(r.VENTA||0),0);
-    const v25=c25.reduce((s,r)=>s+(r.VENTA||0),0);
-    const u26=c26.reduce((s,r)=>s+(r.UNIDADES||0),0);
-    const u25=c25.reduce((s,r)=>s+(r.UNIDADES||0),0);
-    const inv=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
-    // Segs via DET
-    const segsSet=new Set(cats.flatMap(cat=>(DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).map(r=>r.G)).filter(Boolean));
-    return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
-      ddi:calcDDI(inv,u26),segs:segsSet.size};
-  }
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
   const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
@@ -637,30 +630,6 @@ function getTotals(){
     ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
 }
 function getSegs(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  if(dSelCad){
-    // Use DET when cadena selected
-    const m={};
-    cats.forEach(cat=>{
-      (DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).forEach(r=>{
-        if(!r.G)return;
-        if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-        m[r.G].v26+=r.V||0;m[r.G].u26+=r.U||0;
-      });
-      (DET[cat+'_2025']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M))).forEach(r=>{
-        if(!r.G)return;
-        if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-        m[r.G].v25+=r.V||0;m[r.G].u25+=r.U||0;
-      });
-    });
-    // Add inv per segment for this cadena
-    INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad).forEach(r=>{
-      if(m[r.SEGMENTO])m[r.SEGMENTO].inv+=r.INVENTARIO_UNDS||0;
-    });
-    return Object.values(m).map(s=>({...s,
-      var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
-    })).sort((a,b)=>b.v26-a.v26);
-  }
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
@@ -672,30 +641,13 @@ function getSegs(){
   })).sort((a,b)=>b.v26-a.v26);
 }
 function getTrend(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  return MES_ORD.map(m=>{
-    // SO data: use CAD if cadena selected, else RES
-    let v26=null,v25=null,u26=null,u25=null;
-    if(dSelCad){
-      const c26=cats.flatMap(cat=>(CAD26[cat]||[]).filter(r=>r.MES===m&&r.CADENA===dSelCad));
-      const c25=cats.flatMap(cat=>(CAD25[cat]||[]).filter(r=>r.MES===m&&r.CADENA===dSelCad));
-      if(c26.length){v26=c26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u26=c26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
-      if(c25.length){v25=c25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u25=c25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
-    } else {
-      const r26=RES26.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
-      const r25=RES25.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
-      if(r26.length){v26=r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
-      if(r25.length){v25=r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6;u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3;}
-    }
-    // SI + ppto from PPTO (has cadena)
-    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&(!dSelCad||r.CADENA===dSelCad));
-    const soPpto=ppMes.length?ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6:null;
-    const siReal26=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6:null;
-    const siPpto=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6:null;
-    const siReal25=ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6:null;
-    if(v26===null&&v25===null&&soPpto===null) return null;
-    return{mes:MES_LBL[m]||m,v26,v25,u26,u25,soPpto,siReal26,siPpto,siReal25};
-  }).filter(Boolean);
+  return MES_ORD.filter(m=>RES26.some(r=>r.MES===m)).map(m=>{
+    const f=arr=>arr.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
+    const r26=f(RES26),r25=f(RES25);
+    return{mes:MES_LBL[m]||m,
+      v26:r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6, v25:r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6,
+      u26:r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3,u25:r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3};
+  });
 }
 
 
@@ -1360,6 +1312,15 @@ function renderDashboard(){
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
   const nMeses=selMeses.size||4;
 
+  // Filter by cadena if selected
+  const r26all=resFilter(RES26);
+  const r25all=resFilter(RES25);
+  const r26=dSelCad?r26all.filter(r=>{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
+    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
+  }):r26all;
+
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
 
@@ -1396,28 +1357,10 @@ function renderDashboard(){
 
   // ── Trend charts ──────────────────────────────────────────────────────
   const trendsH=`<div class="trend-row">
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0;">📈 TENDENCIA SELL OUT ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted);">
-          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.7);border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:12px;height:0;border-top:2px dashed ${a};margin-right:3px;vertical-align:middle;opacity:.6;"></span>Ppto 2026</span>
-        </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
-    </div>
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0;">📦 TENDENCIA SELL IN ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted);">
-          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.7);border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:12px;height:0;border-top:2px dashed #6699ff;margin-right:3px;vertical-align:middle;opacity:.6;"></span>Ppto 2026</span>
-        </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
-    </div>
+    <div class="cbox"><div class="cbox-label">📈 TENDENCIA VALOR ($M)</div>
+      <div style="position:relative;height:150px"><canvas id="d-cv"></canvas></div></div>
+    <div class="cbox"><div class="cbox-label">📦 TENDENCIA UNIDADES (K)</div>
+      <div style="position:relative;height:150px"><canvas id="d-cu"></canvas></div></div>
   </div>`;
 
   // ── Cadenas table ─────────────────────────────────────────────────────
@@ -1465,50 +1408,22 @@ function renderDashboard(){
 
 function buildDCharts(trend,a){
   const isLight=document.documentElement.classList.contains('light');
-  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
-  const tickC=isLight?'#7a8499':'#5a5a7a';
-  const fmtChrt=v=>{if(v===null||v===undefined)return'';const a=Math.abs(v);return(v<0?'-':'')+'$'+(a>=1000?(a/1000).toFixed(1)+'B':a>=1?a.toFixed(0)+'M':a.toFixed(0)+'M');};
+  const c25='rgba(229,25,44,.8)',bg25='rgba(229,25,44,.07)';
+  const bg26=isLight?(CUR_CAT==='HOGAR'?'rgba(26,63,163,.08)':'rgba(26,63,163,.06)'):(CUR_CAT==='HOGAR'?'rgba(102,153,255,.07)':'rgba(245,200,0,.07)');
   const base={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtChrt(ctx.parsed.y)}}},
-    scales:{
-      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
-      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:v=>fmtChrt(v)},border:{color:gridC}}
-    }};
-  const lbs=trend.map(t=>t.mes);
-  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
-  if(ctxSO){
-    if(dCharts.v) dCharts.v.destroy();
-    const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
-    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SO Real 2025',data:trend.map(t=>t.v25),
-       borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',
-       borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Real 2026',data:trend.map(t=>t.v26),
-       borderColor:a,backgroundColor:bgSO,
-       borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),
-       borderColor:a,backgroundColor:'transparent',
-       borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
-  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
-  if(ctxSI){
-    if(dCharts.u) dCharts.u.destroy();
-    const siC='#6699ff';
-    const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
-    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SI Real 2025',data:trend.map(t=>t.siReal25),
-       borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',
-       borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Real 2026',data:trend.map(t=>t.siReal26),
-       borderColor:siC,backgroundColor:bgSI,
-       borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),
-       borderColor:siC,backgroundColor:'transparent',
-       borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
+    plugins:{legend:{position:'top',labels:{color:isLight?'#7a8499':'#8888aa',font:{size:9},boxWidth:10,padding:6}}},
+    scales:{x:{grid:{color:isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'},ticks:{color:isLight?'#7a8499':'#5a5a7a',font:{size:9}}},
+            y:{grid:{color:isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'},ticks:{color:isLight?'#7a8499':'#5a5a7a',font:{size:9}}}}};
+  [[`d-cv`,trend.map(t=>r1(t.v26)),trend.map(t=>r1(t.v25)),v=>'$'+v+'M','v'],
+   [`d-cu`,trend.map(t=>r1(t.u26)),trend.map(t=>r1(t.u25)),v=>v+'K','u']]
+  .forEach(([id,y26,y25,cb,k])=>{
+    const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+    if(dCharts[k]) dCharts[k].destroy();
+    dCharts[k]=new Chart(ctx,{type:'line',data:{labels:trend.map(t=>t.mes),datasets:[
+      {label:'2025',data:y25,borderColor:c25,backgroundColor:bg25,borderWidth:1.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'2026',data:y26,borderColor:a,backgroundColor:bg26,borderWidth:2,pointRadius:3,fill:true,tension:.3,spanGaps:true}
+    ]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:cb}}}}});
+  });
 }
 
 // ── PDV EXPLORER ─────────────────────────────────────────────────────────────
