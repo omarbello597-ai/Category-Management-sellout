@@ -641,13 +641,23 @@ function getSegs(){
   })).sort((a,b)=>b.v26-a.v26);
 }
 function getTrend(){
-  return MES_ORD.filter(m=>RES26.some(r=>r.MES===m)).map(m=>{
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return MES_ORD.map(m=>{
     const f=arr=>arr.filter(r=>r.MES===m&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
     const r26=f(RES26),r25=f(RES25);
+    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA));
+    if(!r26.length&&!r25.length&&!ppMes.length) return null;
     return{mes:MES_LBL[m]||m,
-      v26:r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6, v25:r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6,
-      u26:r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3,u25:r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3};
-  });
+      v26:r26.length?r26.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
+      v25:r25.length?r25.reduce((s,r)=>s+(r.VENTA||0),0)/1e6:null,
+      u26:r26.length?r26.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
+      u25:r25.length?r25.reduce((s,r)=>s+(r.UNIDADES||0),0)/1e3:null,
+      soPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6:null,
+      siReal26:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6:null,
+      siPpto:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6:null,
+      siReal25:ppMes.length?ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6:null,
+    };
+  }).filter(Boolean);
 }
 
 
@@ -1357,10 +1367,28 @@ function renderDashboard(){
 
   // ── Trend charts ──────────────────────────────────────────────────────
   const trendsH=`<div class="trend-row">
-    <div class="cbox"><div class="cbox-label">📈 TENDENCIA VALOR ($M)</div>
-      <div style="position:relative;height:150px"><canvas id="d-cv"></canvas></div></div>
-    <div class="cbox"><div class="cbox-label">📦 TENDENCIA UNIDADES (K)</div>
-      <div style="position:relative;height:150px"><canvas id="d-cu"></canvas></div></div>
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
+    </div>
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
+    </div>
   </div>`;
 
   // ── Cadenas table ─────────────────────────────────────────────────────
@@ -1408,22 +1436,37 @@ function renderDashboard(){
 
 function buildDCharts(trend,a){
   const isLight=document.documentElement.classList.contains('light');
-  const c25='rgba(229,25,44,.8)',bg25='rgba(229,25,44,.07)';
-  const bg26=isLight?(CUR_CAT==='HOGAR'?'rgba(26,63,163,.08)':'rgba(26,63,163,.06)'):(CUR_CAT==='HOGAR'?'rgba(102,153,255,.07)':'rgba(245,200,0,.07)');
+  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
+  const tickC=isLight?'#7a8499':'#5a5a7a';
+  const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
   const base={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'top',labels:{color:isLight?'#7a8499':'#8888aa',font:{size:9},boxWidth:10,padding:6}}},
-    scales:{x:{grid:{color:isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'},ticks:{color:isLight?'#7a8499':'#5a5a7a',font:{size:9}}},
-            y:{grid:{color:isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)'},ticks:{color:isLight?'#7a8499':'#5a5a7a',font:{size:9}}}}};
-  [[`d-cv`,trend.map(t=>r1(t.v26)),trend.map(t=>r1(t.v25)),v=>'$'+v+'M','v'],
-   [`d-cu`,trend.map(t=>r1(t.u26)),trend.map(t=>r1(t.u25)),v=>v+'K','u']]
-  .forEach(([id,y26,y25,cb,k])=>{
-    const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
-    if(dCharts[k]) dCharts[k].destroy();
-    dCharts[k]=new Chart(ctx,{type:'line',data:{labels:trend.map(t=>t.mes),datasets:[
-      {label:'2025',data:y25,borderColor:c25,backgroundColor:bg25,borderWidth:1.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'2026',data:y26,borderColor:a,backgroundColor:bg26,borderWidth:2,pointRadius:3,fill:true,tension:.3,spanGaps:true}
-    ]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:cb}}}}});
-  });
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
+    scales:{
+      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
+      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}
+    }};
+  const lbs=trend.map(t=>t.mes);
+  const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
+  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
+  if(ctxSO){
+    if(dCharts.v) dCharts.v.destroy();
+    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SO Real 2025',data:trend.map(t=>t.v25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Real 2026',data:trend.map(t=>t.v26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
+  const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
+  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
+  if(ctxSI){
+    if(dCharts.u) dCharts.u.destroy();
+    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SI Real 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Real 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
 }
 
 // ── PDV EXPLORER ─────────────────────────────────────────────────────────────
