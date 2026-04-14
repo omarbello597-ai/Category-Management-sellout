@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Category Management · Sell Out</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#08080f;--surf:#111119;--card:#16161f;--border:#1e1e2c;
+  --acc:#F5C800;--blue:#1A3FA3;--pos:#0DB75B;--neg:#E5192C;
+  --posL:#0a2e1a;--negL:#2e0a0a;
+  --white:#fff;--muted:#5a5a7a;--text:#d4d4e8;--sub:#8888aa;
+  --ff:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+
+/* ── LOADING ── */
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;}
+.ld-brand{font-family:var(--ff);font-size:48px;color:var(--acc);letter-spacing:4px;}
+.ld-sub{font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.ld-bar{width:300px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ld-fill{height:100%;background:var(--acc);border-radius:2px;width:0%;transition:width .4s;}
+.ld-msg{font-family:var(--fm);font-size:10px;color:var(--muted);min-height:18px;text-align:center;max-width:420px;}
+
+/* ── NAV ── */
+nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;}
+.brand{font-family:var(--ff);font-size:18px;color:var(--acc);letter-spacing:2px;white-space:nowrap;}
+.nav-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
+.main-tabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:2px;}
+.main-tab{padding:5px 14px;border-radius:4px;font-family:var(--fm);font-size:10px;letter-spacing:1px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;}
+.main-tab:hover{color:var(--text);}
+.main-tab.active{background:var(--card);color:var(--white);border:1px solid var(--border);}
+.cat-pills{display:flex;gap:3px;}
+.cat-pill{padding:4px 12px;border-radius:20px;font-family:var(--fm);font-size:9px;letter-spacing:1px;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.cat-pill:hover{border-color:var(--acc);color:var(--acc);}
+.cat-pill.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
+.cat-pill.active.hogar{background:var(--blue);color:#fff;border-color:var(--blue);}
+.cat-pill.active.ferreteria{background:#9b59b6;color:#fff;border-color:#9b59b6;}
+.cat-pill.active.total{background:#444;color:#fff;border-color:#555;}
+.badge{font-family:var(--fm);font-size:9px;padding:3px 9px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--sub);white-space:nowrap;}
+.btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;}
+.btn:hover{border-color:var(--acc);color:var(--acc);}
+.btn.red:hover{border-color:var(--neg);color:var(--neg);}
+.flabel{font-family:var(--fm);font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;}
+select,input[type=text]{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-family:var(--fb);font-size:12px;outline:none;transition:border-color .15s;}
+select:focus,input:focus{border-color:var(--acc);}
+
+/* ── MESES BAR ── */
+#mes-bar{background:var(--surf);border-bottom:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;}
+.mes-btn{padding:3px 9px;min-width:32px;border-radius:5px;font-family:var(--fm);font-size:9px;cursor:pointer;border:1px solid #333;background:transparent;color:#888;font-weight:400;transition:all .15s;}
+.mes-btn.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
+.mes-btn:disabled{opacity:.25;cursor:not-allowed;}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;flex-direction:column;min-height:0;}
+.page.active{display:flex;}
+
+/* ── PILLS ── */
+.pill{display:inline-block;padding:1px 7px;border-radius:3px;font-family:var(--fm);font-size:9.5px;}
+.pill.pos{background:var(--posL);color:var(--pos);border:1px solid rgba(13,183,91,.2);}
+.pill.neg{background:var(--negL);color:var(--neg);border:1px solid rgba(229,25,44,.2);}
+.mono{font-family:var(--fm);}
+.ddi{font-family:var(--fm);font-size:10px;font-weight:700;}
+.ddi.ok{color:#0DB75B;}.ddi.warn{color:#F5C800;}.ddi.crit{color:#E5192C;}.ddi.na{color:var(--muted);}
+
+/* ── KSTRIP ── */
+.kstrip{display:flex;gap:1px;background:var(--border);flex-shrink:0;}
+.ks-item{flex:1;background:var(--surf);padding:5px 8px;text-align:center;min-width:0;}
+.ks-label{font-family:var(--fm);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:1px;}
+.ks-val{font-family:var(--ff);font-size:16px;letter-spacing:.5px;}
+.ks-val.pos{color:var(--pos);}.ks-val.neg{color:var(--neg);}.ks-val.acc{color:var(--acc);}
+
+/* ── DASHBOARD ── */
+.d-filters{background:var(--surf);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.d-body{flex:1;padding:14px;display:grid;gap:10px;grid-template-columns:1fr;overflow-y:auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:12px 14px;position:relative;overflow:hidden;}
+.kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--acc);}
+.kpi-card.neg::after{background:var(--neg);}
+.kpi-card.inv::after{background:#0DB75B;}
+.kpi-label{font-family:var(--fm);font-size:7.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.kpi-val{font-family:var(--ff);font-size:24px;letter-spacing:.5px;line-height:1;}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.trend-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cbox{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:12px 14px;display:flex;flex-direction:column;}
+.cbox-label{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;flex-shrink:0;}
+.seg-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.seg-hdr{padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.seg-hdr-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.seg-table{width:100%;border-collapse:collapse;}
+.seg-table th{background:var(--surf);color:var(--acc);font-family:var(--fm);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.seg-table td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;vertical-align:middle;}
+.seg-table tr:hover td{background:rgba(255,255,255,.02);}
+.seg-table tr.nr td{background:rgba(229,25,44,.04);}
+.seg-table tr.nr td:first-child{border-left:2px solid var(--neg);}
+
+/* ── SPLIT LAYOUT ── */
+.split-body{flex:1;display:flex;min-height:0;}
+.p-left{width:296px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.p-right{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.p-hdr{padding:6px 10px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.p-hdr-title{font-family:var(--ff);font-size:12px;letter-spacing:1px;color:var(--white);}
+.item-list{flex:1;overflow-y:auto;}
+.item-row{display:flex;align-items:center;gap:5px;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:background .1s;}
+.item-row:hover{background:rgba(255,255,255,.03);}
+.item-row.sel{background:rgba(245,200,0,.07);border-left:3px solid var(--acc);}
+.item-rank{font-family:var(--fm);font-size:9px;color:var(--muted);width:22px;text-align:right;flex-shrink:0;}
+.item-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.item-sub{font-family:var(--fm);font-size:7.5px;color:var(--muted);background:var(--card);padding:1px 4px;border-radius:2px;flex-shrink:0;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.item-val{font-family:var(--fm);font-size:10px;color:var(--white);font-weight:600;width:50px;text-align:right;flex-shrink:0;}
+.item-var{font-family:var(--fm);font-size:10px;font-weight:600;width:48px;text-align:right;flex-shrink:0;}
+.item-var.pos{color:var(--pos);}.item-var.neg{color:var(--neg);}
+.r-hdr{padding:7px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.r-title{font-family:var(--ff);font-size:13px;letter-spacing:1px;color:var(--white);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tbl-panel{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;}
+thead{position:sticky;top:0;z-index:5;}
+th{background:var(--surf);color:var(--acc);font-family:var(--fm);font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+tr:hover td{background:rgba(255,255,255,.02);}
+tr.nr td{background:rgba(229,25,44,.04);}
+tr.nr td:first-child{border-left:2px solid var(--neg);}
+
+/* ── PDV FILTERS ── */
+.e-filters{background:var(--surf);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;}
+
+/* ── TAB LOADING SPINNER ── */
+.tab-loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:var(--muted);}
+.spin{font-size:28px;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+
+/* ── COMO VAMOS ─────────────────────────────────────────────────────────────*/
+.cv-body{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+.cv-section-lbl{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.cv-section-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+/* Brand hero */
+.cv-brand-hero{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.cv-bh-main{background:var(--surf);padding:14px 18px;display:flex;align-items:center;gap:14px;}
+.cv-bh-logo{width:46px;height:46px;border-radius:10px;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cv-bh-brand{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:2px;}
+.cv-bh-val{font-family:var(--ff);font-size:28px;letter-spacing:-1px;line-height:1;color:var(--white);}
+.cv-bh-sub{font-size:9px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;}
+.cv-kpi{background:var(--surf);padding:12px 14px;position:relative;overflow:hidden;}
+.cv-kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.cv-kpi-l{font-family:var(--fm);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.cv-kpi-v{font-family:var(--ff);font-size:20px;line-height:1;}
+.cv-kpi-s{font-size:9px;margin-top:3px;}
+/* Total projection cards */
+.cv-proy-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cv-proy-card{border-radius:12px;padding:16px 18px;}
+.cv-proy-card.so{background:rgba(245,200,0,.05);border:1px solid rgba(245,200,0,.2);}
+.cv-proy-card.si{background:rgba(26,63,163,.05);border:1px solid rgba(26,63,163,.2);}
+.cv-pc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cv-pc-type{font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.cv-pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.cv-pc-m-l{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.cv-pc-m-v{font-family:var(--ff);font-size:20px;line-height:1;}
+.cv-pc-m-s{font-size:9px;color:var(--muted);margin-top:2px;}
+.cv-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px;}
+.cv-bar-proy{position:absolute;top:0;left:0;height:100%;border-radius:4px;opacity:.4;}
+.cv-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:4px;}
+.cv-bar-lbls{display:flex;justify-content:space-between;font-family:var(--fm);font-size:8px;color:var(--muted);}
+.cv-gap-box{border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.cv-gap-box.neg{background:var(--negL);border:1px solid rgba(229,25,44,.2);}
+.cv-gap-box.pos{background:var(--posL);border:1px solid rgba(13,183,91,.2);}
+.cv-gap-lbl{font-family:var(--fm);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.cv-gap-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+.cv-gap-val{font-family:var(--ff);font-size:22px;line-height:1;}
+/* Cadena cards */
+.cv-cad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.cv-cad-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cv-cad-hdr{padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.cv-cad-name{font-size:12px;font-weight:700;color:var(--white);}
+.cv-cad-meta{font-family:var(--fm);font-size:9px;color:var(--muted);}
+.cv-cad-body{padding:10px 12px;display:flex;flex-direction:column;gap:7px;}
+.cv-mini{border-radius:7px;padding:8px 10px;}
+.cv-mini.so{background:rgba(245,200,0,.04);border:1px solid rgba(245,200,0,.12);}
+.cv-mini.si{background:rgba(26,63,163,.04);border:1px solid rgba(26,63,163,.12);}
+.cv-mini-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.cv-mini-type{font-family:var(--fm);font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.cv-mini-rows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:5px;}
+.cv-mini-l{font-family:var(--fm);font-size:7px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:1px;}
+.cv-mini-v{font-family:var(--ff);font-size:13px;line-height:1;}
+.cv-mini-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden;position:relative;margin-bottom:3px;}
+.cv-mini-bar-p{position:absolute;top:0;left:0;height:100%;border-radius:2px;opacity:.4;}
+.cv-mini-bar-r{position:absolute;top:0;left:0;height:100%;border-radius:2px;}
+.cv-mini-foot{display:flex;align-items:center;justify-content:space-between;}
+.cv-mini-cumpl-l{font-family:var(--fm);font-size:8px;color:var(--muted);}
+.cv-mini-cumpl-v{font-family:var(--ff);font-size:13px;font-weight:700;}
+/* Recomendaciones */
+.cv-reco-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.cv-reco{border-radius:9px;padding:10px 12px;border-left:3px solid var(--border);background:var(--surf);}
+.cv-reco-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.cv-reco-cad{font-size:11px;font-weight:700;}
+.cv-reco-gap{font-family:var(--fm);font-size:9px;color:var(--muted);}
+.cv-reco-txt{font-size:10px;color:var(--text);line-height:1.5;margin-bottom:5px;}
+.cv-reco-chip{display:inline-flex;border-radius:4px;padding:2px 8px;font-family:var(--fm);font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+/* Cadenas table in dashboard */
+.cad-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.cad-hdr{padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.cad-hdr-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.cad-period{font-family:var(--fm);font-size:8px;color:var(--sub);letter-spacing:1px;}
+.cad-table{width:100%;border-collapse:collapse;}
+.cad-table th{background:var(--surf);color:var(--acc);font-family:var(--fm);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+.cad-table td{padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.cad-table tr:hover td{background:rgba(255,255,255,.02);}
+.cad-name{font-size:14px;font-weight:600;color:var(--white);}
+.cad-part{font-family:var(--fm);font-size:11px;color:var(--sub);}
+.cad-val{font-family:var(--ff);font-size:20px;letter-spacing:.5px;}
+.cad-ant{font-family:var(--fm);font-size:12px;color:var(--sub);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.ok{background:#0DB75B;box-shadow:0 0 6px rgba(13,183,91,.5);}
+.dot.warn{background:#F5C800;box-shadow:0 0 6px rgba(245,200,0,.5);}
+.dot.crit{background:#E5192C;box-shadow:0 0 6px rgba(229,25,44,.5);}
+
+:root.light{
+  --bg:#f0f2f6;--surf:#ffffff;--card:#ffffff;--border:#dde1eb;
+  --acc:#1A3FA3;--blue:#1A3FA3;--pos:#0a9649;--neg:#c91524;
+  --posL:#e6f7ee;--negL:#fdecea;
+  --white:#1a1a2e;--muted:#7a8499;--text:#2d3142;--sub:#6b7280;
+  --ff:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
+}
+:root.light body{background:var(--bg);color:var(--text);}
+:root.light nav{box-shadow:0 1px 4px rgba(0,0,0,.06);}
+:root.light .brand{color:var(--blue);}
+:root.light .ld-brand{color:var(--blue);}
+:root.light .ld-fill{background:var(--blue);}
+:root.light .main-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+:root.light .cat-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+:root.light .cat-pill:hover{border-color:var(--blue);color:var(--blue);}
+:root.light .mes-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+:root.light .kpi-card{box-shadow:0 1px 4px rgba(0,0,0,.05);}
+:root.light .kpi-card::after{background:var(--blue);}
+:root.light .kpi-val{color:var(--blue);}
+:root.light th{background:#edf0f7;color:var(--blue);}
+:root.light .cad-table th{background:#edf0f7;color:var(--blue);}
+:root.light .seg-table th{background:#edf0f7;color:var(--blue);}
+:root.light .cad-hdr{background:#edf0f7;}
+:root.light .cad-hdr-title{color:var(--blue);font-weight:700;}
+:root.light .seg-hdr{background:#edf0f7;}
+:root.light .seg-hdr-title{color:var(--blue);font-weight:700;}
+
+/* ── SEGMENT CARDS MATRIX ──────────────────────────────────────────────────*/
+.seg-cards-wrap{background:var(--card);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-top:2px;}
+.seg-cards-hdr{padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.seg-cards-title{font-family:var(--fm);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:700;white-space:nowrap;}
+.seg-cards-table{border-collapse:collapse;min-width:100%;}
+.seg-cards-table td{border:1px solid var(--border);}
+.seg-corner{background:var(--surf);width:180px;min-width:180px;padding:6px 10px;}
+.seg-col-hdr{background:var(--surf);text-align:center;padding:6px 4px;min-width:130px;}
+.seg-col-hdr-name{font-size:10px;font-weight:700;color:var(--text);letter-spacing:.3px;}
+.seg-col-hdr-part{font-family:var(--fm);font-size:8px;margin-top:2px;}
+.seg-label-cell{background:var(--surf);padding:8px 10px;vertical-align:top;min-width:180px;max-width:180px;}
+.seg-label-name{font-size:11px;font-weight:700;color:var(--white);line-height:1.2;}
+.seg-label-part{font-family:var(--fm);font-size:8px;margin-top:2px;}
+.seg-card-cell{padding:5px;vertical-align:top;background:var(--card);}
+.seg-card{background:var(--surf);border-radius:5px;padding:6px 7px;min-width:118px;}
+.seg-card-pills{display:flex;gap:3px;flex-wrap:wrap;}
+.seg-card-pill{font-family:var(--fm);font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;}
+.seg-card-pill.pos{background:var(--posL);color:var(--pos);}
+.seg-card-pill.neg{background:var(--negL);color:var(--neg);}
+/* Period KPI */
+.kpi-card.periodo .kpi-val{font-family:var(--fb);font-size:12px;line-height:1.4;font-weight:600;letter-spacing:.3px;}
+/* Light mode overrides */
+:root.light .seg-cards-hdr{background:#edf0f7;}
+:root.light .seg-cards-title{color:var(--blue);font-weight:700;}
+:root.light .seg-col-hdr{background:#edf0f7;}
+:root.light .seg-corner{background:#edf0f7;}
+:root.light .seg-label-cell{background:#f5f7fc;}
+:root.light .seg-card{background:#f5f7fc;}
+:root.light .seg-col-hdr-name{color:var(--blue);}
+:root.light .seg-col-hdr-part{color:var(--blue);opacity:.7;}
+:root.light .seg-corner{background:#edf0f7;}
+:root.light .seg-label-cell{background:#f5f7fc;}
+:root.light .seg-label-part{color:var(--blue);font-weight:600;}
+:root.light .p-hdr{background:#edf0f7;}
+:root.light .p-hdr-title{color:var(--blue);}
+:root.light .r-hdr{background:#edf0f7;}
+:root.light .r-section-hdr{background:#edf0f7;}
+:root.light .r-section-title{color:var(--blue);font-weight:700;}
+:root.light .cc-hdr{background:#edf0f7;}
+:root.light #mes-bar{background:#f5f7fc;}
+:root.light .d-filters{background:#f5f7fc;}
+:root.light .e-filters{background:#f5f7fc;}
+:root.light .cv-section-lbl{color:var(--blue);}
+:root.light .cv-brand-hero .cv-bh-main{background:#f5f7fc;}
+:root.light .ks-val.acc{color:var(--blue);}
+:root.light .item-row.sel{background:rgba(26,63,163,.07);border-left:3px solid var(--blue);}
+:root.light .btn:hover{border-color:var(--blue);color:var(--blue);}
+:root.light select:focus,:root.light input:focus{border-color:var(--blue);}
+:root.light ::-webkit-scrollbar-thumb{background:#c4cad6;}
+:root.light .dot.ok{background:#0a9649;}
+:root.light .dot.warn{background:#d4a700;}
+:root.light .dot.crit{background:#c9152a;}
+:root.light .cbox{box-shadow:0 1px 4px rgba(0,0,0,.05);}
+:root.light .kpi-card{box-shadow:0 1px 4px rgba(0,0,0,.05);}
+:root.light .r-kpi{box-shadow:0 1px 4px rgba(0,0,0,.05);}
+:root.light .r-kpi.yellow::after{background:var(--blue);}
+:root.light .cv-proy-card.so{background:rgba(26,63,163,.04);border:1px solid rgba(26,63,163,.15);}
+:root.light .cv-proy-card.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.12);}
+:root.light .cv-mini.so{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.1);}
+:root.light .cv-mini.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.08);}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="ld-brand">Category Management</div>
+  <div class="ld-sub">Sell Out · 2025 – 2026</div>
+  <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
+  <div class="ld-msg" id="ld-msg">Iniciando…</div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;min-height:100vh;flex-direction:column;">
+
+  <nav>
+    <div class="brand">Category Management</div>
+    <div class="nav-sep"></div>
+    <div class="main-tabs">
+      <div class="main-tab active" onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
+      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
+      <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
+      <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="cat-pills">
+      <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
+      <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
+      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)">🔧 FERRETERÍA</div>
+      <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="badge" id="data-badge">—</div>
+    <button id="theme-btn" onclick="toggleTheme()" title="Cambiar tema" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <span id="theme-icon" style="font-size:12px;">☀️</span><span id="theme-txt">MODO CLARO</span>
+    </button>
+  </nav>
+
+  <div id="mes-bar">
+    <span class="flabel">Meses</span>
+    <div id="mes-wrap" style="display:flex;gap:3px;flex:1;"></div>
+    <button class="btn" onclick="selAllMeses()">✓ TODOS</button>
+    <button class="btn red" onclick="clearMeses()">✕ LIMPIAR</button>
+  </div>
+
+
+  <!-- COMO VAMOS -->
+  <div class="page active" id="page-comovamos">
+    <div class="cv-body" id="cv-body"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page" id="page-dashboard">
+    <div class="d-filters">
+      <span class="flabel">Cadena</span>
+      <select id="d-cad-sel" onchange="dSelCad=this.value;renderDashboard()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
+        <option value="">Todas las cadenas</option>
+      </select>
+      <div class="badge" id="d-periodo">—</div>
+      <div class="badge" id="d-val-badge" style="margin-left:auto;">—</div>
+    </div>
+    <div class="d-body" id="d-body"></div>
+  </div>
+
+  <!-- PDV EXPLORER -->
+  <div class="page" id="page-explorer">
+    <div class="e-filters">
+      <span class="flabel">Cadena</span>
+      <select id="e-cadena" onchange="eApplyFilters()" style="max-width:160px"></select>
+      <span class="flabel">Formato</span>
+      <select id="e-formato" onchange="eApplyFilters()" style="max-width:130px"></select>
+      <input type="text" id="e-search" placeholder="Buscar PDV…" oninput="eApplyFilters()" style="width:150px">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-family:var(--fm);font-size:9px;color:var(--muted)">
+        <input type="checkbox" id="e-neg" onchange="eApplyFilters()" style="accent-color:var(--neg)"> Solo caídas
+      </label>
+      <button class="btn red" onclick="eClear()">✕ LIMPIAR</button>
+      <div style="flex:1"></div>
+      <div class="badge" id="e-count">—</div>
+    </div>
+    <div class="kstrip" id="e-kstrip"></div>
+    <div class="split-body">
+      <div class="p-left">
+        <div class="p-hdr">
+          <span class="p-hdr-title">PUNTOS DE VENTA</span>
+          <span style="font-family:var(--fm);font-size:7.5px;color:var(--muted)">clic → detalle</span>
+        </div>
+        <div class="item-list" id="e-pdv-list"></div>
+      </div>
+      <div class="p-right">
+        <div class="r-hdr">
+          <span class="r-title" id="e-r-title">Selecciona un PDV</span>
+          <div id="e-r-kpis" style="display:flex;gap:8px;font-family:var(--fm);font-size:9px;color:var(--sub);flex-shrink:0;"></div>
+        </div>
+        <div class="tbl-panel" id="e-tbl">
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:2px;">SELECCIONA UN PDV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEGMENTOS -->
+  <div class="page" id="page-segmentos">
+    <div class="kstrip" id="s-kstrip"></div>
+    <div class="split-body">
+      <div class="p-left">
+        <div class="p-hdr">
+          <span class="p-hdr-title">SEGMENTOS</span>
+          <span class="badge" id="s-count">—</span>
+        </div>
+        <div class="item-list" id="s-seg-list"></div>
+      </div>
+      <div class="p-right">
+        <div class="r-hdr">
+          <span class="r-title" id="s-r-title">Selecciona un segmento</span>
+          <div id="s-r-kpis" style="display:flex;gap:8px;font-family:var(--fm);font-size:9px;color:var(--sub);flex-shrink:0;"></div>
+        </div>
+        <div class="tbl-panel" id="s-tbl">
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:2px;">SELECCIONA UN SEGMENTO</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── COLUMNAS CORTAS en archivos detalle ──────────────────────────────────────
+// M=MES  D=DPTO  C=CADENA  F=FORMATO  P=PDV  S=SUBCATEGORIA
+// G=SEGMENTO  V=VENTA  U=UNIDADES  I=INVENTARIO  T=DIAS_INVENTARIO
+// YEAR y CATEGORIA van en el nombre del archivo, no en las filas
+// ────────────────────────────────────────────────────────────────────────────
+
+const MES_ORD=['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
+const MES_LBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun',
+               'jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
+const CATS=['AUTOS','HOGAR','FERRETERIA'];
+
+const r1=n=>Math.round(n*10)/10;
+const r0=n=>Math.round(n);
+const sg=v=>v>=0?'+':'';
+const sp=(a,b)=>b>0&&isFinite(a/b)?Math.round((a/b-1)*1000)/10:0;
+const fmtM=v=>{const a=Math.abs(v),s=v<0?'-':'';
+  return s+'$'+(a/1e9).toFixed(3)+'M';};
+const fmtD=v=>{const a=Math.abs(v),s=v<0?'-':'';
+  return a>=1e9?s+'$'+(a/1e9).toFixed(1)+'B':a>=1e6?s+'$'+(a/1e6).toFixed(0)+'M':s+'$'+Math.round(a/1e3)+'K';};
+const fmtK=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':r0(v)+'';
+const ddiClr=d=>d===null||d===undefined?'na':d<30?'crit':d<60?'warn':'ok';
+const ddiLbl=d=>d===null||d===undefined?'—':r0(d)+'d';
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let RES25=[],RES26=[],CAD25={},CAD26={},PPTO=[],INV=[];
+let DET={};
+let CUR_CAT='AUTOS',CUR_PAGE='dashboard';
+let selMeses=new Set();
+let eAllRows=[],eFiltered=[],eSelPdv=null,selSeg=null;
+let dCharts={},rCanal='SO',dSelSubcat='TODAS',dSelCad='';
+
+// ── FETCH ───────────────────────────────────────────────────────────────────
+async function safeJson(url){
+  const res=await fetch(url);
+  if(!res.ok) throw new Error(`Archivo no encontrado: ${url.split('?')[0]} (HTTP ${res.status})`);
+  const txt=await res.text();
+  if(txt.trim().startsWith('<'))
+    throw new Error(`${url.split('?')[0]} devolvió HTML. Verifica que el archivo esté en el repositorio.`);
+  const clean=txt.replace(/:\s*NaN/g,':null').replace(/:\s*Infinity/g,':null').replace(/:\s*-Infinity/g,':null');
+  return JSON.parse(clean);
+}
+
+async function loadDet(cat,year){
+  const key=`${cat}_${year}`;
+  if(DET[key]) return DET[key];
+  try{ DET[key]=await safeJson(`detalle_${cat.toLowerCase()}_${year}.json?v=`+Date.now()); }
+  catch(e){ console.warn('No se pudo cargar detalle',cat,year,e.message); DET[key]=[]; }
+  return DET[key];
+}
+
+// ── LOAD ────────────────────────────────────────────────────────────────────
+async function load(){
+  const fill=document.getElementById('ld-fill');
+  const msg=document.getElementById('ld-msg');
+  try{
+    let step=0,total=CATS.length*2;
+    for(const cat of CATS){
+      msg.textContent='Cargando resumen '+cat+' 2025…';fill.style.width=(10+((++step/total)*35))+'%';
+      try{const d=await safeJson('resumen_'+cat.toLowerCase()+'_2025.json?v='+Date.now());RES25=[...RES25,...d];}catch(e){console.warn('resumen 2025',cat);}
+      msg.textContent='Cargando resumen '+cat+' 2026…';fill.style.width=(10+((++step/total)*35))+'%';
+      try{const d=await safeJson('resumen_'+cat.toLowerCase()+'_2026.json?v='+Date.now());RES26=[...RES26,...d];}catch(e){console.warn('resumen 2026',cat);}
+    }
+    msg.textContent='Cargando cadenas…';fill.style.width='52%';
+    for(const cat of CATS){
+      try{CAD25[cat]=await safeJson('cadenas_'+cat.toLowerCase()+'_2025.json?v='+Date.now());}catch(e){CAD25[cat]=[];}
+      try{CAD26[cat]=await safeJson('cadenas_'+cat.toLowerCase()+'_2026.json?v='+Date.now());}catch(e){CAD26[cat]=[];}
+    }
+    msg.textContent='Cargando presupuesto…';fill.style.width='65%';
+    try{PPTO=await safeJson('presupuesto.json?v='+Date.now());}catch(e){console.warn('presupuesto no disponible');PPTO=[];}
+    msg.textContent='Cargando inventario…';fill.style.width='72%';
+    try{INV=await safeJson('inventario.json?v='+Date.now());}catch(e){console.warn('inventario no disponible');INV=[];}
+    msg.textContent='Cargando detalle AUTOS…';fill.style.width='82%';
+    await loadDet('AUTOS',2026);await loadDet('AUTOS',2025);
+    msg.textContent='Preparando app…';fill.style.width='90%';
+    const mesesDisp=MES_ORD.filter(m=>RES26.some(r=>r.MES===m));
+    buildMesButtons(mesesDisp);selMeses=new Set(mesesDisp);
+    document.getElementById('data-badge').textContent=(RES26.length+RES25.length).toLocaleString()+' filas resumen';
+    fill.style.width='100%';
+    await new Promise(r=>setTimeout(r,300));
+    document.getElementById('loading-screen').style.display='none';
+    const app=document.getElementById('app');
+    app.style.display='flex';app.style.flexDirection='column';
+    CUR_PAGE='comovamos';
+    renderComoVamos();
+    initTheme();
+    setTimeout(async()=>{
+      for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
+    },800);
+  }catch(e){
+    const el=document.getElementById('ld-msg');
+    el.style.cssText='color:#E5192C;max-width:460px;text-align:center;line-height:1.7;font-size:11px;';
+    el.textContent='❌ '+e.message;
+    document.getElementById('ld-fill').style.background='#E5192C';
+    console.error(e);
+  }
+}
+
+// ── MESES ───────────────────────────────────────────────────────────────────
+function buildMesButtons(meses){
+  const wrap=document.getElementById('mes-wrap');
+  wrap.innerHTML='';
+  MES_ORD.forEach(m=>{
+    const has=meses.includes(m);
+    const btn=document.createElement('button');
+    btn.textContent=MES_LBL[m]||m;
+    btn.className='mes-btn'+(has&&selMeses.has(m)?' active':'');
+    btn.disabled=!has; btn.dataset.mes=m;
+    if(has) btn.addEventListener('click',function(){
+      const mes=this.dataset.mes;
+      if(CUR_PAGE==='comovamos'){
+        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
+        // Si ya es el único activo → deseleccionar (ver todos)
+        if(selMeses.size===1&&selMeses.has(mes)){
+          // Deseleccionar → volver a mostrar mes actual
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          // Seleccionar solo este mes
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
+      } else {
+        // En otras páginas: comportamiento toggle normal
+        this.classList.toggle('active');
+        if(selMeses.has(mes)) selMeses.delete(mes);
+        else selMeses.add(mes);
+      }
+      refreshAll();
+    });
+    wrap.appendChild(btn);
+  });
+}
+function selAllMeses(){
+  document.querySelectorAll('.mes-btn').forEach(b=>{
+    if(!b.disabled){b.classList.add('active');selMeses.add(b.dataset.mes);}
+  });
+  refreshAll();
+}
+function clearMeses(){
+  document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+  selMeses.clear(); refreshAll();
+}
+
+// ── NAV ─────────────────────────────────────────────────────────────────────
+function showPage(page,el){
+  CUR_PAGE=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  if(page==='dashboard') renderDashboard();
+  else if(page==='comovamos') renderComoVamos();
+  else if(page==='resultados') initResultados();
+  else if(page==='explorer') initExplorer();
+  else if(page==='segmentos') renderSegmentos();
+}
+function setCat(cat,el){
+  CUR_CAT=cat;eSelPdv=null;selSeg=null;
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+  if(el) el.classList.add('active');
+  if(CUR_PAGE==='comovamos') renderComoVamos();
+  else refreshAll();
+}
+function refreshAll(){
+  if(CUR_PAGE==='dashboard') renderDashboard();
+  else if(CUR_PAGE==='comovamos') renderComoVamos();
+  else if(CUR_PAGE==='explorer') initExplorer();
+  else if(CUR_PAGE==='segmentos') renderSegmentos();
+}
+const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='FERRETERIA'?(l?'#7c3aed':'#c084fc'):CUR_CAT==='TOTAL'?(l?'#4b5563':'#aaa'):(l?'#1A3FA3':'#F5C800');};
+
+// ── RESUMEN HELPERS ─────────────────────────────────────────────────────────
+function resFilter(arr){
+  return arr.filter(r=>{
+    if(CUR_CAT!=='TOTAL'&&r.CATEGORIA!==CUR_CAT) return false;
+    if(selMeses.size>0&&!selMeses.has(r.MES)) return false;
+    return true;
+  });
+}
+function calcDDI(inv,units){
+  if(!units||units<=0) return null;
+  const days=selMeses.size>0?selMeses.size*30:120;
+  return Math.round(inv/(units/days));
+}
+function getTotals(){
+  const r26=resFilter(RES26),r25=resFilter(RES25);
+  const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
+  const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
+  const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
+  const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
+  const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
+  return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
+    ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
+}
+function getSegs(){
+  const r26=resFilter(RES26),r25=resFilter(RES25);
+  const m={};
+  r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
+    m[r.SEGMENTO].v26+=r.VENTA||0;m[r.SEGMENTO].u26+=r.UNIDADES||0;m[r.SEGMENTO].inv+=r.INV_UNDS||0;});
+  r25.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
+    m[r.SEGMENTO].v25+=r.VENTA||0;m[r.SEGMENTO].u25+=r.UNIDADES||0;});
+  return Object.values(m).map(s=>({...s,
+    var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
+  })).sort((a,b)=>b.v26-a.v26);
+}
+function getTrend(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return MES_ORD.map(m=>{
+    const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&(!dSelCad||r.CADENA===dSelCad));
+    if(!ppMes.length) return null;
+    return{mes:MES_LBL[m]||m,
+      soReal26:ppMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0)/1e6,
+      soReal25:ppMes.reduce((s,r)=>s+(r.SO_REAL_2025||0),0)/1e6,
+      soPpto:ppMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0)/1e6,
+      siReal26:ppMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0)/1e6,
+      siReal25:ppMes.reduce((s,r)=>s+(r.SI_REAL_2025||0),0)/1e6,
+      siPpto:ppMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0)/1e6,
+    };
+  }).filter(Boolean);
+}
+
+
+
+// ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+function toggleTheme(){
+  const root=document.documentElement;
+  const isLight=root.classList.toggle('light');
+  const btn=document.getElementById('theme-btn');
+  document.getElementById('theme-icon').textContent=isLight?'🌙':'☀️';
+  document.getElementById('theme-txt').textContent=isLight?'MODO OSCURO':'MODO CLARO';
+  btn.style.background=isLight?'#edf0f7':'var(--card)';
+  btn.style.color=isLight?'#1A3FA3':'var(--muted)';
+  btn.style.borderColor=isLight?'#1A3FA3':'var(--border)';
+  // Persist preference
+  try{localStorage.setItem('cv_theme',isLight?'light':'dark');}catch(e){}
+  // Redraw charts if on dashboard
+  if(CUR_PAGE==='dashboard') setTimeout(()=>renderDashboard(),50);
+  else if(CUR_PAGE==='comovamos') setTimeout(()=>renderComoVamos(),50);
+}
+function initTheme(){
+  try{
+    const saved=localStorage.getItem('cv_theme');
+    if(saved==='light') toggleTheme();
+  }catch(e){}
+}
+
+// ── COMO VAMOS ────────────────────────────────────────────────────────────────
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#F5C800'}};
+CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3'},
+  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#1A3FA3'}};
+
+function cvPptoFilter(cat){
+  const cats=cat==='TOTAL'?CATS:[cat];
+  return PPTO.filter(r=>cats.includes(r.CATEGORIA));
+}
+
+
+function fmtFechaCorte(fechaStr){
+  if(!fechaStr) return null;
+  try{
+    const d=new Date(fechaStr+'T12:00:00');
+    const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return String(d.getDate()).padStart(2,'0')+' '+meses[d.getMonth()]+' '+d.getFullYear();
+  }catch(e){return fechaStr;}
+}
+function cvGetMesActual(){
+  // SO: buscar fila con FECHA_SO_ACTUAL definida
+  const filaSO=PPTO.find(r=>r.FECHA_SO_ACTUAL&&r.SO_DIAS_TRANSCURRIDOS&&r.SO_DIAS_DEL_MES);
+  // SI: buscar fila con FECHA_SI_ACTUAL definida
+  const filaSI=PPTO.find(r=>r.FECHA_SI_ACTUAL&&r.SI_DIAS_TRANSCURRIDOS&&r.SI_DIAS_DEL_MES);
+  const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+  // Fallback: detectar mes actual por ratio real/ppto
+  function fallback(){
+    // Estrategia: el mes en curso es el último que tiene SO_REAL_2026 > 0
+    // comparado con su presupuesto. El mes con menor ratio real/ppto es el parcial.
+    const resumen={};
+    MES_ORD.forEach(m=>{
+      const rows=PPTO.filter(r=>r.MES===m);
+      if(!rows.length) return;
+      const soReal=rows.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const soPpto=rows.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const siReal=rows.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const siPpto=rows.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      resumen[m]={soReal,soPpto,siReal,siPpto,
+        hasSOReal:soReal>0, hasSIReal:siReal>0,
+        soRatio:soPpto>0?soReal/soPpto:0,
+        siRatio:siPpto>0?siReal/siPpto:0};
+    });
+    // Mes en curso SO = último mes con SO real > 0
+    const mesesConSOReal=MES_ORD.filter(m=>resumen[m]?.hasSOReal);
+    // Mes en curso SI = último mes con SI real > 0
+    const mesesConSIReal=MES_ORD.filter(m=>resumen[m]?.hasSIReal);
+    if(!mesesConSOReal.length) return{mes:'ene.',label:'Ene',daysTotal:31,daysElapsed:15,
+      soDaysElapsed:15,soDaysTotal:31,siDaysElapsed:15,siDaysTotal:31};
+    const mesActualSO=mesesConSOReal[mesesConSOReal.length-1];
+    const mesActualSI=mesesConSIReal.length?mesesConSIReal[mesesConSIReal.length-1]:mesActualSO;
+    const keySO=mesActualSO.replace('.','');
+    const keySI=mesActualSI.replace('.','');
+    const dTSO=diasPorMes[keySO]||30;
+    const dTSI=diasPorMes[keySI]||30;
+    // Estimar días transcurridos por ratio real/ppto
+    const ratioSO=resumen[mesActualSO]?.soRatio||0;
+    const ratioSI=resumen[mesActualSI]?.siRatio||0;
+    const dESO=Math.min(dTSO,Math.max(1,Math.round(ratioSO*dTSO)));
+    const dESI=Math.min(dTSI,Math.max(1,Math.round(ratioSI*dTSI)));
+    return{mes:mesActualSO,label:MES_LBL[mesActualSO]||mesActualSO,
+           daysTotal:dTSO,daysElapsed:dESO,
+           soDaysElapsed:dESO,soDaysTotal:dTSO,
+           siDaysElapsed:dESI,siDaysTotal:dTSI};
+  }
+  if(!filaSO) return fallback();
+  const mes=filaSO.MES;
+  // Derivar días transcurridos desde la fecha de corte, parseando el día directamente
+  // del string ISO "YYYY-MM-DD" para evitar desfases de zona horaria (UTC vs local).
+  // Fallback al campo SO_DIAS_TRANSCURRIDOS si la fecha no tiene formato esperado.
+  function daysFromFecha(fechaStr, fallbackDias){
+    try{
+      // Formato ISO: "2026-04-12" → partes[2] = "12"
+      const parts=(fechaStr||'').split('-');
+      if(parts.length===3){
+        const n=parseInt(parts[2],10);
+        return(!isNaN(n)&&n>0)?n:(fallbackDias||1);
+      }
+      return fallbackDias||1;
+    }catch(e){ return fallbackDias||1; }
+  }
+  const soDaysElapsed=daysFromFecha(filaSO.FECHA_SO_ACTUAL, filaSO.SO_DIAS_TRANSCURRIDOS);
+  const soDaysTotal=filaSO.SO_DIAS_DEL_MES;
+  const siDaysElapsed=filaSI?daysFromFecha(filaSI.FECHA_SI_ACTUAL, filaSI.SI_DIAS_TRANSCURRIDOS):soDaysElapsed;
+  const siDaysTotal=filaSI?filaSI.SI_DIAS_DEL_MES:soDaysTotal;
+  return{
+    mes, label:MES_LBL[mes]||mes,
+    daysTotal:soDaysTotal, daysElapsed:soDaysElapsed,
+    soDaysElapsed, soDaysTotal,
+    siDaysElapsed, siDaysTotal,
+    fechaSOStr:filaSO.FECHA_SO_ACTUAL,
+    fechaSIStr:filaSI?filaSI.FECHA_SI_ACTUAL:null
+  };
+}
+
+function cvCalcProy(real,daysElapsed,daysTotal){
+  if(!daysElapsed||daysElapsed<=0) return 0;
+  return(real/daysElapsed)*daysTotal;
+}
+
+function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fechaCorte){
+  const isSO=tipo==='SO';
+  const cumplReal=ppto>0?real/ppto*100:0;
+  const cumplProy=ppto>0?proy/ppto*100:0;
+  const gap=proy-ppto;
+  const isPos=gap>=0;
+  const daysLeft=daysTotal-daysElapsed;
+  const barReal=ppto>0?Math.min(real/ppto*100,100):0;
+  const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
+  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
+  const cls=isSO?'so':'si';
+  const typeColor=isSO?'var(--acc)':'#6699ff';
+  const barColor=isSO?'var(--acc)':'#6699ff';
+  return`<div class="cv-proy-card ${cls}">
+    <div class="cv-pc-hdr">
+      <div>
+        <span class="cv-pc-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:.5px;">Corte: ${fechaCorte}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
+        <span class="pill ${isPos?'pos':'neg'}" style="font-size:9px;">Proy: ${cumplProy.toFixed(1)}%</span>
+      </div>
+    </div>
+    <div class="cv-pc-metrics">
+      <div>
+        <div class="cv-pc-m-l">Real · Día ${daysElapsed}</div>
+        <div class="cv-pc-m-v" style="color:${barColor}">${fmtM(real)}</div>
+        <div class="cv-pc-m-s" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% cumpl. actual</div>
+      </div>
+      <div>
+        <div class="cv-pc-m-l">Proyectado cierre</div>
+        <div class="cv-pc-m-v" style="color:${cumplColor}">${fmtM(proy)}</div>
+        <div class="cv-pc-m-s">al ritmo actual</div>
+      </div>
+      <div>
+        <div class="cv-pc-m-l">Presupuesto ${mesLabel}</div>
+        <div class="cv-pc-m-v" style="color:var(--muted)">${fmtM(ppto)}</div>
+        <div class="cv-pc-m-s">${daysLeft} días restantes</div>
+      </div>
+    </div>
+    <div class="cv-bar-bg">
+      <div class="cv-bar-proy" style="width:${barProy}%;background:${cumplColor};"></div>
+      <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
+    </div>
+    <div class="cv-bar-lbls">
+      <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
+      <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
+      <span>Meta 100%</span>
+    </div>
+    <div class="cv-gap-box ${isPos?'pos':'neg'}">
+      <div>
+        <div class="cv-gap-lbl" style="color:${isPos?'var(--pos)':'var(--neg)'}">Gap proyectado cierre</div>
+        <div class="cv-gap-sub">Faltan ${fmtM(Math.abs(gap))} en ${daysLeft} días · ${daysTotal} días del mes</div>
+      </div>
+      <div class="cv-gap-val" style="color:${isPos?'var(--pos)':'var(--neg)'}">${isPos?'+':''}${fmtM(gap)}</div>
+    </div>
+  </div>`;
+}
+
+function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
+  const isSO=tipo==='SO';
+  const typeColor=isSO?'var(--acc)':'#6699ff';
+  const barColor=isSO?'var(--acc)':'#6699ff';
+  const cumplReal=ppto>0?real/ppto*100:0;
+  const cumplProy=ppto>0?proy/ppto*100:0;
+  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
+  const barReal=ppto>0?Math.min(real/ppto*100,100):0;
+  const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
+  const gap=proy-ppto;
+  return`<div class="cv-mini ${tipo.toLowerCase()}">
+    <div class="cv-mini-hdr">
+      <div>
+        <span class="cv-mini-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al ${fechaCorte}</div>`:''}
+      </div>
+      <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:700;">Hoy: ${cumplReal.toFixed(1)}%</span>
+    </div>
+    <div class="cv-mini-rows">
+      <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${typeColor}">${fmtM(real)}</div></div>
+      <div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor}">${fmtM(proy)}</div></div>
+      <div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(ppto)}</div></div>
+    </div>
+    <div class="cv-mini-bar-bg">
+      <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
+      <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
+    </div>
+    <div class="cv-mini-foot" style="display:flex;justify-content:space-between;">
+      <span class="cv-mini-cumpl-l" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
+      <span class="cv-mini-cumpl-v" style="color:${cumplColor}">${cumplProy.toFixed(1)}% proy.</span>
+    </div>
+  </div>`;
+}
+
+function getTop5Segs(cad,mesFil){
+  // Obtener top 5 segmentos de esta cadena desde los archivos de detalle
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const segMap={};
+  cats.forEach(cat=>{
+    const det=DET[cat+'_2026']||[];
+    det.filter(r=>r.C===cad&&(mesFil?r.M===mesFil:true)).forEach(r=>{
+      if(!r.G) return;
+      if(!segMap[r.G])segMap[r.G]={v26:0,u26:0,inv:0};
+      segMap[r.G].v26+=r.V||0; segMap[r.G].u26+=r.U||0; segMap[r.G].inv+=r.I||0;
+    });
+  });
+  return Object.entries(segMap).sort((a,b)=>b[1].v26-a[1].v26).slice(0,5);
+}
+
+function cvRecoText(cad,soGap,siGap,cumplSO,ddi,mesFil){
+  const pct=cumplSO.toFixed(0);
+  const top5=getTop5Segs(cad,mesFil);
+  // Generar texto de los 5 segmentos top
+  const segsHtml=top5.length?top5.map(([seg,d],i)=>{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    // comparar vs 2025
+    const segMap25={};
+    cats.forEach(cat=>{
+      const det25=DET[cat+'_2025']||[];
+      det25.filter(r=>r.C===cad&&(mesFil?r.M===mesFil:true)&&r.G===seg).forEach(r=>{
+        segMap25[seg]=(segMap25[seg]||0)+(r.V||0);
+      });
+    });
+    const v25=segMap25[seg]||0;
+    const varPct=v25>0?((d.v26/v25)-1)*100:0;
+    const varStr=(varPct>=0?'+':'')+varPct.toFixed(1)+'%';
+    const status=d.v26===0?'⚠ Sin ventas':varPct<-10?'↓ Caída':varPct>5?'↑ Creciendo':'→ Estable';
+    return `${i+1}. ${seg} ${fmtM(d.v26)} (${varStr}) ${status}`;
+  }).join(' | '):'Sin datos de detalle';
+
+  // Acción principal según performance
+  let accion,chip,color;
+  if(ddi!==null&&ddi<25){
+    accion=`Reposición urgente (DDI ${ddi}d). Top segs: ${segsHtml}`;
+    chip='Reposición urgente'; color='var(--neg)';
+  } else if(cumplSO>=90){
+    accion=`Canal en línea (${pct}%). Capitalizar momentum. Top segs: ${segsHtml}`;
+    chip='Ampliar portafolio'; color='var(--pos)';
+  } else if(soGap>-50e6){
+    accion=`Gap manejable ${fmtM(Math.abs(soGap))}. Activar POP. Top segs: ${segsHtml}`;
+    chip='Bundle + POP'; color='#F5C800';
+  } else {
+    accion=`Gap ${fmtM(Math.abs(soGap))} — acción inmediata. Top segs: ${segsHtml}`;
+    chip='Exhibición + negociación'; color='var(--neg)';
+  }
+  return{txt:accion,chip,color};
+}
+
+function renderComoVamos(){
+  if(!PPTO.length){
+    document.getElementById('cv-body').innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px;letter-spacing:2px;">PRESUPUESTO NO DISPONIBLE — Sube presupuesto.json al repositorio</div>';
+    return;
+  }
+  const a=ac();
+  const isLightCV=document.documentElement.classList.contains('light');
+  const CV_BRAND=isLightCV?CV_BRAND_LIGHT:CV_BRAND_DARK;
+  const brand=CV_BRAND[CUR_CAT]||CV_BRAND.AUTOS;
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const mesInfo=cvGetMesActual();
+  const ppAllCat=cvPptoFilter(CUR_CAT);
+
+  // ── Determinar mes(es) a mostrar ─────────────────────────────────────
+  // mesesSel = meses activos en orden cronológico
+  // 0 activos  → mes actual (detectado por FECHA/fallback)
+  // 1 activo   → solo ese mes
+  // 2+ activos → acumulado de esos meses
+  const mesesSel=MES_ORD.filter(m=>selMeses.has(m));
+  let mesFiltro, ppAll, mesLabel, esMesActual, esMultiMes=false;
+
+  // Helper: un mes es "en curso" si tiene FECHA_SO_ACTUAL en el JSON
+  // o si su ratio real/ppto es < 85% (no está cerrado)
+  function esMesParcial(mes){
+    // Primero verificar si hay FECHA_SO_ACTUAL para este mes
+    const filaFecha=PPTO.find(r=>r.MES===mes&&r.FECHA_SO_ACTUAL);
+    if(filaFecha) return true;
+    // Si no, usar ratio: si real < 85% del ppto → mes parcial/en curso
+    const rowsMes=ppAllCat.filter(r=>r.MES===mes);
+    const soR=rowsMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+    const soP=rowsMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+    if(soR===0) return false; // sin datos = no es el mes actual
+    return soP>0 && (soR/soP)<0.85;
+  }
+
+  if(mesesSel.length===0){
+    mesFiltro=mesInfo.mes;
+    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
+    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
+    esMesActual=true;
+  } else if(mesesSel.length===1){
+    mesFiltro=mesesSel[0];
+    ppAll=ppAllCat.filter(r=>r.MES===mesFiltro);
+    mesLabel=MES_LBL[mesFiltro]||mesFiltro;
+    esMesActual=esMesParcial(mesFiltro);
+  } else {
+    esMultiMes=true;
+    mesFiltro=mesesSel[mesesSel.length-1];
+    ppAll=ppAllCat.filter(r=>mesesSel.includes(r.MES));
+    mesLabel=mesesSel.map(m=>MES_LBL[m]).join('·');
+    esMesActual=esMesParcial(mesFiltro);
+  }
+
+  // ── Fecha de corte del mes filtrado ──────────────────────────────────
+  // Buscar en ppAll (ya filtrado por mes) la fecha de corte
+  // Si no existe en JSON, construir con el último día del mes o días transcurridos
+  const filaFechaSO=ppAll.find(r=>r.FECHA_SO_ACTUAL);
+  const filaFechaSI=ppAll.find(r=>r.FECHA_SI_ACTUAL);
+  let fechaSOStr=null, fechaSIStr=null;
+  if(filaFechaSO){
+    fechaSOStr=filaFechaSO.FECHA_SO_ACTUAL;
+  } else if(esMesActual&&mesInfo.fechaSOStr){
+    fechaSOStr=mesInfo.fechaSOStr;
+  } else if(!esMesActual){
+    // Mes pasado: mostrar último día del mes
+    const diasPM={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+    const kk=mesFiltro.replace('.','');
+    const añoMes=2026;
+    const mNum={ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',jul:'07',ago:'08',sep:'09',oct:'10',nov:'11',dic:'12'};
+    fechaSOStr=añoMes+'-'+mNum[kk]+'-'+(diasPM[kk]||30).toString().padStart(2,'0');
+  }
+  if(filaFechaSI){
+    fechaSIStr=filaFechaSI.FECHA_SI_ACTUAL;
+  } else if(esMesActual&&mesInfo.fechaSIStr){
+    fechaSIStr=mesInfo.fechaSIStr;
+  } else {
+    fechaSIStr=fechaSOStr; // usar misma fecha de corte
+  }
+  const fechaSOMostrar=fmtFechaCorte(fechaSOStr);
+  const fechaSIMostrar=fmtFechaCorte(fechaSIStr);
+
+  // ── Acumulado para el hero (todos los meses con real hasta el actual) ─
+  const mesesConReal=MES_ORD.filter(m=>ppAllCat.some(r=>r.MES===m&&r.SO_REAL_2026>0));
+  const ppAcum=ppAllCat.filter(r=>mesesConReal.includes(r.MES));
+  const totSOReal26=ppAcum.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const totSOPpto26=ppAcum.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const totSOReal25=ppAcum.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  const totSIReal26=ppAcum.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+  const cumplAcum=totSOPpto26>0?totSOReal26/totSOPpto26*100:0;
+  const varVs25=sp(totSOReal26,totSOReal25||1);
+  const mesesAnt=mesesConReal;
+
+  // DDI total
+  const invTotal=cats.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0);
+  const r26tot=resFilter(RES26);
+  const u26tot=r26tot.reduce((s,r)=>s+(r.UNIDADES||0),0);
+  const ddiTot=calcDDI(invTotal,u26tot);
+
+  // ── Datos del mes filtrado ───────────────────────────────────────────
+  const soRealMes=ppAll.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const siRealMes=ppAll.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+  const soPptoMes=ppAll.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const siPptoMes=ppAll.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+  // Días para proyección
+  const diasPorMes2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+  const keyFiltro=mesFiltro.replace('.','');
+  const diasDelMesFiltro=diasPorMes2[keyFiltro]||30;
+  let soDiasT, siDiasT, soDias, siDias;
+  if(esMultiMes){
+    // Acumulado: suma de días totales, días transcurridos incluye parcial del último
+    const diasTotales=mesesSel.reduce((s,m)=>s+(diasPorMes2[m.replace('.','')]||30),0);
+    const diasPasados=mesesSel.slice(0,-1).reduce((s,m)=>s+(diasPorMes2[m.replace('.','')]||30),0);
+    const diasTransc=esMesActual ? diasPasados+mesInfo.soDaysElapsed : diasTotales;
+    const diasTranscSI=esMesActual ? diasPasados+mesInfo.siDaysElapsed : diasTotales;
+    soDiasT=siDiasT=diasTotales;
+    soDias=diasTransc; siDias=diasTranscSI;
+  } else if(esMesActual){
+    // Mes en curso — extraer días directamente de la fecha de corte (ISO "YYYY-MM-DD")
+    // Esto evita depender de SO_DIAS_TRANSCURRIDOS o de mesInfo que pueden tener valores incorrectos
+    function diaDesdeISO(fechaStr){
+      try{
+        const p=(fechaStr||'').split('-');
+        if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}
+      }catch(e){}
+      return null;
+    }
+    soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
+    siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
+    // Prioridad: 1) día extraído de la fecha de corte, 2) mesInfo, 3) ratio (último recurso)
+    const dSOFecha=diaDesdeISO(fechaSOStr);
+    const dSIFecha=diaDesdeISO(fechaSIStr||fechaSOStr);
+    if(dSOFecha){
+      soDias=dSOFecha;
+      siDias=dSIFecha||dSOFecha;
+    } else if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+      soDias=mesInfo.soDaysElapsed;
+      siDias=mesInfo.siDaysElapsed||mesInfo.soDaysElapsed;
+    } else {
+      // Último recurso: estimar por ratio real/ppto
+      const ratioSO=soPptoMes>0?soRealMes/soPptoMes:0;
+      const ratioSI=siPptoMes>0?siRealMes/siPptoMes:0;
+      soDiasT=siDiasT=diasDelMesFiltro;
+      soDias=Math.min(diasDelMesFiltro,Math.max(1,Math.round(ratioSO*diasDelMesFiltro)));
+      siDias=Math.min(diasDelMesFiltro,Math.max(1,Math.round(ratioSI*diasDelMesFiltro)));
+    }
+  } else {
+    // Mes pasado completamente cerrado → proy = real
+    soDiasT=siDiasT=diasDelMesFiltro;
+    soDias=siDias=diasDelMesFiltro;
+  }
+  const pctTransc=Math.round(soDias/soDiasT*100);
+  const soProyMes=cvCalcProy(soRealMes,soDias,soDiasT);
+  const siProyMes=cvCalcProy(siRealMes,siDias,siDiasT);
+
+  // ── Hero brand section ────────────────────────────────────────────────
+  const heroH=`<div class="cv-brand-hero">
+    <div class="cv-bh-main">
+      <div class="cv-bh-logo" style="background:${brand.color};color:${CUR_CAT==='HOGAR'?'#fff':'#000'}">${brand.name[0]}</div>
+      <div>
+        <div class="cv-bh-brand" style="color:${brand.color}">${brand.name} · ${brand.cat}</div>
+        <div class="cv-bh-val">${fmtM(totSOReal26)}</div>
+        <div class="cv-bh-sub"><span class="pill ${varVs25>=0?'pos':'neg'}">${sg(varVs25)}${varVs25.toFixed(1)}% vs 2025</span><span style="font-size:9px;color:var(--muted)">${selMeses.size>0?MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · '):mesesConReal.map(m=>MES_LBL[m]).join(' · ')}</span></div>
+      </div>
+    </div>
+    <div class="cv-kpi" style="border-top:2px solid ${brand.color}">
+      <div class="cv-kpi-l">Cumpl. SO Acum.</div>
+      <div class="cv-kpi-v" style="color:${cumplAcum>=90?'var(--pos)':cumplAcum>=75?'#F5C800':'var(--neg)'}">${cumplAcum.toFixed(1)}%</div>
+      <div class="cv-kpi-s"><span class="pill ${cumplAcum>=75?'pos':'neg'}">gap ${sg(totSOReal26-totSOPpto26)}${fmtM(totSOReal26-totSOPpto26)}</span></div>
+    </div>
+    <div class="cv-kpi" style="border-top:2px solid #6699ff">
+      <div class="cv-kpi-l">Sell In Acum.</div>
+      <div class="cv-kpi-v" style="color:#6699ff">${fmtM(totSIReal26)}</div>
+      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">Acumulado ${mesesConReal.length} meses</div>
+    </div>
+    <div class="cv-kpi" style="border-top:2px solid var(--pos)">
+      <div class="cv-kpi-l">DDI Promedio</div>
+      <div class="cv-kpi-v" style="color:${ddiTot===null?'var(--muted)':ddiTot<30?'var(--neg)':ddiTot<60?'#F5C800':'var(--pos)'}">${ddiLbl(ddiTot)}</div>
+      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">Inventario actual</div>
+    </div>
+    <div class="cv-kpi" style="border-top:2px solid var(--neg)">
+      <div class="cv-kpi-l">Proyección mes</div>
+      <div class="cv-kpi-v" style="color:${soProyMes/soPptoMes>=.9?'var(--pos)':soProyMes/soPptoMes>=.75?'#F5C800':'var(--neg)'}">${(soPptoMes>0?soProyMes/soPptoMes*100:0).toFixed(0)}%</div>
+      <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">${mesLabel} · día ${soDias} de ${soDiasT}</div>
+    </div>
+  </div>`;
+
+  // ── Proyección total SO + SI ──────────────────────────────────────────
+  const proyH=`<div>
+    <div class="cv-section-lbl">${brand.name} · ${esMultiMes?'Acumulado':esMesActual?'Proyección cierre':'Resultado completo'} ${mesLabel} 2026 <span style="color:#4facfe;font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px;">${esMesActual?'SO: día '+soDias+'/'+soDiasT+' · SI: día '+siDias+'/'+siDiasT:esMultiMes?'':'Mes cerrado'}</span></div>
+    <div class="cv-proy-row">
+      ${cvProyCard('SO',soRealMes,soProyMes,soPptoMes,brand.color,mesLabel,soDias,soDiasT,fechaSOMostrar)}
+      ${cvProyCard('SI',siRealMes,siProyMes,siPptoMes,'#6699ff',mesLabel,siDias,siDiasT,fechaSIMostrar)}
+    </div>
+  </div>`;
+
+  // ── Cadenas grid ──────────────────────────────────────────────────────
+  // Ordenar cadenas por valor de SO_REAL_2026 descendente
+  const cadenasMap={};
+  ppAll.forEach(r=>{if(r.CADENA)cadenasMap[r.CADENA]=(cadenasMap[r.CADENA]||0)+(r.SO_REAL_2026||0);});
+  const cadenas=Object.keys(cadenasMap).sort((a,b)=>cadenasMap[b]-cadenasMap[a]);
+  const cadH=`<div>
+    <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
+    <div class="cv-cad-grid">${cadenas.map(cad=>{
+      const ppC=ppAll.filter(r=>r.CADENA===cad);
+      // Acumulado
+      // Acumulado de todos los meses con real para esta cadena (header)
+      const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
+      const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
+      const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+      const varPct=sp(totSORCad,varC||1);
+      // Mes actual
+      const ppCMes=ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
+      const siP=cvCalcProy(csiR,siDias,siDiasT);
+      // DDI para esta cadena
+      const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
+      const ddiCad=calcDDI(invCad,uCad);
+      const ddiCls2=ddiClr(ddiCad);
+      const cumplSOProy=csOP>0?soP/csOP*100:0;
+      const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
+      const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
+      return`<div class="cv-cad-card">
+        <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
+          <div>
+            <div class="cv-cad-name">${cad}</div>
+            <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
+          </div>
+          <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;">${sg(varPct)}${varPct.toFixed(1)}%</span>
+        </div>
+        <div class="cv-cad-body">
+          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
+          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+
+  // ── Recomendaciones ───────────────────────────────────────────────────
+  const recoH=`<div>
+    <div class="cv-section-lbl">Recomendaciones por cadena · Acelerar Sell Out ${mesLabel}</div>
+    <div class="cv-reco-grid">${cadenas.map(cad=>{
+      const ppC=ppAll.filter(r=>r.CADENA===cad);
+      const ppCMesR=ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMesR.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMesR.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMesR.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMesR.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
+      const cumplSO=csOP>0?soP/csOP*100:0;
+      const soGap=soP-csOP;
+      const siGap=cvCalcProy(csiR,siDias,siDiasT)-csiP;
+      const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
+      const ddiCad=calcDDI(invCad,uCad);
+      const reco=cvRecoText(cad,soGap,siGap,cumplSO,ddiCad,mesFiltro);
+      const borderColor=reco.color;
+      return`<div class="cv-reco" style="border-color:${borderColor};background:${borderColor==='var(--pos)'?'rgba(13,183,91,.04)':borderColor==='var(--neg)'?'rgba(229,25,44,.04)':'rgba(245,200,0,.04)'}">
+        <div class="cv-reco-top">
+          <span class="cv-reco-cad" style="color:${borderColor}">${cad}</span>
+          <span class="cv-reco-gap">gap ${sg(soGap)}${fmtM(soGap)} · ${cumplSO.toFixed(0)}% cumpl.</span>
+        </div>
+        <div class="cv-reco-txt">${reco.txt}</div>
+        <div class="cv-reco-chip" style="background:${borderColor==='var(--pos)'?'rgba(13,183,91,.1)':borderColor==='var(--neg)'?'rgba(229,25,44,.1)':'rgba(245,200,0,.1)'};border:1px solid ${borderColor};color:${borderColor}">${reco.chip}</div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+
+  document.getElementById('cv-body').innerHTML=heroH+proyH+cadH+recoH;
+}
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
+
+function getCadenas(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const m26={},m25={};
+  cats.forEach(cat=>{
+    (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)).forEach(r=>{
+      if(!m26[r.CADENA])m26[r.CADENA]={cad:r.CADENA,v26:0,u26:0};
+      m26[r.CADENA].v26+=r.VENTA||0;m26[r.CADENA].u26+=r.UNIDADES||0;
+    });
+    (CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)).forEach(r=>{
+      if(!m25[r.CADENA])m25[r.CADENA]={v25:0,u25:0};
+      m25[r.CADENA].v25+=r.VENTA||0;m25[r.CADENA].u25+=r.UNIDADES||0;
+    });
+  });
+  const tot=Object.values(m26).reduce((s,x)=>s+x.v26,0);
+  const cats2=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return Object.values(m26).map(c=>({...c,
+    v25:m25[c.cad]?.v25||0,u25:m25[c.cad]?.u25||0,
+    varV:sp(c.v26,m25[c.cad]?.v25||1),varU:sp(c.u26,m25[c.cad]?.u25||1),
+    part:tot>0?c.v26/tot*100:0,
+    invUnds:cats2.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0)
+  })).map(c=>({...c,ddi:calcDDI(c.invUnds,c.u26)}))
+  .sort((a,b)=>b.v26-a.v26);
+}
+
+function getDetSeg(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const m26={},m25={};
+  cats.forEach(cat=>{
+    const d26=(DET[cat+'_2026']||[]).filter(r=>(selMeses.size===0||selMeses.has(r.M))&&(!dSelCad||r.C===dSelCad)&&(dSelSubcat==='TODAS'||r.S===dSelSubcat));
+    const d25=(DET[cat+'_2025']||[]).filter(r=>(selMeses.size===0||selMeses.has(r.M))&&(!dSelCad||r.C===dSelCad)&&(dSelSubcat==='TODAS'||r.S===dSelSubcat));
+    d26.forEach(r=>{const k=r.C+'|||'+r.G;
+      if(!m26[k])m26[k]={cad:r.C,seg:r.G,v:0,u:0};m26[k].v+=r.V||0;m26[k].u+=r.U||0;});
+    d25.forEach(r=>{const k=r.C+'|||'+r.G;
+      if(!m25[k])m25[k]={v:0,u:0};m25[k].v+=r.V||0;m25[k].u+=r.U||0;});
+  });
+  return{m26,m25};
+}
+
+function getSegsForSubcat(){
+  if(dSelSubcat==='TODAS') return null;
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const vs=new Set();
+  cats.forEach(cat=>{
+    (DET[cat+'_2026']||[]).forEach(r=>{if(r.S===dSelSubcat&&r.G)vs.add(r.G);});
+    (DET[cat+'_2025']||[]).forEach(r=>{if(r.S===dSelSubcat&&r.G)vs.add(r.G);});
+  });
+  return vs;
+}
+
+function buildSegCards(segs,cadenas,a){
+  const{m26,m25}=getDetSeg();
+  const validSegs=getSegsForSubcat();
+  const filteredSegs=validSegs?segs.filter(s=>validSegs.has(s.seg)):segs;
+  const totalV26=filteredSegs.reduce((s,x)=>s+x.v26,0);
+
+  // Subcategoría selector
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const subcats=new Set(['TODAS']);
+  cats.forEach(cat=>(DET[cat+'_2026']||[]).forEach(r=>{if(r.S)subcats.add(r.S);}));
+  const subcatSel=`<select onchange="dSelSubcat=this.value;renderDashboard()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;cursor:pointer;">
+    ${[...subcats].map(s=>`<option value="${s}" ${s===dSelSubcat?'selected':''}>${s==='TODAS'?'Todas las subcategorías':s}</option>`).join('')}
+  </select>`;
+
+  let html=`<div class="seg-cards-wrap"><div class="seg-cards-hdr">
+    <span class="seg-cards-title">⚡ RESUMEN POR SEGMENTO</span>
+    ${subcatSel}
+  </div><div style="overflow-x:auto"><table class="seg-cards-table">
+  <thead><tr><td class="seg-corner"></td>`;
+
+  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
+  cadFiltered.forEach(c=>{
+    html+=`<td class="seg-col-hdr">
+      <div class="seg-col-hdr-name">${c.cad.split(' ').slice(0,2).join(' ')}</div>
+      <div class="seg-col-hdr-part" style="color:${a}">${c.part.toFixed(1)}%</div>
+    </td>`;
+  });
+  html+='</tr></thead><tbody>';
+
+  filteredSegs.forEach(seg=>{
+    const partSeg=totalV26>0?seg.v26/totalV26*100:0;
+    // Inventario total del segmento (todas cadenas)
+    const invSegTotal=INV.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+    html+=`<tr><td class="seg-label-cell">
+      <div class="seg-label-name">${seg.seg}</div>
+      <div class="seg-label-part">${partSeg.toFixed(1)}%</div>
+      <div class="seg-card-pills" style="margin-top:4px">
+        <span class="seg-card-pill ${seg.var>=0?'pos':'neg'}">${sg(seg.var)}${seg.var.toFixed(1)}%</span>
+        <span class="seg-card-pill ${seg.varu>=0?'pos':'neg'}">${sg(seg.varu)}${seg.varu.toFixed(1)}%U</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+        <span style="color:var(--sub)">${r0(invSegTotal).toLocaleString()} u</span>
+        <span>DDI: <span class="ddi ${ddiClr(seg.ddi)}">${ddiLbl(seg.ddi)}</span></span>
+      </div>
+    </td>`;
+    cadFiltered.forEach(cad=>{
+      const k=cad.cad+'|||'+seg.seg;
+      const d26=m26[k]||{v:0,u:0};
+      const d25=m25[k]||{v:0,u:0};
+      const varV=sp(d26.v,d25.v||1);
+      const varU=sp(d26.u,d25.u||1);
+      const totCad=Object.values(m26).filter(x=>x.cad===cad.cad).reduce((s,x)=>s+x.v,0);
+      const partCad=totCad>0?d26.v/totCad*100:0;
+      // DDI por cadena x segmento
+      const invCS=INV.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.CADENA===cad.cad&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const ddiCS=calcDDI(invCS,d26.u);
+      html+=`<td class="seg-card-cell"><div class="seg-card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:4px;font-family:var(--fm);font-size:7.5px;color:var(--muted)">
+          <span>VALOR (M)</span><span>UNDS (K)</span>
+          <span style="color:var(--sub)">2025: ${fmtD(d25.v)}</span><span style="color:var(--sub)">${fmtK(d25.u)}</span>
+          <span style="color:${a};font-weight:700">2026: ${fmtD(d26.v)}</span><span style="color:${a};font-weight:700">${fmtK(d26.u)}</span>
+        </div>
+        <div class="seg-card-pills">
+          <span class="seg-card-pill ${varV>=0?'pos':'neg'}">${sg(varV)}${varV.toFixed(0)}%</span>
+          <span class="seg-card-pill ${varU>=0?'pos':'neg'}">${sg(varU)}${varU.toFixed(0)}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;font-family:var(--fm);font-size:7px;color:var(--muted)">
+          <span>Part. ${partCad.toFixed(1)}%</span>
+          <span style="color:var(--sub)">${r0(invCS).toLocaleString()} u</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px;font-family:var(--fm);font-size:7px;color:var(--muted)">
+          <span></span>
+          <span>DDI: <span class="ddi ${ddiClr(ddiCS)}">${ddiLbl(ddiCS)}</span></span>
+        </div>
+      </div></td>`;
+    });
+    html+='</tr>';
+  });
+  return html+'</tbody></table></div></div>';
+}
+
+function renderDashboard(){
+  const a=ac();
+  const mLbl=selMeses.size===0?'Acumulado':
+    MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
+  const nMeses=selMeses.size||4;
+
+  // Filter by cadena if selected
+  const r26all=resFilter(RES26);
+  const r25all=resFilter(RES25);
+  const r26=dSelCad?r26all.filter(r=>{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
+    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
+  }):r26all;
+
+  const t=getTotals(),segs=getSegs(),trend=getTrend();
+  const cadenas=getCadenas();
+
+  // Populate CADENA dropdown
+  const sel=document.getElementById('d-cad-sel');
+  if(sel){
+    const current=sel.value;
+    sel.innerHTML='<option value="">Todas las cadenas</option>'+
+      cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
+    if(!cadenas.find(c=>c.cad===dSelCad)) dSelCad='';
+  }
+
+  // Value badge
+  const badge=document.getElementById('d-val-badge');
+  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+  document.getElementById('d-periodo').textContent=mLbl;
+
+  // ── KPI row ──────────────────────────────────────────────────────────
+  const periodTxt='ACUMULADO · '+
+    (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
+  const kpis=[
+    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
+    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
+    {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
+    {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
+    {l:'Período',           v:periodTxt, s:nMeses+' mes(es)', c:'var(--acc)', ex:'periodo'},
+  ];
+  const kpiH='<div class="kpi-row">'+kpis.map(k=>`<div class="kpi-card${k.neg?' neg':''}${k.ex?' '+k.ex:''}">
+    <div class="kpi-label">${k.l}</div>
+    <div class="kpi-val" style="color:${k.c||a}">${k.v}</div>
+    <div class="kpi-sub">${k.s||''}</div>
+  </div>`).join('')+'</div>';
+
+  // ── Trend charts ──────────────────────────────────────────────────────
+  const trendsH=`<div class="trend-row">
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
+    </div>
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
+    </div>
+  </div>`;
+
+  // ── Cadenas table ─────────────────────────────────────────────────────
+  const cadPeriod='RESUMEN CADENAS — '+mLbl.toUpperCase();
+  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
+  const cadTableH=`<div class="cad-wrap"><div class="cad-hdr">
+    <span class="cad-hdr-title">⚡ ${cadPeriod}</span>
+  </div>
+  <table class="cad-table"><thead><tr>
+    <th style="width:200px">CADENA</th>
+    <th style="text-align:right">PART%</th>
+    <th style="text-align:right">VALOR AÑO ACT.</th>
+    <th style="text-align:right">VALOR AÑO ANT.</th>
+    <th style="text-align:center">VAR% VALOR</th>
+    <th style="text-align:right">UNDS AÑO ACT.</th>
+    <th style="text-align:right">UNDS AÑO ANT.</th>
+    <th style="text-align:center">VAR% UNDS</th>
+    <th style="text-align:right">INV UNDS</th>
+    <th style="text-align:center">DDI</th>
+    <th style="text-align:center">STATUS</th>
+  </tr></thead><tbody>
+  ${cadFiltered.map(c=>`<tr>
+    <td class="cad-name">${c.cad}</td>
+    <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
+    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtD(c.v26)}</td>
+    <td class="mono cad-ant" style="text-align:right">${fmtD(c.v25)}</td>
+    <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
+    <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
+    <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
+    <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
+    <td class="mono" style="text-align:right;color:var(--sub)">${r0(c.invUnds).toLocaleString()}</td>
+    <td style="text-align:center"><span class="ddi ${ddiClr(c.ddi)}">${ddiLbl(c.ddi)}</span></td>
+    <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
+
+  // ── Segment matrix ────────────────────────────────────────────────────
+  const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
+    ?buildSegCards(segs,cadenas,a)
+    :'<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:9px;">Cargando detalle de segmentos…</div>';
+
+  document.getElementById('d-body').innerHTML=kpiH+trendsH+cadTableH+segMatrixH;
+  setTimeout(()=>buildDCharts(trend,a),0);
+}
+
+function buildDCharts(trend,a){
+  const isLight=document.documentElement.classList.contains('light');
+  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
+  const tickC=isLight?'#7a8499':'#5a5a7a';
+  const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
+  const base={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
+    scales:{
+      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
+      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}
+    }};
+  const lbs=trend.map(t=>t.mes);
+  const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
+  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
+  if(ctxSO){
+    if(dCharts.v) dCharts.v.destroy();
+    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
+  const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
+  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
+  if(ctxSI){
+    if(dCharts.u) dCharts.u.destroy();
+    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SI Real 2025',data:trend.map(t=>t.siReal25||null),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Real 2026',data:trend.map(t=>t.siReal26||null),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
+}
+
+// ── PDV EXPLORER ─────────────────────────────────────────────────────────────
+async function initExplorer(){
+  document.getElementById('e-pdv-list').innerHTML=
+    `<div class="tab-loading"><div class="spin">⏳</div>
+     <div style="font-family:var(--fm);font-size:9px;letter-spacing:2px;">CARGANDO DETALLE…</div></div>`;
+  document.getElementById('e-kstrip').innerHTML='';
+
+  // Lazy-load detalle for current cat
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  for(const c of cats){ await loadDet(c,2025); await loadDet(c,2026); }
+
+  // Combine rows, inject _YR so we can split 2025/2026
+  eAllRows=[];
+  for(const c of cats){
+    (DET[`${c}_2025`]||[]).forEach(r=>eAllRows.push({...r,_YR:2025}));
+    (DET[`${c}_2026`]||[]).forEach(r=>eAllRows.push({...r,_YR:2026}));
+  }
+
+  // Populate dropdowns
+  const rows26=eAllRows.filter(r=>r._YR===2026&&(selMeses.size===0||selMeses.has(r.M)));
+  const cadenas=[...new Set(rows26.map(r=>r.C).filter(Boolean))].sort();
+  const formatos=[...new Set(rows26.map(r=>r.F).filter(Boolean))].sort();
+  const ec=document.getElementById('e-cadena'), ef=document.getElementById('e-formato');
+  const pc=ec.value, pf=ef.value;
+  ec.innerHTML='<option value="">Todas las cadenas</option>'+cadenas.map(c=>`<option>${c}</option>`).join('');
+  ef.innerHTML='<option value="">Todos los formatos</option>'+formatos.map(f=>`<option>${f}</option>`).join('');
+  if(cadenas.includes(pc)) ec.value=pc;
+  if(formatos.includes(pf)) ef.value=pf;
+
+  eApplyFilters();
+}
+
+function eApplyFilters(){
+  if(!eAllRows.length) return;
+  const cadFil=document.getElementById('e-cadena').value;
+  const fmtFil=document.getElementById('e-formato').value;
+  const q=document.getElementById('e-search').value.toLowerCase();
+  const onlyNeg=document.getElementById('e-neg').checked;
+
+  // Short keys: P=PDV, C=CADENA, F=FORMATO, G=SEGMENTO, M=MES
+  //             V=VENTA, U=UNIDADES, I=INVENTARIO
+  const f26=eAllRows.filter(r=>r._YR===2026&&(selMeses.size===0||selMeses.has(r.M)));
+  const f25=eAllRows.filter(r=>r._YR===2025&&(selMeses.size===0||selMeses.has(r.M)));
+
+  // Aggregate by PDV
+  const m26={}, m25={};
+  f26.forEach(r=>{
+    if(!r.P) return;
+    if(!m26[r.P]) m26[r.P]={pdv:r.P,cad:r.C,fmt:r.F,v:0,u:0,inv:0,segs:{}};
+    m26[r.P].v+=r.V||0; m26[r.P].u+=r.U||0; m26[r.P].inv+=r.I||0;
+    if(r.G){if(!m26[r.P].segs[r.G])m26[r.P].segs[r.G]={v26:0,u26:0,inv:0};
+      m26[r.P].segs[r.G].v26+=r.V||0; m26[r.P].segs[r.G].u26+=r.U||0; m26[r.P].segs[r.G].inv+=r.I||0;}
+  });
+  f25.forEach(r=>{
+    if(!r.P) return;
+    if(!m25[r.P]) m25[r.P]={v:0,u:0,segs:{}};
+    m25[r.P].v+=r.V||0; m25[r.P].u+=r.U||0;
+    if(r.G){if(!m25[r.P].segs[r.G])m25[r.P].segs[r.G]={v25:0,u25:0};
+      m25[r.P].segs[r.G].v25+=r.V||0; m25[r.P].segs[r.G].u25+=r.U||0;}
+  });
+
+  let pdvs=Object.values(m26).map(p=>({...p,
+    v25:m25[p.pdv]?.v||0, u25:m25[p.pdv]?.u||0, segs25:m25[p.pdv]?.segs||{},
+    var:sp(p.v,m25[p.pdv]?.v||1), ddi:calcDDI(p.inv,p.u)
+  })).sort((a,b)=>b.v-a.v);
+
+  if(cadFil) pdvs=pdvs.filter(p=>p.cad===cadFil);
+  if(fmtFil) pdvs=pdvs.filter(p=>p.fmt===fmtFil);
+  if(q) pdvs=pdvs.filter(p=>p.pdv.toLowerCase().includes(q));
+  if(onlyNeg) pdvs=pdvs.filter(p=>p.var<0);
+  eFiltered=pdvs;
+
+  document.getElementById('e-count').textContent=pdvs.length+' PDVs';
+  const a=ac();
+
+  // Kstrip totals
+  const tv26=pdvs.reduce((s,p)=>s+p.v,0), tv25=pdvs.reduce((s,p)=>s+p.v25,0);
+  const tu26=pdvs.reduce((s,p)=>s+p.u,0), tinv=pdvs.reduce((s,p)=>s+p.inv,0);
+  const tvarV=sp(tv26,tv25||1), tvarU=sp(tu26,pdvs.reduce((s,p)=>s+p.u25,0)||1);
+  const ddiT=calcDDI(tinv,tu26);
+  document.getElementById('e-kstrip').innerHTML=[
+    ['PDVs',''+pdvs.length,0],['Valor 2026',fmtM(tv26),tvarV],
+    ['VAR% Val',sg(tvarV)+tvarV.toFixed(1)+'%',tvarV],
+    ['Unds 2026',fmtK(tu26),tvarU],['VAR% Unds',sg(tvarU)+tvarU.toFixed(1)+'%',tvarU],
+    ['DDI',ddiLbl(ddiT),ddiT===null?0:ddiT<30?-1:1]
+  ].map(k=>{
+    const cls=k[2]>0?'pos':k[2]<0?'neg':'acc';
+    return`<div class="ks-item"><div class="ks-label">${k[0]}</div><div class="ks-val ${cls}">${k[1]}</div></div>`;
+  }).join('');
+
+  // PDV list
+  document.getElementById('e-pdv-list').innerHTML=!pdvs.length
+    ?`<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px">SIN RESULTADOS</div>`
+    :pdvs.map((p,i)=>{
+      const isSel=eSelPdv?.pdv===p.pdv;
+      return`<div class="item-row${isSel?' sel':''}" onclick="eSelectPdv(${i})">
+        <span class="item-rank">#${i+1}</span>
+        <span class="item-name" title="${p.pdv}">${p.pdv}</span>
+        <span class="item-sub">${p.fmt||p.cad||''}</span>
+        <span class="item-val" style="color:${a}">${fmtM(p.v)}</span>
+        <span class="item-var ${p.var>=0?'pos':'neg'}">${sg(p.var)}${p.var.toFixed(1)}%</span>
+      </div>`;
+    }).join('');
+}
+
+function eSelectPdv(idx){
+  eSelPdv=eFiltered[idx];
+  document.querySelectorAll('#e-pdv-list .item-row').forEach((r,i)=>r.classList.toggle('sel',i===idx));
+  const p=eSelPdv, a=ac();
+  document.getElementById('e-r-title').textContent=p.pdv;
+  document.getElementById('e-r-kpis').innerHTML=`
+    <span style="color:var(--muted);font-family:var(--fm);font-size:9px">${p.cad||''} · ${p.fmt||''}</span>
+    <span style="color:${a};font-family:var(--fm);font-size:10px;font-weight:600">${fmtM(p.v)}</span>
+    <span class="pill ${p.var>=0?'pos':'neg'}">${sg(p.var)}${p.var.toFixed(1)}%</span>
+    <span class="ddi ${ddiClr(p.ddi)}" style="font-size:10px">📦 ${ddiLbl(p.ddi)}</span>`;
+
+  const segs=Object.entries(p.segs).map(([seg,sv])=>({
+    seg, v26:sv.v26, u26:sv.u26, inv:sv.inv,
+    v25:p.segs25?.[seg]?.v25||0, u25:p.segs25?.[seg]?.u25||0,
+    var:sp(sv.v26,p.segs25?.[seg]?.v25||1), ddi:calcDDI(sv.inv,sv.u26)
+  })).sort((a,b)=>b.v26-a.v26);
+
+  const tot=segs.reduce((s,x)=>s+x.v26,0);
+  document.getElementById('e-tbl').innerHTML=`<table>
+    <thead><tr>
+      <th style="width:26px">#</th><th style="width:175px">SEGMENTO</th>
+      <th style="text-align:right">VAL 26</th><th style="text-align:right">VAL 25</th>
+      <th style="text-align:right">DIF</th><th style="text-align:center">VAR%</th>
+      <th style="text-align:right">UNDS</th><th style="text-align:right">INV</th>
+      <th style="text-align:center">DDI</th><th style="text-align:right">PART%</th>
+    </tr></thead>
+    <tbody>${segs.map((s,i)=>{
+      const isN=s.var<-5, part=tot>0?s.v26/tot*100:0;
+      return`<tr class="${isN?'nr':''}">
+        <td class="mono" style="color:var(--muted);font-size:9px">${i+1}</td>
+        <td style="color:${isN?'var(--neg)':'var(--text)'}" title="${s.seg}">${s.seg}</td>
+        <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtM(s.v26)}</td>
+        <td class="mono" style="text-align:right;color:var(--muted)">${fmtM(s.v25)}</td>
+        <td class="mono" style="text-align:right;color:${s.v26-s.v25>=0?'var(--pos)':'var(--neg)'}">${sg(s.v26-s.v25)}${fmtM(s.v26-s.v25)}</td>
+        <td style="text-align:center"><span class="pill ${s.var>=0?'pos':'neg'}">${sg(s.var)}${s.var.toFixed(1)}%</span></td>
+        <td class="mono" style="text-align:right;color:var(--sub)">${fmtK(s.u26)}</td>
+        <td class="mono" style="text-align:right;color:var(--sub)">${fmtM(s.inv)}</td>
+        <td style="text-align:center"><span class="ddi ${ddiClr(s.ddi)}">${ddiLbl(s.ddi)}</span></td>
+        <td class="mono" style="text-align:right;color:var(--sub)">${part.toFixed(1)}%</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function eClear(){
+  document.getElementById('e-cadena').value='';
+  document.getElementById('e-formato').value='';
+  document.getElementById('e-search').value='';
+  document.getElementById('e-neg').checked=false;
+  eSelPdv=null; eApplyFilters();
+}
+
+// ── SEGMENTOS ────────────────────────────────────────────────────────────────
+function renderSegmentos(){
+  const segs=getSegs(), t=getTotals(), a=ac();
+  document.getElementById('s-kstrip').innerHTML=[
+    ['Valor Cat',fmtM(t.v26),t.varV],['VAR% Val',sg(t.varV)+t.varV.toFixed(1)+'%',t.varV],
+    ['Unds Cat',fmtK(t.u26),t.varU],['VAR% Unds',sg(t.varU)+t.varU.toFixed(1)+'%',t.varU],
+    ['Segmentos',''+segs.length,0],['DDI Global',ddiLbl(t.ddi),t.ddi===null?0:t.ddi<30?-1:t.ddi<60?.1:1]
+  ].map(k=>{
+    const cls=k[2]>0?'pos':k[2]<0?'neg':'acc';
+    return`<div class="ks-item"><div class="ks-label">${k[0]}</div><div class="ks-val ${cls}">${k[1]}</div></div>`;
+  }).join('');
+
+  document.getElementById('s-count').textContent=segs.length+' segs';
+  document.getElementById('s-seg-list').innerHTML=segs.map((s,i)=>`
+    <div class="item-row${selSeg===s.seg?' sel':''}" onclick="selectSeg('${s.seg.replace(/'/g,"\\'")}')">
+      <span class="item-rank">${i+1}</span>
+      <span class="item-name" title="${s.seg}">${s.seg}</span>
+      <span class="item-val" style="color:${a}">${fmtM(s.v26)}</span>
+      <span class="item-var ${s.var>=0?'pos':'neg'}">${sg(s.var)}${s.var.toFixed(1)}%</span>
+    </div>`).join('');
+
+  if(selSeg) renderSegDetail(selSeg);
+}
+
+function selectSeg(seg){
+  selSeg=seg;
+  document.querySelectorAll('#s-seg-list .item-row').forEach(r=>{
+    r.classList.toggle('sel',r.querySelector('.item-name')?.textContent===seg);
+  });
+  renderSegDetail(seg);
+}
+
+function renderSegDetail(seg){
+  const a=ac();
+  const meses=MES_ORD.filter(m=>RES26.some(r=>r.MES===m));
+  const rows=meses.map(m=>{
+    const f=arr=>arr.filter(r=>r.MES===m&&r.SEGMENTO===seg&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
+    const r26=f(RES26),r25=f(RES25);
+    const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
+    const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
+    const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
+    const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
+    const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
+    return{m,v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),ddi:calcDDI(inv,u26)};
+  }).filter(r=>r.v26>0||r.v25>0);
+
+  const tv26=rows.reduce((s,r)=>s+r.v26,0),tv25=rows.reduce((s,r)=>s+r.v25,0);
+  const tinv=rows.reduce((s,r)=>s+r.inv,0),tu26=rows.reduce((s,r)=>s+r.u26,0);
+  const tvarV=sp(tv26,tv25||1), ddiT=calcDDI(tinv,tu26);
+
+  document.getElementById('s-r-title').textContent='📦 '+seg;
+  document.getElementById('s-r-kpis').innerHTML=`
+    <span style="color:${a};font-family:var(--fm);font-size:10px;font-weight:600">${fmtM(tv26)}</span>
+    <span class="pill ${tvarV>=0?'pos':'neg'}">${sg(tvarV)}${tvarV.toFixed(1)}%</span>
+    <span class="ddi ${ddiClr(ddiT)}" style="font-size:10px">📦 ${ddiLbl(ddiT)}</span>`;
+
+  document.getElementById('s-tbl').innerHTML=`<table>
+    <thead><tr>
+      <th style="width:50px">MES</th>
+      <th style="text-align:right">VALOR 2026</th><th style="text-align:right">VALOR 2025</th>
+      <th style="text-align:right">DIF $</th><th style="text-align:center">VAR%</th>
+      <th style="text-align:right">UNDS 2026</th><th style="text-align:center">VAR% U</th>
+      <th style="text-align:right">INVENTARIO</th><th style="text-align:center">DDI</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.varV<-5?'nr':''}">
+      <td class="mono" style="color:${a};font-weight:700">${MES_LBL[r.m]||r.m}</td>
+      <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtM(r.v26)}</td>
+      <td class="mono" style="text-align:right;color:var(--muted)">${fmtM(r.v25)}</td>
+      <td class="mono" style="text-align:right;color:${r.v26-r.v25>=0?'var(--pos)':'var(--neg)'}">${sg(r.v26-r.v25)}${fmtM(r.v26-r.v25)}</td>
+      <td style="text-align:center"><span class="pill ${r.varV>=0?'pos':'neg'}">${sg(r.varV)}${r.varV.toFixed(1)}%</span></td>
+      <td class="mono" style="text-align:right;color:var(--sub)">${fmtK(r.u26)}</td>
+      <td style="text-align:center"><span class="pill ${r.varU>=0?'pos':'neg'}">${sg(r.varU)}${r.varU.toFixed(1)}%</span></td>
+      <td class="mono" style="text-align:right;color:var(--sub)">${fmtM(r.inv)}</td>
+      <td style="text-align:center"><span class="ddi ${ddiClr(r.ddi)}">${ddiLbl(r.ddi)}</span></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+load();
+</script>
+</body>
+</html>
