@@ -218,7 +218,7 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 .dot.crit{background:#E5192C;box-shadow:0 0 6px rgba(229,25,44,.5);}
 
 :root.light{
-  --bg:#f0f2f6;--surf:#ffffff;--card:#ffffff;--border:#dde1eb;
+  --bg:#e8ecf2;--surf:#ffffff;--card:#ffffff;--border:#b0baca;
   --acc:#1A3FA3;--blue:#1A3FA3;--pos:#0a9649;--neg:#c91524;
   --posL:#e6f7ee;--negL:#fdecea;
   --white:#1a1a2e;--muted:#7a8499;--text:#2d3142;--sub:#6b7280;
@@ -302,8 +302,20 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 :root.light .r-kpi.yellow::after{background:var(--blue);}
 :root.light .cv-proy-card.so{background:rgba(26,63,163,.04);border:1px solid rgba(26,63,163,.15);}
 :root.light .cv-proy-card.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.12);}
-:root.light .cv-mini.so{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.1);}
-:root.light .cv-mini.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.08);}
+:root.light .cv-mini.so{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.25);}
+:root.light .cv-mini.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.2);}
+:root.light .kpi-card{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
+:root.light .cbox{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
+:root.light .cv-proy-card.so{background:rgba(26,63,163,.04);border:1.5px solid rgba(26,63,163,.35) !important;}
+:root.light .cv-proy-card.si{background:rgba(26,63,163,.04);border:1.5px solid rgba(26,63,163,.3) !important;}
+:root.light .cv-cad-card{border:1.5px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
+:root.light .cv-brand-hero{border:1.5px solid #b0baca !important;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+:root.light .seg-cards-wrap{border:1.5px solid #b0baca !important;}
+:root.light .cad-wrap{border:1.5px solid #b0baca !important;}
+:root.light .seg-wrap{border:1.5px solid #b0baca !important;}
+:root.light .r-kpi{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
+:root.light .cv-gap-box.neg{border:1.5px solid rgba(201,21,36,.35) !important;}
+:root.light .cv-gap-box.pos{border:1.5px solid rgba(10,150,73,.35) !important;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
@@ -677,8 +689,9 @@ function toggleTheme(){
 function initTheme(){
   try{
     const saved=localStorage.getItem('cv_theme');
-    if(saved==='light') toggleTheme();
-  }catch(e){}
+    // Modo claro por defecto; solo usar oscuro si el usuario lo eligió explícitamente
+    if(saved!=='dark') toggleTheme();
+  }catch(e){ toggleTheme(); }
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
@@ -1047,30 +1060,14 @@ function renderComoVamos(){
     soDiasT=siDiasT=diasTotales;
     soDias=diasTransc; siDias=diasTranscSI;
   } else if(esMesActual){
-    // Mes en curso — extraer días directamente de la fecha de corte (ISO "YYYY-MM-DD")
-    // Esto evita depender de SO_DIAS_TRANSCURRIDOS o de mesInfo que pueden tener valores incorrectos
-    function diaDesdeISO(fechaStr){
-      try{
-        const p=(fechaStr||'').split('-');
-        if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}
-      }catch(e){}
-      return null;
-    }
-    // Usar siempre diasDelMesFiltro (calculado del nombre del mes) en lugar de
-    // SO_DIAS_DEL_MES del JSON que puede tener un valor incorrecto (ej: 31 para abril)
-    soDiasT=diasDelMesFiltro;
-    siDiasT=diasDelMesFiltro;
-    // Prioridad: 1) día extraído de la fecha de corte, 2) mesInfo, 3) ratio (último recurso)
-    const dSOFecha=diaDesdeISO(fechaSOStr);
-    const dSIFecha=diaDesdeISO(fechaSIStr||fechaSOStr);
-    if(dSOFecha){
-      soDias=dSOFecha;
-      siDias=dSIFecha||dSOFecha;
-    } else if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+    // Mes en curso — usar días de mesInfo si coincide, sino calcular por ratio
+    if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+      soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
+      siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
       soDias=mesInfo.soDaysElapsed;
       siDias=mesInfo.siDaysElapsed||mesInfo.soDaysElapsed;
     } else {
-      // Último recurso: estimar por ratio real/ppto
+      // Calcular días transcurridos por ratio real/ppto directamente
       const ratioSO=soPptoMes>0?soRealMes/soPptoMes:0;
       const ratioSI=siPptoMes>0?siRealMes/siPptoMes:0;
       soDiasT=siDiasT=diasDelMesFiltro;
