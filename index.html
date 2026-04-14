@@ -747,14 +747,18 @@ function cvGetMesActual(){
   }
   if(!filaSO) return fallback();
   const mes=filaSO.MES;
-  // Derivar días transcurridos desde la fecha de corte (getDate()) para evitar
-  // usar SO_DIAS_TRANSCURRIDOS que puede estar desactualizado en el JSON.
-  // Si por alguna razón la fecha no parsea, se cae al campo del JSON como fallback.
+  // Derivar días transcurridos desde la fecha de corte, parseando el día directamente
+  // del string ISO "YYYY-MM-DD" para evitar desfases de zona horaria (UTC vs local).
+  // Fallback al campo SO_DIAS_TRANSCURRIDOS si la fecha no tiene formato esperado.
   function daysFromFecha(fechaStr, fallbackDias){
     try{
-      const d=new Date(fechaStr);
-      const n=d.getDate();
-      return(!isNaN(n)&&n>0)?n:(fallbackDias||1);
+      // Formato ISO: "2026-04-12" → partes[2] = "12"
+      const parts=(fechaStr||'').split('-');
+      if(parts.length===3){
+        const n=parseInt(parts[2],10);
+        return(!isNaN(n)&&n>0)?n:(fallbackDias||1);
+      }
+      return fallbackDias||1;
     }catch(e){ return fallbackDias||1; }
   }
   const soDaysElapsed=daysFromFecha(filaSO.FECHA_SO_ACTUAL, filaSO.SO_DIAS_TRANSCURRIDOS);
