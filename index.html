@@ -150,26 +150,36 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 .cv-kpi-v{font-family:var(--ff);font-size:20px;line-height:1;}
 .cv-kpi-s{font-size:9px;margin-top:3px;}
 /* Total projection cards */
-.cv-proy-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.cv-proy-card{border-radius:12px;padding:16px 18px;}
-.cv-proy-card.so{background:rgba(245,200,0,.05);border:1px solid rgba(245,200,0,.2);}
-.cv-proy-card.si{background:rgba(26,63,163,.05);border:1px solid rgba(26,63,163,.2);}
-.cv-pc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.cv-pc-type{font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
-.cv-pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
-.cv-pc-m-l{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
-.cv-pc-m-v{font-family:var(--ff);font-size:20px;line-height:1;}
-.cv-pc-m-s{font-size:9px;color:var(--muted);margin-top:2px;}
+.cv-proy-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.cv-proy-row{grid-template-columns:1fr;}}
+.cv-proy-card{border-radius:14px;overflow:hidden;border:none;padding:0;}
+.cv-proy-card.so{background:var(--card);border:1.5px solid rgba(245,200,0,.35);}
+.cv-proy-card.si{background:var(--card);border:1.5px solid rgba(26,63,163,.3);}
+/* Header banda de color */
+.cv-pc-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;margin-bottom:0;}
+.cv-proy-card.so .cv-pc-hdr{background:rgba(245,200,0,.15);}
+.cv-proy-card.si .cv-pc-hdr{background:rgba(26,63,163,.12);}
+.cv-pc-type{font-family:var(--ff);font-size:22px;letter-spacing:2px;}
+.cv-pc-corte{font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:1px;letter-spacing:.5px;}
+/* Métricas */
+.cv-pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:0;padding:14px 16px 10px;}
+@media(max-width:400px){.cv-pc-metrics{grid-template-columns:1fr 1fr;}}
+.cv-pc-m-l{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.cv-pc-m-v{font-family:var(--ff);font-size:26px;line-height:1;}
+.cv-pc-m-s{font-size:9px;color:var(--muted);margin-top:3px;font-weight:600;}
+/* Barra */
+.cv-bar-wrap{padding:0 16px 6px;}
 .cv-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px;}
 .cv-bar-proy{position:absolute;top:0;left:0;height:100%;border-radius:4px;opacity:.4;}
 .cv-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:4px;}
 .cv-bar-lbls{display:flex;justify-content:space-between;font-family:var(--fm);font-size:8px;color:var(--muted);}
-.cv-gap-box{border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
-.cv-gap-box.neg{background:var(--negL);border:1px solid rgba(229,25,44,.2);}
-.cv-gap-box.pos{background:var(--posL);border:1px solid rgba(13,183,91,.2);}
+/* Gap box */
+.cv-gap-box{border-radius:0 0 12px 12px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:0;}
+.cv-gap-box.neg{background:var(--negL);border-top:1px solid rgba(229,25,44,.15);}
+.cv-gap-box.pos{background:var(--posL);border-top:1px solid rgba(13,183,91,.15);}
 .cv-gap-lbl{font-family:var(--fm);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
 .cv-gap-sub{font-size:9px;color:var(--muted);margin-top:2px;}
-.cv-gap-val{font-family:var(--ff);font-size:22px;line-height:1;}
+.cv-gap-val{font-family:var(--ff);font-size:26px;line-height:1;}
 /* Cadena cards */
 .cv-cad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .cv-cad-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
@@ -812,8 +822,8 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
   return`<div class="cv-proy-card ${cls}">
     <div class="cv-pc-hdr">
       <div>
-        <span class="cv-pc-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
-        ${fechaCorte?`<div style="font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:.5px;">Corte: ${fechaCorte}</div>`:''}
+        <div class="cv-pc-type" style="color:${typeColor}">${isSO?'SELL OUT':'SELL IN'}</div>
+        ${fechaCorte?`<div class="cv-pc-corte">Corte: ${fechaCorte}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
         <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
@@ -824,7 +834,7 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
       <div>
         <div class="cv-pc-m-l">Real · Día ${daysElapsed}</div>
         <div class="cv-pc-m-v" style="color:${barColor}">${fmtM(real)}</div>
-        <div class="cv-pc-m-s" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% cumpl. actual</div>
+        <div class="cv-pc-m-s" style="color:${realColor}">${cumplReal.toFixed(1)}% cumpl. actual</div>
       </div>
       <div>
         <div class="cv-pc-m-l">Proyectado cierre</div>
@@ -837,14 +847,16 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
         <div class="cv-pc-m-s">${daysLeft} días restantes</div>
       </div>
     </div>
-    <div class="cv-bar-bg">
-      <div class="cv-bar-proy" style="width:${barProy}%;background:${cumplColor};"></div>
-      <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
-    </div>
-    <div class="cv-bar-lbls">
-      <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
-      <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
-      <span>Meta 100%</span>
+    <div class="cv-bar-wrap">
+      <div class="cv-bar-bg">
+        <div class="cv-bar-proy" style="width:${barProy}%;background:${cumplColor};"></div>
+        <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
+      </div>
+      <div class="cv-bar-lbls">
+        <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
+        <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
+        <span>Meta 100%</span>
+      </div>
     </div>
     <div class="cv-gap-box ${isPos?'pos':'neg'}">
       <div>
