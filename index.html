@@ -689,7 +689,7 @@ function toggleTheme(){
 function initTheme(){
   try{
     const saved=localStorage.getItem('cv_theme');
-    // Modo claro por defecto; solo usar oscuro si el usuario lo eligió explícitamente
+    // Modo claro por defecto; solo oscuro si el usuario lo eligió explícitamente
     if(saved!=='dark') toggleTheme();
   }catch(e){ toggleTheme(); }
 }
@@ -1060,14 +1060,30 @@ function renderComoVamos(){
     soDiasT=siDiasT=diasTotales;
     soDias=diasTransc; siDias=diasTranscSI;
   } else if(esMesActual){
-    // Mes en curso — usar días de mesInfo si coincide, sino calcular por ratio
-    if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
-      soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
-      siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
+    // Mes en curso — extraer días directamente de la fecha de corte (ISO "YYYY-MM-DD")
+    // Esto evita depender de SO_DIAS_TRANSCURRIDOS o de mesInfo que pueden tener valores incorrectos
+    function diaDesdeISO(fechaStr){
+      try{
+        const p=(fechaStr||'').split('-');
+        if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}
+      }catch(e){}
+      return null;
+    }
+    // Usar siempre diasDelMesFiltro (calculado del nombre del mes) en lugar de
+    // SO_DIAS_DEL_MES del JSON que puede tener un valor incorrecto (ej: 31 para abril)
+    soDiasT=diasDelMesFiltro;
+    siDiasT=diasDelMesFiltro;
+    // Prioridad: 1) día extraído de la fecha de corte, 2) mesInfo, 3) ratio (último recurso)
+    const dSOFecha=diaDesdeISO(fechaSOStr);
+    const dSIFecha=diaDesdeISO(fechaSIStr||fechaSOStr);
+    if(dSOFecha){
+      soDias=dSOFecha;
+      siDias=dSIFecha||dSOFecha;
+    } else if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
       soDias=mesInfo.soDaysElapsed;
       siDias=mesInfo.siDaysElapsed||mesInfo.soDaysElapsed;
     } else {
-      // Calcular días transcurridos por ratio real/ppto directamente
+      // Último recurso: estimar por ratio real/ppto
       const ratioSO=soPptoMes>0?soRealMes/soPptoMes:0;
       const ratioSI=siPptoMes>0?siRealMes/siPptoMes:0;
       soDiasT=siDiasT=diasDelMesFiltro;
