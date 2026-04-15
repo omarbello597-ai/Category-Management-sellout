@@ -36,20 +36,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px
   background:linear-gradient(to bottom,transparent,rgba(255,255,255,.08) 30%,rgba(255,255,255,.08) 70%,transparent);
   pointer-events:none;
 }
-.ld-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px;}
-/* Logos lado a lado */
-.ld-logos{display:flex;align-items:center;gap:32px;margin-bottom:4px;}
-.ld-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
-.ld-logo-img{height:48px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4));}
-.ld-logo-label{font-family:var(--fm);font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:.4;color:#fff;}
-.ld-divider{width:1px;height:56px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.2),transparent);}
-/* Título */
-.ld-brand{font-family:var(--ff);font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:4px;}
-.ld-tagline{font-family:var(--ff);font-size:28px;letter-spacing:3px;color:#fff;text-align:center;line-height:1.2;}
-.ld-tagline span.acc-y{color:#F5C800;}
-.ld-tagline span.acc-b{color:#4d8cff;}
+.ld-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px;}
+/* Título principal — protagonista */
+.ld-brand{font-family:var(--ff);font-size:42px;letter-spacing:6px;color:#fff;text-transform:uppercase;text-align:center;line-height:1;margin-bottom:4px;}
+.ld-brand span.acc-y{color:#F5C800;}
+.ld-brand span.acc-b{color:#4d8cff;}
+/* Subtítulo */
+.ld-tagline{font-family:var(--fm);font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.35);text-transform:uppercase;text-align:center;margin-bottom:8px;}
+/* Logos lado a lado — sin fondo */
+.ld-logos{display:flex;align-items:center;gap:36px;margin:4px 0;}
+.ld-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ld-logo-img{height:44px;object-fit:contain;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6)) brightness(1.05);}
+.ld-logo-label{font-family:var(--fm);font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:.35;color:#fff;}
+.ld-divider{width:1px;height:52px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.15),transparent);}
 /* Barra de progreso */
-.ld-bar-wrap{width:320px;display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.ld-bar-wrap{width:340px;display:flex;flex-direction:column;gap:6px;margin-top:12px;}
 .ld-bar{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
 .ld-fill{height:100%;border-radius:2px;width:0%;transition:width .35s ease;
   background:linear-gradient(90deg,#F5C800,#F5821F,#4d8cff);}
@@ -395,21 +397,23 @@ nav.cat-total .brand{color:#4a4a4a;}
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="ld-inner">
+    <div class="ld-brand">CATEGORY<br><span class="acc-y">MANAGE</span><span class="acc-b">MENT</span></div>
+    <div class="ld-tagline">Sell Out · Sell In · 2025 – 2026</div>
     <div class="ld-logos">
       <div class="ld-logo-wrap">
         <img src="Logo_SImoniz.png" class="ld-logo-img" alt="Simoniz"
+          style="mix-blend-mode:lighten;"
           onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#F5C800;letter-spacing:3px;\'>SIMONIZ</div>'">
         <span class="ld-logo-label">Autos</span>
       </div>
       <div class="ld-divider"></div>
       <div class="ld-logo-wrap">
         <img src="Logo_BINNER.png" class="ld-logo-img" alt="Binner"
+          style="mix-blend-mode:lighten;"
           onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#4d8cff;letter-spacing:3px;\'>BINNER</div>'">
         <span class="ld-logo-label">Hogar</span>
       </div>
     </div>
-    <div class="ld-brand">Category Management</div>
-    <div class="ld-tagline"><span class="acc-y">SELL OUT</span> · <span class="acc-b">SELL IN</span><br>2025 – 2026</div>
     <div class="ld-bar-wrap">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div class="ld-msg" id="ld-msg">Iniciando…</div>
