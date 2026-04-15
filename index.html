@@ -335,10 +335,11 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 nav.cat-autos,#mes-bar.cat-autos{background:rgba(245,200,0,.22);border-bottom:2px solid rgba(245,200,0,.7);}
 nav.cat-hogar,#mes-bar.cat-hogar{background:rgba(0,68,168,.12);border-bottom:2px solid rgba(0,68,168,.45);}
 nav.cat-ferreteria,#mes-bar.cat-ferreteria{background:rgba(156,52,182,.1);border-bottom:2px solid rgba(156,52,182,.4);}
-nav.cat-total,#mes-bar.cat-total{background:rgba(80,80,80,.07);border-bottom:2px solid rgba(80,80,80,.25);}
+nav.cat-total,#mes-bar.cat-total{background:rgba(245,130,31,.14);border-bottom:2px solid rgba(245,130,31,.55);}
 :root.light nav.cat-autos,:root.light #mes-bar.cat-autos{background:rgba(245,200,0,.28);border-bottom:2px solid rgba(200,155,0,.65);}
 :root.light nav.cat-hogar,:root.light #mes-bar.cat-hogar{background:rgba(0,68,168,.1);border-bottom:2px solid rgba(0,68,168,.4);}
 :root.light nav.cat-ferreteria,:root.light #mes-bar.cat-ferreteria{background:rgba(124,58,237,.09);border-bottom:2px solid rgba(124,58,237,.35);}
+:root.light nav.cat-total,:root.light #mes-bar.cat-total{background:rgba(245,130,31,.13);border-bottom:2px solid rgba(245,130,31,.5);}
 /* AUTOS: botones activos negro + amarillo para contraste sobre fondo amarillo */
 nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
 nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
@@ -348,6 +349,15 @@ nav.cat-autos .brand{color:#111;}
 :root.light nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
 :root.light #mes-bar.cat-autos .mes-btn.active{background:#111;color:#F5C800;border-color:#111;}
 :root.light nav.cat-autos .brand{color:#111;}
+/* TOTAL: botones activos gris oscuro Simonizco + naranja */
+nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+nav.cat-total .mes-btn.active,#mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+nav.cat-total .brand{color:#4a4a4a;}
+:root.light nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+:root.light nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+:root.light #mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+:root.light nav.cat-total .brand{color:#4a4a4a;}
 </style>
 </head>
 <body>
@@ -737,9 +747,9 @@ function initTheme(){
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
-const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#F5C800',logoFile:null}};
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3',logoFile:'Logo_BINNER.png'},
-  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#1A3FA3'}};
+  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 
 function cvPptoFilter(cat){
   const cats=cat==='TOTAL'?CATS:[cat];
