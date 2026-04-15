@@ -26,7 +26,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px
 .ld-msg{font-family:var(--fm);font-size:10px;color:var(--muted);min-height:18px;text-align:center;max-width:420px;}
 
 /* ── NAV ── */
-nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;}
+nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;transition:background .3s,border-color .3s;}
 .brand{font-family:var(--ff);font-size:18px;color:var(--acc);letter-spacing:2px;white-space:nowrap;}
 .nav-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
 .main-tabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:2px;}
@@ -49,7 +49,7 @@ select,input[type=text]{background:var(--card);border:1px solid var(--border);co
 select:focus,input:focus{border-color:var(--acc);}
 
 /* ── MESES BAR ── */
-#mes-bar{background:var(--surf);border-bottom:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;}
+#mes-bar{background:var(--surf);border-bottom:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;transition:background .3s,border-color .3s;}
 .mes-btn{padding:3px 9px;min-width:32px;border-radius:5px;font-family:var(--fm);font-size:9px;cursor:pointer;border:1px solid #333;background:transparent;color:#888;font-weight:400;transition:all .15s;}
 .mes-btn.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
 .mes-btn:disabled{opacity:.25;cursor:not-allowed;}
@@ -329,6 +329,15 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── NAV THEME POR CATEGORÍA ── */
+nav.cat-autos,#mes-bar.cat-autos{background:rgba(245,200,0,.13);border-bottom-color:rgba(245,200,0,.4);}
+nav.cat-hogar,#mes-bar.cat-hogar{background:rgba(26,63,163,.09);border-bottom-color:rgba(26,63,163,.3);}
+nav.cat-ferreteria,#mes-bar.cat-ferreteria{background:rgba(156,52,182,.08);border-bottom-color:rgba(156,52,182,.25);}
+nav.cat-total,#mes-bar.cat-total{background:rgba(80,80,80,.06);border-bottom-color:rgba(80,80,80,.2);}
+:root.light nav.cat-autos,:root.light #mes-bar.cat-autos{background:rgba(245,200,0,.18);border-bottom-color:rgba(200,160,0,.5);}
+:root.light nav.cat-hogar,:root.light #mes-bar.cat-hogar{background:rgba(26,63,163,.1);border-bottom-color:rgba(26,63,163,.35);}
+:root.light nav.cat-ferreteria,:root.light #mes-bar.cat-ferreteria{background:rgba(124,58,237,.08);border-bottom-color:rgba(124,58,237,.3);}
 </style>
 </head>
 <body>
@@ -613,10 +622,22 @@ function showPage(page,el){
   else if(page==='explorer') initExplorer();
   else if(page==='segmentos') renderSegmentos();
 }
+function updateNavTheme(cat){
+  const nav=document.querySelector('nav');
+  const mesBar=document.getElementById('mes-bar');
+  const isLight=document.documentElement.classList.contains('light');
+  // Quitar clases previas
+  nav.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
+  mesBar.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
+  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':cat==='FERRETERIA'?'cat-ferreteria':'cat-total';
+  nav.classList.add(cls);
+  mesBar.classList.add(cls);
+}
 function setCat(cat,el){
   CUR_CAT=cat;eSelPdv=null;selSeg=null;
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
+  updateNavTheme(cat);
   if(CUR_PAGE==='comovamos') renderComoVamos();
   else refreshAll();
 }
@@ -702,11 +723,12 @@ function initTheme(){
     // Modo claro por defecto; solo oscuro si el usuario lo eligió explícitamente
     if(saved!=='dark') toggleTheme();
   }catch(e){ toggleTheme(); }
+  updateNavTheme(CUR_CAT);
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
-const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#F5C800'}};
-CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3'},
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#F5C800',logoFile:null}};
+CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3',logoFile:'Logo_BINNER.png'},
   FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#1A3FA3'}};
 
 function cvPptoFilter(cat){
@@ -1116,7 +1138,12 @@ function renderComoVamos(){
   // ── Hero brand section ────────────────────────────────────────────────
   const heroH=`<div class="cv-brand-hero">
     <div class="cv-bh-main">
-      <div class="cv-bh-logo" style="background:${brand.color};color:${CUR_CAT==='HOGAR'?'#fff':'#000'}">${brand.name[0]}</div>
+      <div class="cv-bh-logo" style="background:${brand.logoFile?'transparent':brand.color};padding:${brand.logoFile?'2px':'0'};color:${CUR_CAT==='HOGAR'?'#fff':'#000'}">
+        ${brand.logoFile
+          ? `<img src="${brand.logoFile}" alt="${brand.name}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"
+              onerror="this.parentNode.style.background='${brand.color}';this.parentNode.style.padding='0';this.outerHTML='${brand.name[0]}'">`
+          : brand.name[0]}
+      </div>
       <div>
         <div class="cv-bh-brand" style="color:${brand.color}">${brand.name} · ${brand.cat}</div>
         <div class="cv-bh-val">${fmtM(totSOReal26)}</div>
