@@ -1007,12 +1007,18 @@ const CAD_LOGOS={
   'CENCOSUD COLOMBIA S A':         'Logo_CENCOSUD_COLOMBIA_S_A.png',
   'COLOMBIANA DE COMERCIO SA':     'Logo_COLOMBIANA_DE_COMERCIO.jpg',
   'SUPERTIENDAS Y DROGUERIAS OLIMPICA S A': 'Logo_SUPERTIENDAS_Y_DROGERIAS_OLIMPICA_S_A.png',
-  'MECANELECTRO S.A.S.':           'Logo__MECANELECTRO.png',
+  'MECANELECTRO S.A.S.':           'Logo_MECANELECTRO.png',
   'MAKRO SUPERMAYORISTA S A S':    'Logo_MAKRO_SUPERMAYORISTA_S_A_S.png',
   'EASY':                          'Logo_EASY.jpg',
 };
 function cadLogoHtml(cad,size=28){
-  const f=CAD_LOGOS[cad];
+  // Búsqueda exacta primero, luego parcial case-insensitive
+  let f=CAD_LOGOS[cad];
+  if(!f){
+    const cadU=cad.toUpperCase().replace(/[.\s]+/g,'');
+    const key=Object.keys(CAD_LOGOS).find(k=>cadU.includes(k.toUpperCase().replace(/[.\s]+/g,''))||k.toUpperCase().replace(/[.\s]+/g,'').includes(cadU));
+    if(key) f=CAD_LOGOS[key];
+  }
   if(!f) return '';
   return `<img src="${f}" alt="${cad}"
     style="height:${size}px;max-width:${size*3}px;object-fit:contain;border-radius:4px;flex-shrink:0;"
