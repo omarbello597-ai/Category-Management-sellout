@@ -1571,15 +1571,15 @@ function renderDashboard(){
 
   // Value badge
   const badge=document.getElementById('d-val-badge');
-  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+  if(badge) badge.textContent=fmtM(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
   document.getElementById('d-periodo').textContent=mLbl;
 
   // ── KPI row ──────────────────────────────────────────────────────────
   const periodTxt='ACUMULADO · '+
     (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
   const kpis=[
-    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
-    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Valor Año Actual',  v:fmtM(t.v26), s:'Año Anterior: '+fmtM(t.v25), neg:t.varV<0},
+    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtM(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
     {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
     {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
     {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
@@ -1639,8 +1639,8 @@ function renderDashboard(){
   ${cadFiltered.map(c=>`<tr>
     <td class="cad-name">${c.cad}</td>
     <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
-    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtD(c.v26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtD(c.v25)}</td>
+    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtM(c.v26)}</td>
+    <td class="mono cad-ant" style="text-align:right">${fmtM(c.v25)}</td>
     <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
     <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
     <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
