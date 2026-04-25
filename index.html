@@ -432,9 +432,9 @@ nav.cat-total .brand{color:#4a4a4a;}
     <div class="nav-sep"></div>
     <div class="main-tabs">
       <div class="main-tab active" onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
-      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
-      <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
-      <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
+      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 SEGUIMIENTO SELL OUT</div>
+      <div class="main-tab"        onclick="showPage('explorer',this)">🏪 SELL OUT × PDV</div>
+      <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SELL OUT × SEGMENTOS</div>
     </div>
     <div class="nav-sep"></div>
     <div class="cat-pills">
@@ -632,7 +632,7 @@ async function load(){
     initTheme();
     setTimeout(async()=>{
       for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
-      // Re-renderizar si el usuario está en dashboard o segmentos para mostrar datos recién cargados
+      // Re-renderizar si el usuario está en dashboard o segmentos
       if(CUR_PAGE==='dashboard') renderDashboard();
       else if(CUR_PAGE==='segmentos') renderSegmentos();
     },800);
@@ -744,7 +744,6 @@ function calcDDI(inv,units){
 function getTotals(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   if(dSelCad){
-    // Cadena seleccionada → usar archivos cadenas (tienen columna CADENA)
     let v26=0,v25=0,u26=0,u25=0;
     cats.forEach(cat=>{
       (CAD26[cat]||[]).filter(r=>r.CADENA===dSelCad&&(selMeses.size===0||selMeses.has(r.MES)))
@@ -761,7 +760,6 @@ function getTotals(){
     return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
       ddi:calcDDI(inv,u26),segs:segsSet.size};
   }
-  // Sin filtro de cadena → usar archivos resumen
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
   const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
@@ -774,32 +772,21 @@ function getTotals(){
 function getSegs(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   if(dSelCad){
-    // Cadena seleccionada → usar archivos detalle (tienen CADENA+SEGMENTO)
     const m={};
     cats.forEach(cat=>{
-      (DET[cat+'_2026']||[])
-        .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
-        .forEach(r=>{
-          if(!r.G) return;
-          if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-          m[r.G].v26+=r.V||0; m[r.G].u26+=r.U||0;
-        });
-      (DET[cat+'_2025']||[])
-        .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
-        .forEach(r=>{
-          if(!r.G) return;
-          if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-          m[r.G].v25+=r.V||0; m[r.G].u25+=r.U||0;
-        });
+      (DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
+        .forEach(r=>{if(!r.G)return;if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+          m[r.G].v26+=r.V||0;m[r.G].u26+=r.U||0;});
+      (DET[cat+'_2025']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
+        .forEach(r=>{if(!r.G)return;if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+          m[r.G].v25+=r.V||0;m[r.G].u25+=r.U||0;});
     });
-    // Inventario por segmento para esta cadena
     INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad)
       .forEach(r=>{if(m[r.SEGMENTO])m[r.SEGMENTO].inv+=r.INVENTARIO_UNDS||0;});
     return Object.values(m).map(s=>({...s,
       var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
     })).sort((a,b)=>b.v26-a.v26);
   }
-  // Sin filtro de cadena → usar archivos resumen
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
@@ -1333,31 +1320,58 @@ function renderComoVamos(){
     </div>
   </div>`;
 
-  // ── Cadenas grid ──────────────────────────────────────────────────────
-  // Ordenar cadenas por valor de SO_REAL_2026 descendente
+  // ── Cadenas: ordenar por SO_REAL_2026 ───────────────────────────────────────
   const cadenasMap={};
   ppAll.forEach(r=>{if(r.CADENA)cadenasMap[r.CADENA]=(cadenasMap[r.CADENA]||0)+(r.SO_REAL_2026||0);});
   const cadenas=Object.keys(cadenasMap).sort((a,b)=>cadenasMap[b]-cadenasMap[a]);
-  const cadH=`<div>
+
+  // ── Sección 3: Tendencia total cadenas ──────────────────────────────────────
+  const totalTrendH=`<div>
+    <div class="cv-section-lbl">Tendencia total cadenas · ${mesLabel} 2026</div>
+    <div class="trend-row">
+      <div class="cbox">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
+          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+            <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+          </div>
+        </div>
+        <div style="position:relative;height:160px"><canvas id="cv-total-so"></canvas></div>
+      </div>
+      <div class="cbox">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
+          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+            <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+          </div>
+        </div>
+        <div style="position:relative;height:160px"><canvas id="cv-total-si"></canvas></div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Sección 4: Por cadena (tarjeta + gráfica SO + gráfica SI) ──────────────
+  const cadRowsH=`<div>
     <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
-    <div class="cv-cad-grid">${cadenas.map(cad=>{
+    <div style="display:flex;flex-direction:column;gap:10px;">
+    ${cadenas.map(cad=>{
       const ppC=ppAll.filter(r=>r.CADENA===cad);
-      // Acumulado
-      // Acumulado de todos los meses con real para esta cadena (header)
       const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
       const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
       const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
       const varPct=sp(totSORCad,varC||1);
-      // Si hay múltiples meses seleccionados, ppC ya contiene todos (ppAll los filtra)
-      const ppCMes=esMultiMes ? ppC : ppC.filter(r=>r.MES===mesFiltro);
+      const ppCMes=esMultiMes?ppC:ppC.filter(r=>r.MES===mesFiltro);
       const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
       const soP=cvCalcProy(csOR,soDias,soDiasT);
       const siP=cvCalcProy(csiR,siDias,siDiasT);
-      // DDI para esta cadena
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
       const ddiCad=calcDDI(invCad,uCad);
@@ -1365,58 +1379,57 @@ function renderComoVamos(){
       const cumplSOProy=csOP>0?soP/csOP*100:0;
       const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
-      return`<div class="cv-cad-card">
-        <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            ${cadLogoHtml(cad,28)}
-            <div style="min-width:0;">
-              <div class="cv-cad-name">${cad}</div>
-              <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
+      const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+      return`<div style="display:grid;grid-template-columns:210px 1fr 1fr;gap:8px;align-items:stretch;">
+        <div class="cv-cad-card">
+          <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              ${cadLogoHtml(cad,22)}
+              <div style="min-width:0;">
+                <div class="cv-cad-name">${cad}</div>
+                <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
+              </div>
+            </div>
+            <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
+          </div>
+          <div class="cv-cad-body">
+            ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
+            ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+          </div>
+        </div>
+        <div class="cbox" style="padding:10px 12px;min-height:160px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
+            <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL OUT ($M)</span>
+            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+              <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
             </div>
           </div>
-          <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
+          <div style="position:relative;flex:1;min-height:120px;"><canvas id="cv-so-${cadId}"></canvas></div>
         </div>
-        <div class="cv-cad-body">
-          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
-          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+        <div class="cbox" style="padding:10px 12px;min-height:160px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
+            <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL IN ($M)</span>
+            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+              <span><span style="display:inline-block;width:8px;height:2px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+            </div>
+          </div>
+          <div style="position:relative;flex:1;min-height:120px;"><canvas id="cv-si-${cadId}"></canvas></div>
         </div>
       </div>`;
     }).join('')}
     </div>
   </div>`;
 
-  // ── Recomendaciones ───────────────────────────────────────────────────
-  const recoH=`<div>
-    <div class="cv-section-lbl">Recomendaciones por cadena · Acelerar Sell Out ${mesLabel}</div>
-    <div class="cv-reco-grid">${cadenas.map(cad=>{
-      const ppC=ppAll.filter(r=>r.CADENA===cad);
-      const ppCMesR=ppC.filter(r=>r.MES===mesFiltro);
-      const csOR=ppCMesR.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-      const csOP=ppCMesR.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      const csiR=ppCMesR.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
-      const csiP=ppCMesR.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
-      const soP=cvCalcProy(csOR,soDias,soDiasT);
-      const cumplSO=csOP>0?soP/csOP*100:0;
-      const soGap=soP-csOP;
-      const siGap=cvCalcProy(csiR,siDias,siDiasT)-csiP;
-      const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
-      const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
-      const ddiCad=calcDDI(invCad,uCad);
-      const reco=cvRecoText(cad,soGap,siGap,cumplSO,ddiCad,mesFiltro);
-      const borderColor=reco.color;
-      return`<div class="cv-reco" style="border-color:${borderColor};background:${borderColor==='var(--pos)'?'rgba(13,183,91,.04)':borderColor==='var(--neg)'?'rgba(229,25,44,.04)':'rgba(245,200,0,.04)'}">
-        <div class="cv-reco-top">
-          <span class="cv-reco-cad" style="color:${borderColor}">${cad}</span>
-          <span class="cv-reco-gap">gap ${sg(soGap)}${fmtM(soGap)} · ${cumplSO.toFixed(0)}% cumpl.</span>
-        </div>
-        <div class="cv-reco-txt">${reco.txt}</div>
-        <div class="cv-reco-chip" style="background:${borderColor==='var(--pos)'?'rgba(13,183,91,.1)':borderColor==='var(--neg)'?'rgba(229,25,44,.1)':'rgba(245,200,0,.1)'};border:1px solid ${borderColor};color:${borderColor}">${reco.chip}</div>
-      </div>`;
-    }).join('')}
-    </div>
-  </div>`;
-
-  document.getElementById('cv-body').innerHTML=heroH+proyH+cadH+recoH;
+  destroyCharts(cvCharts);
+  document.getElementById('cv-body').innerHTML=heroH+proyH+totalTrendH+cadRowsH;
+  setTimeout(()=>{
+    buildCvTotalCharts(getTrend(), a);
+    buildCvCadCharts(cadenas, a);
+  }, 50);
 }
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
@@ -1556,30 +1569,26 @@ function renderDashboard(){
   const mLbl=selMeses.size===0?'Acumulado':
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
   const nMeses=selMeses.size||4;
-
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
 
   // Populate CADENA dropdown
   const sel=document.getElementById('d-cad-sel');
   if(sel){
-    const current=sel.value;
     sel.innerHTML='<option value="">Todas las cadenas</option>'+
       cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
     if(!cadenas.find(c=>c.cad===dSelCad)) dSelCad='';
   }
-
-  // Value badge
   const badge=document.getElementById('d-val-badge');
-  if(badge) badge.textContent=fmtM(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
   document.getElementById('d-periodo').textContent=mLbl;
 
-  // ── KPI row ──────────────────────────────────────────────────────────
+  // ── KPI row ──────────────────────────────────────────────────────────────────
   const periodTxt='ACUMULADO · '+
     (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
   const kpis=[
-    {l:'Valor Año Actual',  v:fmtM(t.v26), s:'Año Anterior: '+fmtM(t.v25), neg:t.varV<0},
-    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtM(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
+    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
     {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
     {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
     {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
@@ -1591,108 +1600,117 @@ function renderDashboard(){
     <div class="kpi-sub">${k.s||''}</div>
   </div>`).join('')+'</div>';
 
-  // ── Trend charts ──────────────────────────────────────────────────────
-  const trendsH=`<div class="trend-row">
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
-        </div>
+  // ── Tendencia SO total (ancho completo) ──────────────────────────────────────
+  const soTrendH=`<div class="cbox">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT — TOTAL CADENAS ($M)</span>
+      <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+        <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+        <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+        <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
       </div>
-      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
     </div>
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+    <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
+  </div>`;
+
+  // ── Per-cadena rows: tarjeta SO + gráfica SO ─────────────────────────────────
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
+  const cadRowsH=`<div>
+    <div class="cv-section-lbl">Sell Out por cadena · ${mLbl}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+    ${cadFiltered.map(c=>{
+      const ppCad=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===c.cad&&(selMeses.size===0||selMeses.has(r.MES)));
+      const soPpto=ppCad.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const cumplPct=soPpto>0?c.v26/soPpto*100:0;
+      const cumplColor=cumplPct>=90?'var(--pos)':cumplPct>=75?'#F5C800':'var(--neg)';
+      const ddiCls2=ddiClr(c.ddi);
+      const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
+      const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
+      const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
+      return`<div style="display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:stretch;">
+        <div class="cv-cad-card">
+          <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              ${cadLogoHtml(c.cad,22)}
+              <div style="min-width:0;">
+                <div class="cv-cad-name">${c.cad}</div>
+                <div class="cv-cad-meta">${c.part.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(c.ddi)}</span></div>
+              </div>
+            </div>
+            <span class="pill ${c.varV>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(c.varV)}${c.varV.toFixed(1)}%</span>
+          </div>
+          <div class="cv-cad-body">
+            <div class="cv-mini so">
+              <div class="cv-mini-hdr">
+                <span class="cv-mini-type" style="color:var(--acc)">Sell Out</span>
+                ${soPpto>0?`<span style="font-family:var(--fm);font-size:8px;color:${cumplColor};font-weight:700;">${cumplPct.toFixed(1)}% cumpl.</span>`:''}
+              </div>
+              <div class="cv-mini-rows">
+                <div><div class="cv-mini-l">Real 2026</div><div class="cv-mini-v" style="color:var(--acc)">${fmtM(c.v26)}</div></div>
+                <div><div class="cv-mini-l">Real 2025</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(c.v25)}</div></div>
+                ${soPpto>0?`<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(soPpto)}</div></div>`:''}
+              </div>
+              ${soPpto>0?`<div class="cv-mini-bar-bg">
+                <div class="cv-mini-bar-p" style="width:${Math.min(cumplPct,100)}%;background:${cumplColor};"></div>
+                <div class="cv-mini-bar-r" style="width:${Math.min(c.v26/soPpto*100,100)}%;background:var(--acc);"></div>
+              </div>
+              <div class="cv-mini-foot">
+                <span style="font-family:var(--fm);font-size:8px;font-weight:600;color:${c.varV>=0?'var(--pos)':'var(--neg)'};">${sg(c.varV)}${c.varV.toFixed(1)}% vs 2025</span>
+                <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">${cumplPct.toFixed(1)}% vs ppto</span>
+              </div>`:`<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;font-weight:600;color:${c.varV>=0?'var(--pos)':'var(--neg)'};">${sg(c.varV)}${c.varV.toFixed(1)}% vs 2025</span></div>`}
+            </div>
+          </div>
         </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
+        <div class="cbox" style="padding:10px 12px;min-height:150px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
+            <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">TENDENCIA SELL OUT — ${c.cad} ($M)</span>
+            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+              <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+            </div>
+          </div>
+          <div style="position:relative;min-height:120px;"><canvas id="sg-so-${cadId}"></canvas></div>
+        </div>
+      </div>`;
+    }).join('')}
     </div>
   </div>`;
 
-  // ── Cadenas table ─────────────────────────────────────────────────────
-  const cadPeriod='RESUMEN CADENAS — '+mLbl.toUpperCase();
-  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
-  const cadTableH=`<div class="cad-wrap"><div class="cad-hdr">
-    <span class="cad-hdr-title">⚡ ${cadPeriod}</span>
-  </div>
-  <table class="cad-table"><thead><tr>
-    <th style="width:200px">CADENA</th>
-    <th style="text-align:right">PART%</th>
-    <th style="text-align:right">VALOR AÑO ACT.</th>
-    <th style="text-align:right">VALOR AÑO ANT.</th>
-    <th style="text-align:center">VAR% VALOR</th>
-    <th style="text-align:right">UNDS AÑO ACT.</th>
-    <th style="text-align:right">UNDS AÑO ANT.</th>
-    <th style="text-align:center">VAR% UNDS</th>
-    <th style="text-align:right">INV UNDS</th>
-    <th style="text-align:center">DDI</th>
-    <th style="text-align:center">STATUS</th>
-  </tr></thead><tbody>
-  ${cadFiltered.map(c=>`<tr>
-    <td class="cad-name">${c.cad}</td>
-    <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
-    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtM(c.v26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtM(c.v25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
-    <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
-    <td class="mono" style="text-align:right;color:var(--sub)">${r0(c.invUnds).toLocaleString()}</td>
-    <td style="text-align:center"><span class="ddi ${ddiClr(c.ddi)}">${ddiLbl(c.ddi)}</span></td>
-    <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
-  </tr>`).join('')}
-  </tbody></table></div>`;
-
-  // ── Segment matrix ────────────────────────────────────────────────────
+  // ── Segment matrix ────────────────────────────────────────────────────────────
   const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
     ?buildSegCards(segs,cadenas,a)
     :'<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:9px;">Cargando detalle de segmentos…</div>';
 
-  document.getElementById('d-body').innerHTML=kpiH+trendsH+cadTableH+segMatrixH;
-  setTimeout(()=>buildDCharts(trend,a),0);
-}
+  destroyCharts(sgCharts);
+  document.getElementById('d-body').innerHTML=kpiH+soTrendH+cadRowsH+segMatrixH;
 
-function buildDCharts(trend,a){
-  const isLight=document.documentElement.classList.contains('light');
-  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
-  const tickC=isLight?'#7a8499':'#5a5a7a';
-  const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
-  const base={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
-    scales:{
-      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
-      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}
-    }};
-  const lbs=trend.map(t=>t.mes);
-  const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
-  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
-  if(ctxSO){
-    if(dCharts.v) dCharts.v.destroy();
-    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
-  const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
-  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
-  if(ctxSI){
-    if(dCharts.u) dCharts.u.destroy();
-    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SI Real 2025',data:trend.map(t=>t.siReal25||null),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Real 2026',data:trend.map(t=>t.siReal26||null),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
+  setTimeout(()=>{
+    // SO total chart
+    const isLight=document.documentElement.classList.contains('light');
+    const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
+    const tickC=isLight?'#7a8499':'#5a5a7a';
+    const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
+    const base={responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
+      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}}};
+    const lbs=trend.map(t=>t.mes);
+    const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
+    const ctxSO=document.getElementById('d-cv')?.getContext('2d');
+    if(ctxSO){
+      if(dCharts.v) dCharts.v.destroy();
+      dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
+        {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+        {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+        {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+      ]},options:base});
+    }
+    // Per-cadena SO charts
+    buildSgCadCharts(cadFiltered.map(c=>c.cad), a);
+  }, 0);
 }
 
 // ── PDV EXPLORER ─────────────────────────────────────────────────────────────
@@ -1926,6 +1944,96 @@ function renderSegDetail(seg){
       <td class="mono" style="text-align:right;color:var(--sub)">${fmtM(r.inv)}</td>
       <td style="text-align:center"><span class="ddi ${ddiClr(r.ddi)}">${ddiLbl(r.ddi)}</span></td>
     </tr>`).join('')}</tbody></table>`;
+}
+
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+let cvCharts={}, sgCharts={};
+
+function destroyCharts(registry){
+  Object.values(registry).forEach(c=>{try{c.destroy();}catch(e){}});
+  Object.keys(registry).forEach(k=>delete registry[k]);
+}
+
+function getCadTrend(cad){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return MES_ORD.map(m=>{
+    const rows=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&r.CADENA===cad);
+    const z={mes:MES_LBL[m]||m,soReal26:null,soReal25:null,soPpto:null,siReal26:null,siReal25:null,siPpto:null};
+    if(!rows.length) return z;
+    const sum=f=>{ const v=rows.reduce((s,r)=>s+(r[f]||0),0)/1e6; return v>0?v:null; };
+    return{mes:z.mes,soReal26:sum('SO_REAL_2026'),soReal25:sum('SO_REAL_2025'),soPpto:sum('SO_PPTO_2026'),
+      siReal26:sum('SI_REAL_2026'),siReal25:sum('SI_REAL_2025'),siPpto:sum('SI_PPTO_2026')};
+  });
+}
+
+function buildMiniChart(id,lbs,datasets,reg){
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  if(reg[id]){try{reg[id].destroy();}catch(e){} delete reg[id];}
+  const isLight=document.documentElement.classList.contains('light');
+  const gridC=isLight?'rgba(0,0,0,.04)':'rgba(255,255,255,.05)';
+  const tickC=isLight?'#7a8499':'#5a5a7a';
+  reg[id]=new Chart(ctx,{type:'line',data:{labels:lbs,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:c=>c.parsed.y===null?' —':' '+c.dataset.label+': $'+c.parsed.y.toFixed(2)+'M'}}},
+      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5}},border:{color:gridC}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5},
+          callback:v=>v==null?'':'$'+v.toFixed(1)+'M'},border:{color:gridC}}}}});
+}
+
+function buildCvTotalCharts(trend,a){
+  const lbs=trend.map(t=>t.mes);
+  const isLight=document.documentElement.classList.contains('light');
+  const bgSO=isLight?'rgba(26,63,163,.05)':'rgba(245,200,0,.06)';
+  const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.06)';
+  buildMiniChart('cv-total-so',lbs,[
+    {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+    {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
+    {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
+  ],cvCharts);
+  buildMiniChart('cv-total-si',lbs,[
+    {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+    {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
+    {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
+  ],cvCharts);
+}
+
+function buildCvCadCharts(cadenas,a){
+  cadenas.forEach(cad=>{
+    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+    const trend=getCadTrend(cad);
+    const lbs=trend.map(t=>t.mes);
+    const isLight=document.documentElement.classList.contains('light');
+    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
+    const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.05)';
+    buildMiniChart('cv-so-'+cadId,lbs,[
+      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],cvCharts);
+    buildMiniChart('cv-si-'+cadId,lbs,[
+      {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],cvCharts);
+  });
+}
+
+function buildSgCadCharts(cadNames,a){
+  cadNames.forEach(cad=>{
+    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+    const trend=getCadTrend(cad);
+    const lbs=trend.map(t=>t.mes);
+    const isLight=document.documentElement.classList.contains('light');
+    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
+    buildMiniChart('sg-so-'+cadId,lbs,[
+      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],sgCharts);
+  });
 }
 
 load();
