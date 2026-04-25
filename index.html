@@ -1396,6 +1396,15 @@ function renderComoVamos(){
             ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
             ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
           </div>
+          <div style="padding:7px 12px;background:${(soP-csOP)>=0?'var(--posL)':'var(--negL)'};border-top:1px solid ${(soP-csOP)>=0?'rgba(10,150,73,.15)':'rgba(229,25,44,.15)'};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-family:var(--fm);font-size:7px;font-weight:700;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};letter-spacing:.5px;text-transform:uppercase;">Gap proyectado cierre</div>
+                <div style="font-size:8px;color:var(--muted);margin-top:1px;">Faltan ${fmtM(Math.abs(soP-csOP))} en ${soDiasT-soDias} días · ${soDiasT} días</div>
+              </div>
+              <div style="font-family:var(--ff);font-size:18px;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};">${(soP-csOP)>=0?'+':''}${fmtM(soP-csOP)}</div>
+            </div>
+          </div>
         </div>
         <div class="cbox" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
           <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
@@ -1651,8 +1660,7 @@ function renderDashboard(){
                 ${soPpto>0?`<span style="font-family:var(--fm);font-size:8px;color:${cumplColor};font-weight:700;">${cumplPct.toFixed(1)}% cumpl.</span>`:''}
               </div>
               ${(()=>{
-                const soRealMes=ppCad.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-                // Usar la misma lógica de días que CÓMO VAMOS: extraer día del string ISO
+                // Proyección: usar SOLO el mes activo (no acumulado) igual que CÓMO VAMOS
                 function _diaISO(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
                 const diasPM2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
                 const rowFecha=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
@@ -1661,7 +1669,12 @@ function renderDashboard(){
                 const dDias=dSOFecha||mesInfoSG.soDaysElapsed||1;
                 const mesK=mesInfoSG.mes?(mesInfoSG.mes||'').replace('.',''):'abr';
                 const dTotal=diasPM2[mesK]||mesInfoSG.soDaysTotal||30;
-                const soP=dDias>0?cvCalcProy(soRealMes,dDias,dTotal):0;
+                // Real del mes activo para proyectar (independiente de cuántos meses estén seleccionados)
+                const ppCadMesActivo=(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).flatMap(cat=>
+                  PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===mesInfoSG.mes));
+                const soRealMesActivo=ppCadMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+                const soRealMes=ppCad.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+                const soP=dDias>0?cvCalcProy(soRealMesActivo,dDias,dTotal):0;
                 const gap=soP-soPpto;
                 const gapColor=gap>=0?'var(--pos)':'var(--neg)';
                 const proyPct=soPpto>0?soP/soPpto*100:0;
