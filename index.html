@@ -1380,7 +1380,7 @@ function renderComoVamos(){
       const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
       const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
-      return`<div style="display:grid;grid-template-columns:270px 1fr 1fr;gap:8px;align-items:stretch;">
+       return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch;">
         <div class="cv-cad-card">
           <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
             <div style="display:flex;align-items:center;gap:8px;min-width:0;">
@@ -1397,27 +1397,30 @@ function renderComoVamos(){
             ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
           </div>
         </div>
-        <div class="cbox" style="padding:10px 12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
-            <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL OUT ($M)</span>
-            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
-              <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
-              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
-              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+        <div class="cbox" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;">
+              <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL OUT ($M)</span>
+              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+                <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+              </div>
             </div>
+            <div style="position:relative;flex:1;min-height:85px;"><canvas id="cv-so-${cadId}"></canvas></div>
           </div>
-          <div style="position:relative;height:105px;"><canvas id="cv-so-${cadId}"></canvas></div>
-        </div>
-        <div class="cbox" style="padding:10px 12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
-            <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL IN ($M)</span>
-            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
-              <span><span style="display:inline-block;width:8px;height:2px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
-              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
-              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+          <div style="height:0.5px;background:var(--border);flex-shrink:0;"></div>
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;">
+              <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL IN ($M)</span>
+              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+                <span><span style="display:inline-block;width:8px;height:2px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+              </div>
             </div>
+            <div style="position:relative;flex:1;min-height:85px;"><canvas id="cv-si-${cadId}"></canvas></div>
           </div>
-          <div style="position:relative;height:105px;"><canvas id="cv-si-${cadId}"></canvas></div>
         </div>
       </div>`;
     }).join('')}
@@ -1649,7 +1652,16 @@ function renderDashboard(){
               </div>
               ${(()=>{
                 const soRealMes=ppCad.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-                const soP=mesInfoSG.soDaysElapsed>0?cvCalcProy(soRealMes,mesInfoSG.soDaysElapsed,mesInfoSG.soDaysTotal):0;
+                // Usar la misma lógica de días que CÓMO VAMOS: extraer día del string ISO
+                function _diaISO(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
+                const diasPM2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+                const rowFecha=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
+                const fechaISO=rowFecha?rowFecha.FECHA_SO_ACTUAL:null;
+                const dSOFecha=_diaISO(fechaISO);
+                const dDias=dSOFecha||mesInfoSG.soDaysElapsed||1;
+                const mesK=mesInfoSG.mes?(mesInfoSG.mes||'').replace('.',''):'abr';
+                const dTotal=diasPM2[mesK]||mesInfoSG.soDaysTotal||30;
+                const soP=dDias>0?cvCalcProy(soRealMes,dDias,dTotal):0;
                 const gap=soP-soPpto;
                 const gapColor=gap>=0?'var(--pos)':'var(--neg)';
                 const proyPct=soPpto>0?soP/soPpto*100:0;
