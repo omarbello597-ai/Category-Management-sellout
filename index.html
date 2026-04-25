@@ -18,48 +18,15 @@
 body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
 
 /* ── LOADING ── */
-#loading-screen{
-  position:fixed;inset:0;z-index:9999;overflow:hidden;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#0d0d0d;
-}
-/* Fondo dividido diagonal: izq amarillo Simoniz, der azul Binner */
-#loading-screen::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg, rgba(245,200,0,.12) 0%, rgba(245,200,0,.04) 45%, rgba(0,68,168,.04) 55%, rgba(0,68,168,.14) 100%);
-  pointer-events:none;
-}
-/* Línea diagonal separadora */
-#loading-screen::after{
-  content:'';position:absolute;
-  top:0;left:50%;width:1px;height:100%;
-  background:linear-gradient(to bottom,transparent,rgba(255,255,255,.08) 30%,rgba(255,255,255,.08) 70%,transparent);
-  pointer-events:none;
-}
-.ld-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px;}
-/* Título principal — protagonista */
-.ld-brand{font-family:var(--ff);font-size:42px;letter-spacing:6px;color:#fff;text-transform:uppercase;text-align:center;line-height:1;margin-bottom:4px;}
-.ld-brand span.acc-y{color:#F5C800;}
-.ld-brand span.acc-b{color:#4d8cff;}
-/* Subtítulo */
-.ld-tagline{font-family:var(--fm);font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.35);text-transform:uppercase;text-align:center;margin-bottom:8px;}
-/* Logos lado a lado — sin fondo */
-.ld-logos{display:flex;align-items:center;gap:36px;margin:4px 0;}
-.ld-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
-.ld-logo-img{height:44px;object-fit:contain;
-  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6)) brightness(1.05);}
-.ld-logo-label{font-family:var(--fm);font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:.35;color:#fff;}
-.ld-divider{width:1px;height:52px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.15),transparent);}
-/* Barra de progreso */
-.ld-bar-wrap{width:340px;display:flex;flex-direction:column;gap:6px;margin-top:12px;}
-.ld-bar{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
-.ld-fill{height:100%;border-radius:2px;width:0%;transition:width .35s ease;
-  background:linear-gradient(90deg,#F5C800,#F5821F,#4d8cff);}
-.ld-msg{font-family:var(--fm);font-size:9px;color:rgba(255,255,255,.3);min-height:16px;text-align:center;letter-spacing:1px;}
-.ld-pct{font-family:var(--ff);font-size:12px;color:rgba(255,255,255,.2);text-align:right;letter-spacing:1px;}
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;}
+.ld-brand{font-family:var(--ff);font-size:48px;color:var(--acc);letter-spacing:4px;}
+.ld-sub{font-family:var(--fm);font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.ld-bar{width:300px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ld-fill{height:100%;background:var(--acc);border-radius:2px;width:0%;transition:width .4s;}
+.ld-msg{font-family:var(--fm);font-size:10px;color:var(--muted);min-height:18px;text-align:center;max-width:420px;}
 
 /* ── NAV ── */
-nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;transition:background .3s,border-color .3s;}
+nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;}
 .brand{font-family:var(--ff);font-size:18px;color:var(--acc);letter-spacing:2px;white-space:nowrap;}
 .nav-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
 .main-tabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:2px;}
@@ -82,7 +49,7 @@ select,input[type=text]{background:var(--card);border:1px solid var(--border);co
 select:focus,input:focus{border-color:var(--acc);}
 
 /* ── MESES BAR ── */
-#mes-bar{background:var(--surf);border-bottom:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;transition:background .3s,border-color .3s;}
+#mes-bar{background:var(--surf);border-bottom:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:nowrap;}
 .mes-btn{padding:3px 9px;min-width:32px;border-radius:5px;font-family:var(--fm);font-size:9px;cursor:pointer;border:1px solid #333;background:transparent;color:#888;font-weight:400;transition:all .15s;}
 .mes-btn.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
 .mes-btn:disabled{opacity:.25;cursor:not-allowed;}
@@ -173,7 +140,7 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 /* Brand hero */
 .cv-brand-hero{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
 .cv-bh-main{background:var(--surf);padding:14px 18px;display:flex;align-items:center;gap:14px;}
-.cv-bh-logo{width:90px;height:54px;border-radius:10px;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.cv-bh-logo{width:46px;height:46px;border-radius:10px;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .cv-bh-brand{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:2px;}
 .cv-bh-val{font-family:var(--ff);font-size:28px;letter-spacing:-1px;line-height:1;color:var(--white);}
 .cv-bh-sub{font-size:9px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;}
@@ -183,36 +150,26 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 .cv-kpi-v{font-family:var(--ff);font-size:20px;line-height:1;}
 .cv-kpi-s{font-size:9px;margin-top:3px;}
 /* Total projection cards */
-.cv-proy-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-@media(max-width:640px){.cv-proy-row{grid-template-columns:1fr;}}
-.cv-proy-card{border-radius:14px;overflow:hidden;border:none;padding:0;}
-.cv-proy-card.so{background:var(--card);border:1.5px solid rgba(245,200,0,.35);}
-.cv-proy-card.si{background:var(--card);border:1.5px solid rgba(26,63,163,.3);}
-/* Header banda de color */
-.cv-pc-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;margin-bottom:0;}
-.cv-proy-card.so .cv-pc-hdr{background:rgba(245,200,0,.15);}
-.cv-proy-card.si .cv-pc-hdr{background:rgba(26,63,163,.12);}
-.cv-pc-type{font-family:var(--ff);font-size:22px;letter-spacing:2px;}
-.cv-pc-corte{font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:1px;letter-spacing:.5px;}
-/* Métricas */
-.cv-pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:0;padding:14px 16px 10px;}
-@media(max-width:400px){.cv-pc-metrics{grid-template-columns:1fr 1fr;}}
-.cv-pc-m-l{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
-.cv-pc-m-v{font-family:var(--ff);font-size:26px;line-height:1;}
-.cv-pc-m-s{font-size:9px;color:var(--muted);margin-top:3px;font-weight:600;}
-/* Barra */
-.cv-bar-wrap{padding:0 16px 6px;}
+.cv-proy-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cv-proy-card{border-radius:12px;padding:16px 18px;}
+.cv-proy-card.so{background:rgba(245,200,0,.05);border:1px solid rgba(245,200,0,.2);}
+.cv-proy-card.si{background:rgba(26,63,163,.05);border:1px solid rgba(26,63,163,.2);}
+.cv-pc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cv-pc-type{font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.cv-pc-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.cv-pc-m-l{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.cv-pc-m-v{font-family:var(--ff);font-size:20px;line-height:1;}
+.cv-pc-m-s{font-size:9px;color:var(--muted);margin-top:2px;}
 .cv-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px;}
 .cv-bar-proy{position:absolute;top:0;left:0;height:100%;border-radius:4px;opacity:.4;}
 .cv-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:4px;}
 .cv-bar-lbls{display:flex;justify-content:space-between;font-family:var(--fm);font-size:8px;color:var(--muted);}
-/* Gap box */
-.cv-gap-box{border-radius:0 0 12px 12px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:0;}
-.cv-gap-box.neg{background:var(--negL);border-top:1px solid rgba(229,25,44,.15);}
-.cv-gap-box.pos{background:var(--posL);border-top:1px solid rgba(13,183,91,.15);}
+.cv-gap-box{border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.cv-gap-box.neg{background:var(--negL);border:1px solid rgba(229,25,44,.2);}
+.cv-gap-box.pos{background:var(--posL);border:1px solid rgba(13,183,91,.2);}
 .cv-gap-lbl{font-family:var(--fm);font-size:8px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
 .cv-gap-sub{font-size:9px;color:var(--muted);margin-top:2px;}
-.cv-gap-val{font-family:var(--ff);font-size:26px;line-height:1;}
+.cv-gap-val{font-family:var(--ff);font-size:22px;line-height:1;}
 /* Cadena cards */
 .cv-cad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .cv-cad-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
@@ -261,7 +218,7 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 .dot.crit{background:#E5192C;box-shadow:0 0 6px rgba(229,25,44,.5);}
 
 :root.light{
-  --bg:#e8ecf2;--surf:#ffffff;--card:#ffffff;--border:#b0baca;
+  --bg:#f0f2f6;--surf:#ffffff;--card:#ffffff;--border:#dde1eb;
   --acc:#1A3FA3;--blue:#1A3FA3;--pos:#0a9649;--neg:#c91524;
   --posL:#e6f7ee;--negL:#fdecea;
   --white:#1a1a2e;--muted:#7a8499;--text:#2d3142;--sub:#6b7280;
@@ -270,7 +227,8 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 :root.light body{background:var(--bg);color:var(--text);}
 :root.light nav{box-shadow:0 1px 4px rgba(0,0,0,.06);}
 :root.light .brand{color:var(--blue);}
-/* loading screen siempre en modo oscuro corporativo */
+:root.light .ld-brand{color:var(--blue);}
+:root.light .ld-fill{background:var(--blue);}
 :root.light .main-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
 :root.light .cat-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
 :root.light .cat-pill:hover{border-color:var(--blue);color:var(--blue);}
@@ -344,84 +302,21 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 :root.light .r-kpi.yellow::after{background:var(--blue);}
 :root.light .cv-proy-card.so{background:rgba(26,63,163,.04);border:1px solid rgba(26,63,163,.15);}
 :root.light .cv-proy-card.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.12);}
-:root.light .cv-mini.so{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.25);}
-:root.light .cv-mini.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.2);}
-:root.light .kpi-card{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
-:root.light .cbox{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
-:root.light .cv-proy-card.so{background:rgba(26,63,163,.04);border:1.5px solid rgba(26,63,163,.35) !important;}
-:root.light .cv-proy-card.si{background:rgba(26,63,163,.04);border:1.5px solid rgba(26,63,163,.3) !important;}
-:root.light .cv-cad-card{border:1.5px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
-:root.light .cv-brand-hero{border:1.5px solid #b0baca !important;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-:root.light .seg-cards-wrap{border:1.5px solid #b0baca !important;}
-:root.light .cad-wrap{border:1.5px solid #b0baca !important;}
-:root.light .seg-wrap{border:1.5px solid #b0baca !important;}
-:root.light .r-kpi{border:1px solid #b0baca !important;box-shadow:0 2px 6px rgba(0,0,0,.08);}
-:root.light .cv-gap-box.neg{border:1.5px solid rgba(201,21,36,.35) !important;}
-:root.light .cv-gap-box.pos{border:1.5px solid rgba(10,150,73,.35) !important;}
+:root.light .cv-mini.so{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.1);}
+:root.light .cv-mini.si{background:rgba(26,63,163,.03);border:1px solid rgba(26,63,163,.08);}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-
-/* ── NAV THEME POR CATEGORÍA ── */
-/* Amarillo Simoniz: #F5C800 | Azul Binner: #0044A8 */
-nav.cat-autos,#mes-bar.cat-autos{background:rgba(245,200,0,.22);border-bottom:2px solid rgba(245,200,0,.7);}
-nav.cat-hogar,#mes-bar.cat-hogar{background:rgba(0,68,168,.12);border-bottom:2px solid rgba(0,68,168,.45);}
-nav.cat-ferreteria,#mes-bar.cat-ferreteria{background:rgba(156,52,182,.1);border-bottom:2px solid rgba(156,52,182,.4);}
-nav.cat-total,#mes-bar.cat-total{background:rgba(245,130,31,.14);border-bottom:2px solid rgba(245,130,31,.55);}
-:root.light nav.cat-autos,:root.light #mes-bar.cat-autos{background:rgba(245,200,0,.28);border-bottom:2px solid rgba(200,155,0,.65);}
-:root.light nav.cat-hogar,:root.light #mes-bar.cat-hogar{background:rgba(0,68,168,.1);border-bottom:2px solid rgba(0,68,168,.4);}
-:root.light nav.cat-ferreteria,:root.light #mes-bar.cat-ferreteria{background:rgba(124,58,237,.09);border-bottom:2px solid rgba(124,58,237,.35);}
-:root.light nav.cat-total,:root.light #mes-bar.cat-total{background:rgba(245,130,31,.13);border-bottom:2px solid rgba(245,130,31,.5);}
-/* AUTOS: botones activos negro + amarillo para contraste sobre fondo amarillo */
-nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
-nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
-nav.cat-autos .mes-btn.active,#mes-bar.cat-autos .mes-btn.active{background:#111;color:#F5C800;border-color:#111;}
-nav.cat-autos .brand{color:#111;}
-:root.light nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
-:root.light nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
-:root.light #mes-bar.cat-autos .mes-btn.active{background:#111;color:#F5C800;border-color:#111;}
-:root.light nav.cat-autos .brand{color:#111;}
-/* TOTAL: botones activos gris oscuro Simonizco + naranja */
-nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-nav.cat-total .mes-btn.active,#mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-nav.cat-total .brand{color:#4a4a4a;}
-:root.light nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-:root.light nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-:root.light #mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-:root.light nav.cat-total .brand{color:#4a4a4a;}
 </style>
 </head>
 <body>
 
 <!-- LOADING -->
 <div id="loading-screen">
-  <div class="ld-inner">
-    <div class="ld-brand">CATEGORY<br><span class="acc-y">MANAGE</span><span class="acc-b">MENT</span></div>
-    <div class="ld-tagline">Sell Out · Sell In · 2025 – 2026</div>
-    <div class="ld-logos">
-      <div class="ld-logo-wrap">
-        <img src="Logo_SImoniz.png" class="ld-logo-img" alt="Simoniz"
-          style="mix-blend-mode:lighten;"
-          onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#F5C800;letter-spacing:3px;\'>SIMONIZ</div>'">
-        <span class="ld-logo-label">Autos</span>
-      </div>
-      <div class="ld-divider"></div>
-      <div class="ld-logo-wrap">
-        <img src="Logo_BINNER.png" class="ld-logo-img" alt="Binner"
-          style="mix-blend-mode:lighten;"
-          onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#4d8cff;letter-spacing:3px;\'>BINNER</div>'">
-        <span class="ld-logo-label">Hogar</span>
-      </div>
-    </div>
-    <div class="ld-bar-wrap">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="ld-msg" id="ld-msg">Iniciando…</div>
-        <div class="ld-pct" id="ld-pct">0%</div>
-      </div>
-      <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
-    </div>
-  </div>
+  <div class="ld-brand">Category Management</div>
+  <div class="ld-sub">Sell Out · 2025 – 2026</div>
+  <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
+  <div class="ld-msg" id="ld-msg">Iniciando…</div>
 </div>
 
 <!-- APP -->
@@ -592,7 +487,6 @@ async function loadDet(cat,year){
 async function load(){
   const fill=document.getElementById('ld-fill');
   const msg=document.getElementById('ld-msg');
-  const pct=document.getElementById('ld-pct');
   try{
     let step=0,total=CATS.length*2;
     for(const cat of CATS){
@@ -602,27 +496,21 @@ async function load(){
       try{const d=await safeJson('resumen_'+cat.toLowerCase()+'_2026.json?v='+Date.now());RES26=[...RES26,...d];}catch(e){console.warn('resumen 2026',cat);}
     }
     msg.textContent='Cargando cadenas…';fill.style.width='52%';
-    if(pct) pct.textContent='52%';
     for(const cat of CATS){
       try{CAD25[cat]=await safeJson('cadenas_'+cat.toLowerCase()+'_2025.json?v='+Date.now());}catch(e){CAD25[cat]=[];}
       try{CAD26[cat]=await safeJson('cadenas_'+cat.toLowerCase()+'_2026.json?v='+Date.now());}catch(e){CAD26[cat]=[];}
     }
     msg.textContent='Cargando presupuesto…';fill.style.width='65%';
-    if(pct) pct.textContent='65%';
     try{PPTO=await safeJson('presupuesto.json?v='+Date.now());}catch(e){console.warn('presupuesto no disponible');PPTO=[];}
     msg.textContent='Cargando inventario…';fill.style.width='72%';
-    if(pct) pct.textContent='72%';
     try{INV=await safeJson('inventario.json?v='+Date.now());}catch(e){console.warn('inventario no disponible');INV=[];}
     msg.textContent='Cargando detalle AUTOS…';fill.style.width='82%';
-    if(pct) pct.textContent='82%';
     await loadDet('AUTOS',2026);await loadDet('AUTOS',2025);
     msg.textContent='Preparando app…';fill.style.width='90%';
-    if(pct) pct.textContent='90%';
     const mesesDisp=MES_ORD.filter(m=>RES26.some(r=>r.MES===m));
     buildMesButtons(mesesDisp);selMeses=new Set(mesesDisp);
     document.getElementById('data-badge').textContent=(RES26.length+RES25.length).toLocaleString()+' filas resumen';
     fill.style.width='100%';
-    if(pct) pct.textContent='100%';
     await new Promise(r=>setTimeout(r,300));
     document.getElementById('loading-screen').style.display='none';
     const app=document.getElementById('app');
@@ -654,26 +542,10 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      if(CUR_PAGE==='comovamos'){
-        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
-        // Si ya es el único activo → deseleccionar (ver todos)
-        if(selMeses.size===1&&selMeses.has(mes)){
-          // Deseleccionar → volver a mostrar mes actual
-          selMeses.clear();
-          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-        } else {
-          // Seleccionar solo este mes
-          selMeses.clear();
-          selMeses.add(mes);
-          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-          this.classList.add('active');
-        }
-      } else {
-        // En otras páginas: comportamiento toggle normal
-        this.classList.toggle('active');
-        if(selMeses.has(mes)) selMeses.delete(mes);
-        else selMeses.add(mes);
-      }
+      // Toggle normal en todas las páginas — permite selección múltiple
+      this.classList.toggle('active');
+      if(selMeses.has(mes)) selMeses.delete(mes);
+      else selMeses.add(mes);
       refreshAll();
     });
     wrap.appendChild(btn);
@@ -703,22 +575,10 @@ function showPage(page,el){
   else if(page==='explorer') initExplorer();
   else if(page==='segmentos') renderSegmentos();
 }
-function updateNavTheme(cat){
-  const nav=document.querySelector('nav');
-  const mesBar=document.getElementById('mes-bar');
-  const isLight=document.documentElement.classList.contains('light');
-  // Quitar clases previas
-  nav.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
-  mesBar.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
-  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':cat==='FERRETERIA'?'cat-ferreteria':'cat-total';
-  nav.classList.add(cls);
-  mesBar.classList.add(cls);
-}
 function setCat(cat,el){
   CUR_CAT=cat;eSelPdv=null;selSeg=null;
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
-  updateNavTheme(cat);
   if(CUR_PAGE==='comovamos') renderComoVamos();
   else refreshAll();
 }
@@ -801,16 +661,14 @@ function toggleTheme(){
 function initTheme(){
   try{
     const saved=localStorage.getItem('cv_theme');
-    // Modo claro por defecto; solo oscuro si el usuario lo eligió explícitamente
-    if(saved!=='dark') toggleTheme();
-  }catch(e){ toggleTheme(); }
-  updateNavTheme(CUR_CAT);
+    if(saved==='light') toggleTheme();
+  }catch(e){}
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
-const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
-CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3',logoFile:'Logo_BINNER.png'},
-  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#F5C800'}};
+CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3'},
+  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed'},TOTAL:{name:'Simoniz · Binner',cat:'Todas las categorías',color:'#1A3FA3'}};
 
 function cvPptoFilter(cat){
   const cats=cat==='TOTAL'?CATS:[cat];
@@ -828,9 +686,9 @@ function fmtFechaCorte(fechaStr){
 }
 function cvGetMesActual(){
   // SO: buscar fila con FECHA_SO_ACTUAL definida
-  // Solo requerir FECHA_SO_ACTUAL — los días se derivan directo del string ISO
-  const filaSO=PPTO.find(r=>r.FECHA_SO_ACTUAL);
-  const filaSI=PPTO.find(r=>r.FECHA_SI_ACTUAL);
+  const filaSO=PPTO.find(r=>r.FECHA_SO_ACTUAL&&r.SO_DIAS_TRANSCURRIDOS&&r.SO_DIAS_DEL_MES);
+  // SI: buscar fila con FECHA_SI_ACTUAL definida
+  const filaSI=PPTO.find(r=>r.FECHA_SI_ACTUAL&&r.SI_DIAS_TRANSCURRIDOS&&r.SI_DIAS_DEL_MES);
   const diasPorMes={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   // Fallback: detectar mes actual por ratio real/ppto
   function fallback(){
@@ -888,11 +746,9 @@ function cvGetMesActual(){
     }catch(e){ return fallbackDias||1; }
   }
   const soDaysElapsed=daysFromFecha(filaSO.FECHA_SO_ACTUAL, filaSO.SO_DIAS_TRANSCURRIDOS);
-  const mesKey=(filaSO.MES||'').replace('.','');
-  const soDaysTotal=filaSO.SO_DIAS_DEL_MES||(diasPorMes[mesKey]||30);
+  const soDaysTotal=filaSO.SO_DIAS_DEL_MES;
   const siDaysElapsed=filaSI?daysFromFecha(filaSI.FECHA_SI_ACTUAL, filaSI.SI_DIAS_TRANSCURRIDOS):soDaysElapsed;
-  const mesKeySI=filaSI?(filaSI.MES||'').replace('.',''):mesKey;
-  const siDaysTotal=filaSI?(filaSI.SI_DIAS_DEL_MES||(diasPorMes[mesKeySI]||30)):soDaysTotal;
+  const siDaysTotal=filaSI?filaSI.SI_DIAS_DEL_MES:soDaysTotal;
   return{
     mes, label:MES_LBL[mes]||mes,
     daysTotal:soDaysTotal, daysElapsed:soDaysElapsed,
@@ -925,8 +781,8 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
   return`<div class="cv-proy-card ${cls}">
     <div class="cv-pc-hdr">
       <div>
-        <div class="cv-pc-type" style="color:${typeColor}">${isSO?'SELL OUT':'SELL IN'}</div>
-        ${fechaCorte?`<div class="cv-pc-corte">Corte: ${fechaCorte}</div>`:''}
+        <span class="cv-pc-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:2px;letter-spacing:.5px;">Corte: ${fechaCorte}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
         <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
@@ -937,7 +793,7 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
       <div>
         <div class="cv-pc-m-l">Real · Día ${daysElapsed}</div>
         <div class="cv-pc-m-v" style="color:${barColor}">${fmtM(real)}</div>
-        <div class="cv-pc-m-s" style="color:${realColor}">${cumplReal.toFixed(1)}% cumpl. actual</div>
+        <div class="cv-pc-m-s" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% cumpl. actual</div>
       </div>
       <div>
         <div class="cv-pc-m-l">Proyectado cierre</div>
@@ -950,16 +806,14 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
         <div class="cv-pc-m-s">${daysLeft} días restantes</div>
       </div>
     </div>
-    <div class="cv-bar-wrap">
-      <div class="cv-bar-bg">
-        <div class="cv-bar-proy" style="width:${barProy}%;background:${cumplColor};"></div>
-        <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
-      </div>
-      <div class="cv-bar-lbls">
-        <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
-        <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
-        <span>Meta 100%</span>
-      </div>
+    <div class="cv-bar-bg">
+      <div class="cv-bar-proy" style="width:${barProy}%;background:${cumplColor};"></div>
+      <div class="cv-bar-real" style="width:${barReal}%;background:${barColor};"></div>
+    </div>
+    <div class="cv-bar-lbls">
+      <span style="color:${barColor}">Hoy ${barReal.toFixed(1)}%</span>
+      <span style="color:${cumplColor}">Proy. ${barProy.toFixed(1)}%</span>
+      <span>Meta 100%</span>
     </div>
     <div class="cv-gap-box ${isPos?'pos':'neg'}">
       <div>
@@ -1060,31 +914,6 @@ function cvRecoText(cad,soGap,siGap,cumplSO,ddi,mesFil){
   return{txt:accion,chip,color};
 }
 
-
-// ── LOGOS POR CADENA ────────────────────────────────────────────────────────
-const CAD_LOGOS={
-  'SODIMAC COLOMBIA S A':          'Logo_SODIMAC_COLOMBIA_S_A.png',
-  'ALMACENES EXITO S A':           'Logo_ALAMCENES_EXITO_S_A.png',
-  'CENCOSUD COLOMBIA S A':         'Logo_CENCOSUD_COLOMBIA_S_A.png',
-  'COLOMBIANA DE COMERCIO SA':     'Logo_COLOMBIANA_DE_COMERCIO.jpg',
-  'SUPERTIENDAS Y DROGUERIAS OLIMPICA S A': 'Logo_SUPERTIENDAS_Y_DROGERIAS_OLIMPICA_S_A.png',
-  'MECANELECTRO S.A.S.':           'Logo_MECANELECTRO.png',
-  'MAKRO SUPERMAYORISTA S A S':    'Logo_MAKRO_SUPERMAYORISTA_S_A_S.png',
-  'EASY':                          'Logo_EASY.jpg',
-};
-function cadLogoHtml(cad,size=28){
-  // Búsqueda exacta primero, luego parcial case-insensitive
-  let f=CAD_LOGOS[cad];
-  if(!f){
-    const cadU=cad.toUpperCase().replace(/[.\s]+/g,'');
-    const key=Object.keys(CAD_LOGOS).find(k=>cadU.includes(k.toUpperCase().replace(/[.\s]+/g,''))||k.toUpperCase().replace(/[.\s]+/g,'').includes(cadU));
-    if(key) f=CAD_LOGOS[key];
-  }
-  if(!f) return '';
-  return `<img src="${f}" alt="${cad}"
-    style="height:${size}px;max-width:${size*3}px;object-fit:contain;border-radius:4px;flex-shrink:0;"
-    onerror="this.style.display='none'">`;
-}
 function renderComoVamos(){
   if(!PPTO.length){
     document.getElementById('cv-body').innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px;letter-spacing:2px;">PRESUPUESTO NO DISPONIBLE — Sube presupuesto.json al repositorio</div>';
@@ -1202,30 +1031,14 @@ function renderComoVamos(){
     soDiasT=siDiasT=diasTotales;
     soDias=diasTransc; siDias=diasTranscSI;
   } else if(esMesActual){
-    // Mes en curso — extraer días directamente de la fecha de corte (ISO "YYYY-MM-DD")
-    // Esto evita depender de SO_DIAS_TRANSCURRIDOS o de mesInfo que pueden tener valores incorrectos
-    function diaDesdeISO(fechaStr){
-      try{
-        const p=(fechaStr||'').split('-');
-        if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}
-      }catch(e){}
-      return null;
-    }
-    // Usar siempre diasDelMesFiltro (calculado del nombre del mes) en lugar de
-    // SO_DIAS_DEL_MES del JSON que puede tener un valor incorrecto (ej: 31 para abril)
-    soDiasT=diasDelMesFiltro;
-    siDiasT=diasDelMesFiltro;
-    // Prioridad: 1) día extraído de la fecha de corte, 2) mesInfo, 3) ratio (último recurso)
-    const dSOFecha=diaDesdeISO(fechaSOStr);
-    const dSIFecha=diaDesdeISO(fechaSIStr||fechaSOStr);
-    if(dSOFecha){
-      soDias=dSOFecha;
-      siDias=dSIFecha||dSOFecha;
-    } else if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+    // Mes en curso — usar días de mesInfo si coincide, sino calcular por ratio
+    if(mesFiltro===mesInfo.mes&&mesInfo.soDaysElapsed){
+      soDiasT=mesInfo.soDaysTotal||diasDelMesFiltro;
+      siDiasT=mesInfo.siDaysTotal||diasDelMesFiltro;
       soDias=mesInfo.soDaysElapsed;
       siDias=mesInfo.siDaysElapsed||mesInfo.soDaysElapsed;
     } else {
-      // Último recurso: estimar por ratio real/ppto
+      // Calcular días transcurridos por ratio real/ppto directamente
       const ratioSO=soPptoMes>0?soRealMes/soPptoMes:0;
       const ratioSI=siPptoMes>0?siRealMes/siPptoMes:0;
       soDiasT=siDiasT=diasDelMesFiltro;
@@ -1244,12 +1057,7 @@ function renderComoVamos(){
   // ── Hero brand section ────────────────────────────────────────────────
   const heroH=`<div class="cv-brand-hero">
     <div class="cv-bh-main">
-      <div class="cv-bh-logo" style="background:${brand.logoFile?'transparent':brand.color};padding:${brand.logoFile?'2px':'0'};color:${CUR_CAT==='HOGAR'?'#fff':'#000'}">
-        ${brand.logoFile
-          ? `<img src="${brand.logoFile}" alt="${brand.name}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"
-              onerror="this.parentNode.style.background='${brand.color}';this.parentNode.style.padding='0';this.outerHTML='${brand.name[0]}'">`
-          : brand.name[0]}
-      </div>
+      <div class="cv-bh-logo" style="background:${brand.color};color:${CUR_CAT==='HOGAR'?'#fff':'#000'}">${brand.name[0]}</div>
       <div>
         <div class="cv-bh-brand" style="color:${brand.color}">${brand.name} · ${brand.cat}</div>
         <div class="cv-bh-val">${fmtM(totSOReal26)}</div>
@@ -1321,14 +1129,11 @@ function renderComoVamos(){
       const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
       return`<div class="cv-cad-card">
         <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            ${cadLogoHtml(cad,28)}
-            <div style="min-width:0;">
-              <div class="cv-cad-name">${cad}</div>
-              <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
-            </div>
+          <div>
+            <div class="cv-cad-name">${cad}</div>
+            <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
           </div>
-          <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
+          <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;">${sg(varPct)}${varPct.toFixed(1)}%</span>
         </div>
         <div class="cv-cad-body">
           ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
