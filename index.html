@@ -1380,7 +1380,7 @@ function renderComoVamos(){
       const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
       const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
-      return`<div style="display:grid;grid-template-columns:210px 1fr 1fr;gap:8px;align-items:stretch;">
+      return`<div style="display:grid;grid-template-columns:270px 1fr 1fr;gap:8px;align-items:stretch;">
         <div class="cv-cad-card">
           <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
             <div style="display:flex;align-items:center;gap:8px;min-width:0;">
@@ -1397,7 +1397,7 @@ function renderComoVamos(){
             ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
           </div>
         </div>
-        <div class="cbox" style="padding:10px 12px;min-height:160px;">
+        <div class="cbox" style="padding:10px 12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
             <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL OUT ($M)</span>
             <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
@@ -1406,9 +1406,9 @@ function renderComoVamos(){
               <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
             </div>
           </div>
-          <div style="position:relative;flex:1;min-height:120px;"><canvas id="cv-so-${cadId}"></canvas></div>
+          <div style="position:relative;height:105px;"><canvas id="cv-so-${cadId}"></canvas></div>
         </div>
-        <div class="cbox" style="padding:10px 12px;min-height:160px;">
+        <div class="cbox" style="padding:10px 12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
             <span style="font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:.5px;">SELL IN ($M)</span>
             <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
@@ -1417,7 +1417,7 @@ function renderComoVamos(){
               <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
             </div>
           </div>
-          <div style="position:relative;flex:1;min-height:120px;"><canvas id="cv-si-${cadId}"></canvas></div>
+          <div style="position:relative;height:105px;"><canvas id="cv-si-${cadId}"></canvas></div>
         </div>
       </div>`;
     }).join('')}
@@ -1571,6 +1571,7 @@ function renderDashboard(){
   const nMeses=selMeses.size||4;
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
+  const mesInfoSG=cvGetMesActual();
 
   // Populate CADENA dropdown
   const sel=document.getElementById('d-cad-sel');
@@ -1628,7 +1629,7 @@ function renderDashboard(){
       const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
-      return`<div style="display:grid;grid-template-columns:220px 1fr;gap:8px;align-items:stretch;">
+      return`<div style="display:grid;grid-template-columns:320px 1fr;gap:8px;align-items:stretch;">
         <div class="cv-cad-card">
           <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
             <div style="display:flex;align-items:center;gap:8px;min-width:0;">
@@ -1646,19 +1647,28 @@ function renderDashboard(){
                 <span class="cv-mini-type" style="color:var(--acc)">Sell Out</span>
                 ${soPpto>0?`<span style="font-family:var(--fm);font-size:8px;color:${cumplColor};font-weight:700;">${cumplPct.toFixed(1)}% cumpl.</span>`:''}
               </div>
-              <div class="cv-mini-rows">
-                <div><div class="cv-mini-l">Real 2026</div><div class="cv-mini-v" style="color:var(--acc)">${fmtM(c.v26)}</div></div>
-                <div><div class="cv-mini-l">Real 2025</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(c.v25)}</div></div>
-                ${soPpto>0?`<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(soPpto)}</div></div>`:''}
-              </div>
-              ${soPpto>0?`<div class="cv-mini-bar-bg">
-                <div class="cv-mini-bar-p" style="width:${Math.min(cumplPct,100)}%;background:${cumplColor};"></div>
-                <div class="cv-mini-bar-r" style="width:${Math.min(c.v26/soPpto*100,100)}%;background:var(--acc);"></div>
-              </div>
-              <div class="cv-mini-foot">
-                <span style="font-family:var(--fm);font-size:8px;font-weight:600;color:${c.varV>=0?'var(--pos)':'var(--neg)'};">${sg(c.varV)}${c.varV.toFixed(1)}% vs 2025</span>
-                <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">${cumplPct.toFixed(1)}% vs ppto</span>
-              </div>`:`<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;font-weight:600;color:${c.varV>=0?'var(--pos)':'var(--neg)'};">${sg(c.varV)}${c.varV.toFixed(1)}% vs 2025</span></div>`}
+              ${(()=>{
+                const soRealMes=ppCad.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+                const soP=mesInfoSG.soDaysElapsed>0?cvCalcProy(soRealMes,mesInfoSG.soDaysElapsed,mesInfoSG.soDaysTotal):0;
+                const gap=soP-soPpto;
+                const gapColor=gap>=0?'var(--pos)':'var(--neg)';
+                const proyPct=soPpto>0?soP/soPpto*100:0;
+                return`<div class="cv-mini-rows" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+                  <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">${fmtM(c.v26)}</div></div>
+                  ${soP>0?`<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor};font-size:14px;">${fmtM(soP)}</div></div>`:''}
+                  ${soPpto>0?`<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">${fmtM(soPpto)}</div></div>`:''}
+                  <div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:${c.varV>=0?'var(--pos)':'var(--neg)'};font-size:14px;">${sg(c.varV)}${c.varV.toFixed(1)}%</div></div>
+                </div>
+                ${soPpto>0?`<div class="cv-mini-bar-bg">
+                  <div class="cv-mini-bar-p" style="width:${Math.min(proyPct,100)}%;background:${cumplColor};"></div>
+                  <div class="cv-mini-bar-r" style="width:${Math.min(c.v26/soPpto*100,100)}%;background:var(--acc);"></div>
+                </div>
+                <div class="cv-mini-foot">
+                  <span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy ${cumplPct.toFixed(1)}%</span>
+                  <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">Proy. ${proyPct.toFixed(1)}%</span>
+                  ${soP>0?`<span style="font-family:var(--fm);font-size:8px;color:${gapColor};">gap ${sg(gap)}${fmtM(gap)}</span>`:''}
+                </div>`:''}`;
+              })()}
             </div>
           </div>
         </div>
@@ -1671,7 +1681,7 @@ function renderDashboard(){
               <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
             </div>
           </div>
-          <div style="position:relative;min-height:120px;"><canvas id="sg-so-${cadId}"></canvas></div>
+          <div style="position:relative;height:130px;"><canvas id="sg-so-${cadId}"></canvas></div>
         </div>
       </div>`;
     }).join('')}
