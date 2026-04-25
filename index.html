@@ -654,10 +654,27 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      // Toggle normal en todas las páginas — permite selección múltiple
-      this.classList.toggle('active');
-      if(selMeses.has(mes)) selMeses.delete(mes);
-      else selMeses.add(mes);
+      // Selección inteligente en todas las páginas:
+      // Si TODOS los meses están activos → clic en uno = seleccionar SOLO ese mes
+      // Si hay selección parcial → toggle normal (agregar o quitar)
+      // Si solo ese mes está activo → deseleccionar todo (volver a todos)
+      const totalDisp=document.querySelectorAll('.mes-btn:not(:disabled)').length;
+      if(selMeses.size===totalDisp){
+        // Todos activos → seleccionar solo el clickeado
+        selMeses.clear();
+        document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        selMeses.add(mes);
+        this.classList.add('active');
+      } else if(selMeses.size===1&&selMeses.has(mes)){
+        // Solo este mes activo → deseleccionar (mostrar todos)
+        selMeses.clear();
+        document.querySelectorAll('.mes-btn').forEach(b=>{if(!b.disabled)b.classList.add('active');selMeses.add(b.dataset.mes);});
+      } else {
+        // Selección parcial → toggle normal
+        this.classList.toggle('active');
+        if(selMeses.has(mes)) selMeses.delete(mes);
+        else selMeses.add(mes);
+      }
       refreshAll();
     });
     wrap.appendChild(btn);
