@@ -632,6 +632,9 @@ async function load(){
     initTheme();
     setTimeout(async()=>{
       for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
+      // Re-renderizar si el usuario está en dashboard o segmentos para mostrar datos recién cargados
+      if(CUR_PAGE==='dashboard') renderDashboard();
+      else if(CUR_PAGE==='segmentos') renderSegmentos();
     },800);
   }catch(e){
     const el=document.getElementById('ld-msg');
@@ -654,25 +657,17 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      // Selección inteligente en todas las páginas:
-      // Si TODOS los meses están activos → clic en uno = seleccionar SOLO ese mes
-      // Si hay selección parcial → toggle normal (agregar o quitar)
-      // Si solo ese mes está activo → deseleccionar (volver a todos)
       const totalDisp=document.querySelectorAll('.mes-btn:not(:disabled)').length;
       if(selMeses.size===totalDisp){
-        // Todos activos → seleccionar solo el clickeado
         selMeses.clear();
         document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-        selMeses.add(mes);
-        this.classList.add('active');
+        selMeses.add(mes); this.classList.add('active');
       } else if(selMeses.size===1&&selMeses.has(mes)){
-        // Solo este mes activo → volver a todos
         selMeses.clear();
         document.querySelectorAll('.mes-btn').forEach(b=>{
           if(!b.disabled){b.classList.add('active');selMeses.add(b.dataset.mes);}
         });
       } else {
-        // Selección parcial → toggle normal (permite multi-mes)
         this.classList.toggle('active');
         if(selMeses.has(mes)) selMeses.delete(mes);
         else selMeses.add(mes);
@@ -747,6 +742,26 @@ function calcDDI(inv,units){
   return Math.round(inv/(units/days));
 }
 function getTotals(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  if(dSelCad){
+    // Cadena seleccionada → usar archivos cadenas (tienen columna CADENA)
+    let v26=0,v25=0,u26=0,u25=0;
+    cats.forEach(cat=>{
+      (CAD26[cat]||[]).filter(r=>r.CADENA===dSelCad&&(selMeses.size===0||selMeses.has(r.MES)))
+        .forEach(r=>{v26+=r.VENTA||0;u26+=r.UNIDADES||0;});
+      (CAD25[cat]||[]).filter(r=>r.CADENA===dSelCad&&(selMeses.size===0||selMeses.has(r.MES)))
+        .forEach(r=>{v25+=r.VENTA||0;u25+=r.UNIDADES||0;});
+    });
+    const inv=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad)
+      .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+    const segsSet=new Set();
+    cats.forEach(cat=>(DET[cat+'_2026']||[])
+      .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
+      .forEach(r=>{if(r.G)segsSet.add(r.G);}));
+    return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
+      ddi:calcDDI(inv,u26),segs:segsSet.size};
+  }
+  // Sin filtro de cadena → usar archivos resumen
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
   const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
@@ -757,6 +772,34 @@ function getTotals(){
     ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
 }
 function getSegs(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  if(dSelCad){
+    // Cadena seleccionada → usar archivos detalle (tienen CADENA+SEGMENTO)
+    const m={};
+    cats.forEach(cat=>{
+      (DET[cat+'_2026']||[])
+        .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
+        .forEach(r=>{
+          if(!r.G) return;
+          if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+          m[r.G].v26+=r.V||0; m[r.G].u26+=r.U||0;
+        });
+      (DET[cat+'_2025']||[])
+        .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
+        .forEach(r=>{
+          if(!r.G) return;
+          if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
+          m[r.G].v25+=r.V||0; m[r.G].u25+=r.U||0;
+        });
+    });
+    // Inventario por segmento para esta cadena
+    INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad)
+      .forEach(r=>{if(m[r.SEGMENTO])m[r.SEGMENTO].inv+=r.INVENTARIO_UNDS||0;});
+    return Object.values(m).map(s=>({...s,
+      var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
+    })).sort((a,b)=>b.v26-a.v26);
+  }
+  // Sin filtro de cadena → usar archivos resumen
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
@@ -1306,9 +1349,7 @@ function renderComoVamos(){
       const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
       const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
       const varPct=sp(totSORCad,varC||1);
-      // Mes actual
       // Si hay múltiples meses seleccionados, ppC ya contiene todos (ppAll los filtra)
-      // Si es un solo mes, filtrar explícitamente por mesFiltro
       const ppCMes=esMultiMes ? ppC : ppC.filter(r=>r.MES===mesFiltro);
       const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
@@ -1515,15 +1556,6 @@ function renderDashboard(){
   const mLbl=selMeses.size===0?'Acumulado':
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
   const nMeses=selMeses.size||4;
-
-  // Filter by cadena if selected
-  const r26all=resFilter(RES26);
-  const r25all=resFilter(RES25);
-  const r26=dSelCad?r26all.filter(r=>{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
-    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
-  }):r26all;
 
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
