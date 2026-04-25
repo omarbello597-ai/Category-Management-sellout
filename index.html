@@ -1004,37 +1004,42 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
   </div>`;
 }
 
-function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
+ function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
   const isSO=tipo==='SO';
-  const typeColor=isSO?'var(--acc)':'#6699ff';
   const barColor=isSO?'var(--acc)':'#6699ff';
+  const hdrBg=isSO?'rgba(245,200,0,.15)':'rgba(26,63,163,.12)';
+  const border=isSO?'rgba(245,200,0,.35)':'rgba(26,63,163,.3)';
   const cumplReal=ppto>0?real/ppto*100:0;
   const cumplProy=ppto>0?proy/ppto*100:0;
   const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
   const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
-  const gap=proy-ppto;
-  return`<div class="cv-mini ${tipo.toLowerCase()}">
-    <div class="cv-mini-hdr">
+  return`<div style="border-radius:10px;overflow:hidden;border:1.5px solid ${border};">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:${hdrBg};">
       <div>
-        <span class="cv-mini-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
-        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al ${fechaCorte}</div>`:''}
+        <div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:${barColor};">${isSO?'SELL OUT':'SELL IN'}</div>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;letter-spacing:.3px;">Al ${fechaCorte}</div>`:''}
       </div>
-      <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:700;">Hoy: ${cumplReal.toFixed(1)}%</span>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:8px;">Hoy: ${cumplReal.toFixed(1)}%</span>
+        <span class="pill ${cumplProy>=90?'pos':cumplProy>=75?'':'neg'}" style="font-size:8px;${cumplProy>=75&&cumplProy<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':''}">Proy: ${cumplProy.toFixed(1)}%</span>
+      </div>
     </div>
-    <div class="cv-mini-rows">
-      <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${typeColor}">${fmtM(real)}</div></div>
-      <div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor}">${fmtM(proy)}</div></div>
-      <div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(ppto)}</div></div>
-    </div>
-    <div class="cv-mini-bar-bg">
-      <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
-      <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
-    </div>
-    <div class="cv-mini-foot" style="display:flex;justify-content:space-between;">
-      <span class="cv-mini-cumpl-l" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
-      <span class="cv-mini-cumpl-v" style="color:${cumplColor}">${cumplProy.toFixed(1)}% proy.</span>
+    <div style="padding:8px 12px;">
+      <div class="cv-mini-rows" style="margin-bottom:6px;">
+        <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${barColor}">${fmtM(real)}</div></div>
+        <div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor}">${fmtM(proy)}</div></div>
+        <div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(ppto)}</div></div>
+      </div>
+      <div class="cv-mini-bar-bg" style="margin-bottom:4px;">
+        <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
+        <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
+        <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">${cumplProy.toFixed(1)}% proy.</span>
+      </div>
     </div>
   </div>`;
 }
