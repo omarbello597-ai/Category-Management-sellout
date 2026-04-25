@@ -654,23 +654,22 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      // Selección inteligente en todas las páginas:
-      // Si TODOS los meses están activos → clic en uno = seleccionar SOLO ese mes
-      // Si hay selección parcial → toggle normal (agregar o quitar)
-      // Si solo ese mes está activo → deseleccionar todo (volver a todos)
-      const totalDisp=document.querySelectorAll('.mes-btn:not(:disabled)').length;
-      if(selMeses.size===totalDisp){
-        // Todos activos → seleccionar solo el clickeado
-        selMeses.clear();
-        document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-        selMeses.add(mes);
-        this.classList.add('active');
-      } else if(selMeses.size===1&&selMeses.has(mes)){
-        // Solo este mes activo → deseleccionar (mostrar todos)
-        selMeses.clear();
-        document.querySelectorAll('.mes-btn').forEach(b=>{if(!b.disabled)b.classList.add('active');selMeses.add(b.dataset.mes);});
+      if(CUR_PAGE==='comovamos'){
+        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
+        // Si ya es el único activo → deseleccionar (ver todos)
+        if(selMeses.size===1&&selMeses.has(mes)){
+          // Deseleccionar → volver a mostrar mes actual
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          // Seleccionar solo este mes
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
       } else {
-        // Selección parcial → toggle normal
+        // En otras páginas: comportamiento toggle normal
         this.classList.toggle('active');
         if(selMeses.has(mes)) selMeses.delete(mes);
         else selMeses.add(mes);
@@ -1297,15 +1296,16 @@ function renderComoVamos(){
     <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
     <div class="cv-cad-grid">${cadenas.map(cad=>{
       const ppC=ppAll.filter(r=>r.CADENA===cad);
-      // Acumulado
       // Acumulado de todos los meses con real para esta cadena (header)
       const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
       const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
       const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
       const varPct=sp(totSORCad,varC||1);
-      // Mes actual
-      const ppCMes=ppC.filter(r=>r.MES===mesFiltro);
+      // Datos del período seleccionado para esta cadena
+      // Si hay múltiples meses, ppC ya tiene todos los seleccionados (ppAll los filtra)
+      // Si es un solo mes, filtrar por mesFiltro para ser explícitos
+      const ppCMes=esMultiMes ? ppC : ppC.filter(r=>r.MES===mesFiltro);
       const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
