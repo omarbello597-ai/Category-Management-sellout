@@ -1706,6 +1706,8 @@ function renderDashboard(){
   +'</div>';
 
 
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
   const cadRowsH=(()=>{
     let html='<div><div class="cv-section-lbl">Sell Out por cadena · '+mLbl+'</div><div style="display:flex;flex-direction:column;gap:8px;">';
     cadFiltered.forEach(c=>{
