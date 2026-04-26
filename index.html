@@ -1706,10 +1706,9 @@ function renderDashboard(){
   +'</div>';
 
 
-  const cadRowsH=`<div>
-    <div class="cv-section-lbl">Sell Out por cadena · ${mLbl}</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-    ${cadFiltered.map(c=>{
+  const cadRowsH=(()=>{
+    let html='<div><div class="cv-section-lbl">Sell Out por cadena · '+mLbl+'</div><div style="display:flex;flex-direction:column;gap:8px;">';
+    cadFiltered.forEach(c=>{
       const ppCad=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===c.cad&&(selMeses.size===0||selMeses.has(r.MES)));
       const soPpto=ppCad.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       const cumplPct=soPpto>0?c.v26/soPpto*100:0;
@@ -1718,77 +1717,78 @@ function renderDashboard(){
       const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
-      return`<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">
-        <div class="cv-cad-card">
-          <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-              ${cadLogoHtml(c.cad,22)}
-              <div style="min-width:0;">
-                <div class="cv-cad-name">${c.cad}</div>
-                <div class="cv-cad-meta">${c.part.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(c.ddi)}</span></div>
-              </div>
-            </div>
-            <span class="pill ${c.varV>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(c.varV)}${c.varV.toFixed(1)}%</span>
-          </div>
-          <div class="cv-cad-body">
-            <div class="cv-mini so">
-              <div class="cv-mini-hdr">
-                <span class="cv-mini-type" style="color:var(--acc)">Sell Out</span>
-                ${soPpto>0?`<span style="font-family:var(--fm);font-size:8px;color:${cumplColor};font-weight:700;">${cumplPct.toFixed(1)}% cumpl.</span>`:''}
-              </div>
-              ${(()=>{
-                // Proyección: usar SOLO el mes activo (no acumulado) igual que CÓMO VAMOS
-                function _diaISO(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
-                const diasPM2={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-                const rowFecha=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
-                const fechaISO=rowFecha?rowFecha.FECHA_SO_ACTUAL:null;
-                const dSOFecha=_diaISO(fechaISO);
-                const dDias=dSOFecha||mesInfoSG.soDaysElapsed||1;
-                const mesK=mesInfoSG.mes?(mesInfoSG.mes||'').replace('.',''):'abr';
-                const dTotal=diasPM2[mesK]||mesInfoSG.soDaysTotal||30;
-                // Real del mes activo para proyectar (independiente de cuántos meses estén seleccionados)
-                const ppCadMesActivo=(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).flatMap(cat=>
-                  PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===mesInfoSG.mes));
-                const soRealMesActivo=ppCadMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-                const soRealMes=ppCad.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-                const soP=dDias>0?cvCalcProy(soRealMesActivo,dDias,dTotal):0;
-                const gap=soP-soPpto;
-                const gapColor=gap>=0?'var(--pos)':'var(--neg)';
-                const proyPct=soPpto>0?soP/soPpto*100:0;
-                return`<div class="cv-mini-rows" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-                  <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">${fmtM(c.v26)}</div></div>
-                  ${soP>0?`<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor};font-size:14px;">${fmtM(soP)}</div></div>`:''}
-                  ${soPpto>0?`<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">${fmtM(soPpto)}</div></div>`:''}
-                  <div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:${c.varV>=0?'var(--pos)':'var(--neg)'};font-size:14px;">${sg(c.varV)}${c.varV.toFixed(1)}%</div></div>
-                </div>
-                ${soPpto>0?`<div class="cv-mini-bar-bg">
-                  <div class="cv-mini-bar-p" style="width:${Math.min(proyPct,100)}%;background:${cumplColor};"></div>
-                  <div class="cv-mini-bar-r" style="width:${Math.min(c.v26/soPpto*100,100)}%;background:var(--acc);"></div>
-                </div>
-                <div class="cv-mini-foot">
-                  <span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy ${cumplPct.toFixed(1)}%</span>
-                  <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">Proy. ${proyPct.toFixed(1)}%</span>
-                  ${soP>0?`<span style="font-family:var(--fm);font-size:8px;color:${gapColor};">gap ${sg(gap)}${fmtM(gap)}</span>`:''}
-                </div>`:''}`;
-              })()}
-            </div>
-          </div>
-        </div>
-        <div class="cbox" style="padding:10px 12px;min-height:150px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;padding:4px 8px;border-radius:5px;border-left:2.5px solid ${a};background:rgba(255,255,255,.02);">
-            <span style="font-family:var(--fm);font-size:8px;color:${a};letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>
-            <div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">
-              <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
-              <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
-              <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
-            </div>
-          </div>
-          <div style="position:relative;height:130px;"><canvas id="sg-so-${cadId}"></canvas></div>
-        </div>
-      </div>`;
-    }).join('')}
-    </div>
-  </div>`;
+      // Proyección con misma fórmula ISO que CÓMO VAMOS
+      function _diaISO2(f){try{var p=(f||'').split('-');if(p.length===3){var n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
+      const diasPM3={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+      const rowF=PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
+      const fechaISO2=rowF?rowF.FECHA_SO_ACTUAL:null;
+      const dDias2=_diaISO2(fechaISO2)||mesInfoSG.soDaysElapsed||1;
+      const mesK2=(mesInfoSG.mes||'abr').replace('.','');
+      const dTotal2=diasPM3[mesK2]||mesInfoSG.soDaysTotal||30;
+      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===mesInfoSG.mes));
+      const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const soP=dDias2>0?cvCalcProy(soRealMes2,dDias2,dTotal2):0;
+      const gap=soP-soPptoMes2;
+      const gapColor=gap>=0?'var(--pos)':'var(--neg)';
+      const proyPct=soPptoMes2>0?soP/soPptoMes2*100:0;
+      const proyColor=proyPct>=90?'var(--pos)':proyPct>=75?'#F5C800':'var(--neg)';
+      // Build HTML
+      const cumplPill='<span class="pill '+(cumplPct>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplPct.toFixed(1)+'%</span>';
+      const proyPillSty=proyPct>=75&&proyPct<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+      const proyPillCls=proyPct>=90?'pos':proyPct>=75?'':'neg';
+      const proyPill='<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillSty+'">Proy: '+proyPct.toFixed(1)+'%</span>';
+      const realRow='<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">'+fmtM(c.v26)+'</div></div>';
+      const proyRow=soP>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColor+';font-size:14px;">'+fmtM(soP)+'</div></div>':'';
+      const pptoRow=soPptoMes2>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">'+fmtM(soPptoMes2)+'</div></div>':'';
+      const varRow='<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(c.varV>=0?'var(--pos)':'var(--neg)')+';font-size:14px;">'+sg(c.varV)+c.varV.toFixed(1)+'%</div></div>';
+      const barHtml=soPptoMes2>0
+        ?'<div class="cv-mini-bar-bg"><div class="cv-mini-bar-p" style="width:'+Math.min(proyPct,100)+'%;background:'+proyColor+';"></div><div class="cv-mini-bar-r" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:var(--acc);"></div></div>'
+          +'<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplPct.toFixed(1)+'%</span>'
+          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColor+';">Proy. '+proyPct.toFixed(1)+'%</span>'
+          +(soP>0?'<span style="font-family:var(--fm);font-size:8px;color:'+gapColor+';">gap '+sg(gap)+fmtM(gap)+'</span>':'')+'</div>'
+        :'';
+      html+='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
+        +'<div class="cv-cad-card">'
+          +'<div class="cv-cad-hdr" style="background:'+headerBg+';border-bottom-color:'+headerBorder+'20;">'
+            +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+              +cadLogoHtml(c.cad,22)
+              +'<div style="min-width:0;">'
+                +'<div class="cv-cad-name">'+c.cad+'</div>'
+                +'<div class="cv-cad-meta">'+c.part.toFixed(1)+'% part. · <span class="ddi '+ddiCls2+'" style="font-size:9px;">'+ddiLbl(c.ddi)+'</span></div>'
+              +'</div>'
+            +'</div>'
+            +'<span class="pill '+(c.varV>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(c.varV)+c.varV.toFixed(1)+'%</span>'
+          +'</div>'
+          +'<div class="cv-cad-body">'
+            +'<div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
+              +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
+                +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div></div>'
+                +'<div style="display:flex;gap:4px;align-items:center;">'+cumplPill+proyPill+'</div>'
+              +'</div>'
+              +'<div style="padding:8px 12px;">'
+                +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'+realRow+proyRow+pptoRow+varRow+'</div>'
+                +barHtml
+              +'</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="cbox" style="padding:10px 12px;min-height:150px;">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;padding:4px 8px;border-radius:5px;border-left:2.5px solid '+a+';background:rgba(255,255,255,.02);">'
+            +'<span style="font-family:var(--fm);font-size:8px;color:'+a+';letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>'
+            +'<div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">'
+              +'<span><span style="display:inline-block;width:8px;height:2px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>'
+              +'<span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>'
+              +'<span><span style="display:inline-block;width:10px;border-top:1.5px dashed '+a+';vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>'
+            +'</div>'
+          +'</div>'
+          +'<div style="position:relative;height:130px;"><canvas id="sg-so-'+cadId+'"></canvas></div>'
+        +'</div>'
+      +'</div>';
+    });
+    html+='</div></div>';
+    return html;
+  })();
 
   // ── Segment matrix ────────────────────────────────────────────────────────────
   const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
