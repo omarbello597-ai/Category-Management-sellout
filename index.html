@@ -1627,11 +1627,11 @@ function renderDashboard(){
   const varTotal=sp(soRealTotal,soReal25Total||1);
   const cumplColorTotal=cumplTotal>=90?'var(--pos)':cumplTotal>=75?'#F5C800':'var(--neg)';
   const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
-  // Proyección total con misma fórmula días ISO
-  function _diaISO_sg(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
+  function _diaISO_sg(f){try{var p=(f||'').split('-');if(p.length===3){var n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
   const diasPM_sg={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   const rowFechaSG=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
-  const dDiasSG=_diaISO_sg(rowFechaSG?.FECHA_SO_ACTUAL)||mesInfoSG.soDaysElapsed||1;
+  const fechaISO_sg=rowFechaSG?rowFechaSG.FECHA_SO_ACTUAL:null;
+  const dDiasSG=_diaISO_sg(fechaISO_sg)||mesInfoSG.soDaysElapsed||1;
   const mesKSG=(mesInfoSG.mes||'abr').replace('.','');
   const dTotalSG=diasPM_sg[mesKSG]||mesInfoSG.soDaysTotal||30;
   const ppMesActivo=PPTO.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.MES===mesInfoSG.mes);
@@ -1641,64 +1641,70 @@ function renderDashboard(){
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
+  // Build total card HTML sin backticks anidados
+  const corteHtml=fechaISO_sg?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(fechaISO_sg)+'</div>':'';
+  const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+'">'+fmtM(soPrSG)+'</div></div>':'';
+  const pptoRowHtml=soPptoMesActSG>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">'+fmtM(soPptoMesActSG)+'</div></div>':'';
+  const gapRowHtml=gapSG!==0?'<span style="font-family:var(--fm);font-size:8px;color:'+(gapSG>=0?'var(--pos)':'var(--neg)')+';">gap '+sg(gapSG)+fmtM(gapSG)+'</span>':'';
+  const proyPillStyle=proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+  const proyPillCls=proyPctTotalSG>=90?'pos':proyPctTotalSG>=75?'':'neg';
 
-  const soTrendH=`<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">
-    <div class="cv-cad-card">
-      <div class="cv-cad-hdr" style="background:rgba(245,200,0,.05);border-bottom-color:rgba(245,200,0,.2);">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-          <div style="min-width:0;">
-            <div class="cv-cad-name">Total Cadenas</div>
-            <div class="cv-cad-meta">${mLbl} · ${cadenas.length} cadenas activas</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;">
-          <span class="pill ${varTotal>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varTotal)}${varTotal.toFixed(1)}%</span>
-        </div>
-      </div>
-      <div class="cv-cad-body">
-        <div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">
-            <div>
-              <div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>
-              ${rowFechaSG?.FECHA_SO_ACTUAL?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al ${fmtFechaCorte(rowFechaSG.FECHA_SO_ACTUAL)}</div>`:''}
-            </div>
-            <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-              <span class="pill ${cumplTotal>=75?'pos':'neg'}" style="font-size:8px;">Hoy: ${cumplTotal.toFixed(1)}%</span>
-              <span class="pill ${proyPctTotalSG>=90?'pos':proyPctTotalSG>=75?'':'neg'}" style="font-size:8px;${proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':''}">Proy: ${proyPctTotalSG.toFixed(1)}%</span>
-            </div>
-          </div>
-          <div style="padding:8px 12px;">
-            <div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">
-              <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc)">${fmtM(soRealTotal)}</div></div>
-              ${soPrSG>0?`<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${proyColorSG}">${fmtM(soPrSG)}</div></div>`:''}
-              ${soPptoMesActSG>0?`<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(soPptoMesActSG)}</div></div>`:''}
-              <div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:${varTotal>=0?'var(--pos)':'var(--neg)'}">${sg(varTotal)}${varTotal.toFixed(1)}%</div></div>
-            </div>
-            <div class="cv-mini-bar-bg" style="margin-bottom:4px;">
-              <div class="cv-mini-bar-p" style="width:${Math.min(proyPctTotalSG,100)}%;background:${proyColorSG};"></div>
-              <div class="cv-mini-bar-r" style="width:${barRealTotal}%;background:var(--acc);"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;">
-              <span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy ${cumplTotal.toFixed(1)}%</span>
-              <span style="font-family:var(--fm);font-size:8px;color:${proyColorSG};">Proy. ${proyPctTotalSG.toFixed(1)}%</span>
-              ${gapSG!==0?`<span style="font-family:var(--fm);font-size:8px;color:${gapSG>=0?'var(--pos)':'var(--neg)'};">gap ${sg(gapSG)}${fmtM(gapSG)}</span>`:''}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="cbox" style="padding:10px 12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid ${a};background:rgba(255,255,255,.02);">
-        <span class="cbox-label" style="margin:0;color:${a};opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>2025</span>
-          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto</span>
-        </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
-    </div>
-  </div>`;
+  const soTrendH='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
+    +'<div class="cv-cad-card">'
+      +'<div class="cv-cad-hdr" style="background:rgba(245,200,0,.05);border-bottom-color:rgba(245,200,0,.2);">'
+        +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
+          +'<div style="min-width:0;">'
+            +'<div class="cv-cad-name">Total Cadenas</div>'
+            +'<div class="cv-cad-meta">'+mLbl+' · '+cadenas.length+' cadenas activas</div>'
+          +'</div>'
+        +'</div>'
+        +'<span class="pill '+(varTotal>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(varTotal)+varTotal.toFixed(1)+'%</span>'
+      +'</div>'
+      +'<div class="cv-cad-body">'
+        +'<div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
+            +'<div>'
+              +'<div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'
+              +corteHtml
+            +'</div>'
+            +'<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">'
+              +'<span class="pill '+(cumplTotal>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplTotal.toFixed(1)+'%</span>'
+              +'<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillStyle+'">Proy: '+proyPctTotalSG.toFixed(1)+'%</span>'
+            +'</div>'
+          +'</div>'
+          +'<div style="padding:8px 12px;">'
+            +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'
+              +'<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc)">'+fmtM(soRealTotal)+'</div></div>'
+              +proyRowHtml
+              +pptoRowHtml
+              +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(varTotal>=0?'var(--pos)':'var(--neg)')+'">'+sg(varTotal)+varTotal.toFixed(1)+'%</div></div>'
+            +'</div>'
+            +'<div class="cv-mini-bar-bg" style="margin-bottom:4px;">'
+              +'<div class="cv-mini-bar-p" style="width:'+Math.min(proyPctTotalSG,100)+'%;background:'+proyColorSG+';"></div>'
+              +'<div class="cv-mini-bar-r" style="width:'+barRealTotal+'%;background:var(--acc);"></div>'
+            +'</div>'
+            +'<div style="display:flex;justify-content:space-between;">'
+              +'<span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplTotal.toFixed(1)+'%</span>'
+              +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColorSG+';">Proy. '+proyPctTotalSG.toFixed(1)+'%</span>'
+              +gapRowHtml
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="cbox" style="padding:10px 12px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid '+a+';background:rgba(255,255,255,.02);">'
+        +'<span class="cbox-label" style="margin:0;color:'+a+';opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>'
+        +'<div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">'
+          +'<span><span style="display:inline-block;width:10px;height:3px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:3px"></span>2026</span>'
+          +'<span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>2025</span>'
+          +'<span><span style="display:inline-block;width:14px;border-top:2px dashed '+a+';vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto</span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>'
+    +'</div>'
+  +'</div>';
+
 
   const cadRowsH=`<div>
     <div class="cv-section-lbl">Sell Out por cadena · ${mLbl}</div>
