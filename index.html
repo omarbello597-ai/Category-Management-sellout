@@ -759,14 +759,21 @@ function getTotals(){
     return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
       ddi:calcDDI(inv,u26),segs:segsSet.size};
   }
-  const r26=resFilter(RES26),r25=resFilter(RES25);
-  const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
-  const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
-  const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
-  const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
-  const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
+  // Usar CAD26/CAD25 para consistencia con la tarjeta Total Cadenas
+  let v26=0,v25=0,u26=0,u25=0;
+  cats.forEach(cat=>{
+    (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
+      .forEach(r=>{v26+=r.VENTA||0;u26+=r.UNIDADES||0;});
+    (CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
+      .forEach(r=>{v25+=r.VENTA||0;u25+=r.UNIDADES||0;});
+  });
+  const inv=INV.filter(r=>cats.includes(r.CATEGORIA))
+    .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+  const segsSet=new Set();
+  cats.forEach(cat=>(RES26||[]).filter(r=>r.CATEGORIA===cat&&(selMeses.size===0||selMeses.has(r.MES)))
+    .forEach(r=>{if(r.SEGMENTO)segsSet.add(r.SEGMENTO);}));
   return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
-    ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
+    ddi:calcDDI(inv,u26),segs:segsSet.size};
 }
 function getSegs(){
   const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
@@ -1597,15 +1604,15 @@ function renderDashboard(){
     if(!cadenas.find(c=>c.cad===dSelCad)) dSelCad='';
   }
   const badge=document.getElementById('d-val-badge');
-  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+  if(badge) badge.textContent=fmtM(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
   document.getElementById('d-periodo').textContent=mLbl;
 
   // ── KPI row ──────────────────────────────────────────────────────────────────
   const periodTxt='ACUMULADO · '+
     (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
   const kpis=[
-    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
-    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Sell Out Año Actual',  v:fmtM(t.v26), s:'Año Anterior: '+fmtM(t.v25), neg:t.varV<0},
+    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtM(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
     {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
     {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
     {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
