@@ -1641,13 +1641,15 @@ function renderDashboard(){
   // ── Proyección SG: calculada directamente desde PPTO filtrado por categoría ─
   const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
   const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  // 1. Encontrar la fila con FECHA_SO_ACTUAL para la categoría activa
-  const rowF_sg = PPTO.find(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
-  // 2. Extraer mes activo y días desde la fecha ISO (misma lógica que cv)
-  const _mesSG = rowF_sg ? rowF_sg.MES : (mesInfoSG.mes || 'abr.');
+  // 1. Encontrar fila con FECHA_SO_ACTUAL MÁS RECIENTE para la categoría activa
+  // (Todos los meses tienen fecha — el reduce busca la más reciente)
+  const _allFechas = PPTO.filter(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
+  const rowF_sg = _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null);
+  // 2. Extraer mes y días de esa fecha
+  const _mesSG = rowF_sg ? rowF_sg.MES : (mesInfoSG.mes||'abr.');
   const _dDiasSGRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : (mesInfoSG.soDaysElapsed||1);
   const _mesKeySG = (_mesSG||'').replace('.','');
-  const dDiasSG = (!isNaN(_dDiasSGRaw) && _dDiasSGRaw > 0) ? _dDiasSGRaw : 1;
+  const dDiasSG = (!isNaN(_dDiasSGRaw)&&_dDiasSGRaw>0) ? _dDiasSGRaw : 1;
   const dTotalSG = _diasPM[_mesKeySG] || 30;
   // 3. Real y Ppto del mes activo para la categoría activa
   const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && r.MES === _mesSG);
