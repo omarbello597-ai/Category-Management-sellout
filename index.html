@@ -1638,22 +1638,17 @@ function renderDashboard(){
   const varTotal=sp(soRealTotal,soReal25Total||1);
   const cumplColorTotal=cumplTotal>=90?'var(--pos)':cumplTotal>=75?'#F5C800':'var(--neg)';
   const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
-   // ── Proyección SG: usa mesInfoSG directamente igual que CÓMO VAMOS ──────────
-  const _catsF=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  // Encontrar mes activo por número de mes en la fecha ISO
-  const _midxSG=MES_ORD.indexOf(mesInfoSG.mes);
-  const rowF_sg=PPTO.find(r=>{
-    if(!r.FECHA_SO_ACTUAL||!_catsF.includes(r.CATEGORIA)) return false;
-    const _mp=r.FECHA_SO_ACTUAL.split('-');
-    return _mp.length===3&&(parseInt(_mp[1],10)-1)===_midxSG;
-  })||PPTO.find(r=>r.FECHA_SO_ACTUAL&&_catsF.includes(r.CATEGORIA));
-  const _mesFinal=rowF_sg?rowF_sg.MES:mesInfoSG.mes;
-  const ppMesActivo=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesFinal);
-  const soRealMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  const dDiasSG=mesInfoSG.soDaysElapsed||1;
-  const dTotalSG=mesInfoSG.soDaysTotal||30;
-  const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,dTotalSG):0;
+  // ── Proyección SG: usa cvGetMesActual() como única fuente de verdad ────────
+  // mesInfoSG ya tiene: mes, soDaysElapsed, soDaysTotal, fechaSOStr — todos correctos
+  const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
+  const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && r.MES === mesInfoSG.mes);
+  const soRealMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_REAL_2026||0), 0);
+  const soPptoMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_PPTO_2026||0), 0);
+  const dDiasSG = mesInfoSG.soDaysElapsed || 1;
+  const dTotalSG = mesInfoSG.soDaysTotal || 30;
+  const rowF_sg = PPTO.find(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA) && r.MES===mesInfoSG.mes)
+               || PPTO.find(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
+  const soPrSG = dDiasSG > 0 ? cvCalcProy(soRealMesActSG, dDiasSG, dTotalSG) : 0;
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
@@ -1737,8 +1732,8 @@ function renderDashboard(){
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
       // Proyección con misma fórmula ISO que CÓMO VAMOS
-      // Proyección por cadena — usar mesInfoSG directamente igual que CV
-      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===_mesFinal));
+      // Proyección por cadena — usa mesInfoSG como única fuente
+      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===mesInfoSG.mes));
       const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       const dDias2=mesInfoSG.soDaysElapsed||1;
