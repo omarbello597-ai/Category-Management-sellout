@@ -1661,16 +1661,24 @@ function renderDashboard(){
   const soPptoMesActSG=_ppFinal.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   // Misma prioridad de días que CV: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
   const _dISO_sg=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
-  // Buscar la fila con FECHA_SO_ACTUAL del mes activo
-  // Comparamos el mes de la fecha ISO con el índice de mesInfoSG.mes en MES_ORD
-  const _mesIdxSG=MES_ORD.indexOf(mesInfoSG.mes);
+  // Usar directamente mesInfoSG (cvGetMesActual) — misma fuente que CÓMO VAMOS
   const _catsF=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const _mesSGRef=mesInfoSG.mes;
+  const _ppMes=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSGRef);
+  // Si no matchea por string, usar el mes de la fecha ISO (rowF_sg)
   const rowF_sg=PPTO.find(r=>{
     if(!r.FECHA_SO_ACTUAL||!_catsF.includes(r.CATEGORIA)) return false;
     const _mp=r.FECHA_SO_ACTUAL.split('-');
-    return _mp.length===3&&(parseInt(_mp[1],10)-1)===_mesIdxSG;
+    const _midx=MES_ORD.indexOf(mesInfoSG.mes);
+    return _mp.length===3&&(parseInt(_mp[1],10)-1)===_midx;
   })||PPTO.find(r=>r.FECHA_SO_ACTUAL&&_catsF.includes(r.CATEGORIA));
-  const dDiasSG=_dISO_sg(rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null)||(mesInfoSG.soDaysElapsed||0)||(soPptoMesActSG>0?Math.min(dTotalSG,Math.max(1,Math.round((soRealMesActSG/soPptoMesActSG)*dTotalSG))):1);
+  const _mesFinal=rowF_sg?rowF_sg.MES:_mesSGRef;
+  const ppMesActivo=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesFinal);
+  const soRealMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  // Días: usar directamente mesInfoSG — ya calculado correctamente por cvGetMesActual
+  const dDiasSG=mesInfoSG.soDaysElapsed||1;
+  const dTotalSG=mesInfoSG.soDaysTotal||30;
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,dTotalSG):0;
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
@@ -1755,24 +1763,12 @@ function renderDashboard(){
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
       // Proyección con misma fórmula ISO que CÓMO VAMOS
-      // Proyección por cadena — misma lógica exacta que CV
-      const diasPM3={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-      const mesK2=(mesInfoSG.mes||'abr').replace('.','');
-      const dTotal2=diasPM3[mesK2]||30;
-      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===mesInfoSG.mes));
+      // Proyección por cadena — usar mesInfoSG directamente igual que CV
+      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===_mesFinal));
       const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      // Misma prioridad: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
-      const _dISO_cad=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
-      const _mesIdxSG2=MES_ORD.indexOf(mesInfoSG.mes);
-      const rowF_cad=PPTO.find(r=>{
-        if(!r.FECHA_SO_ACTUAL||!cats.includes(r.CATEGORIA)) return false;
-        const _mp2=r.FECHA_SO_ACTUAL.split('-');
-        return _mp2.length===3&&(parseInt(_mp2[1],10)-1)===_mesIdxSG2;
-      })||PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
-      const dDias2=_dISO_cad(rowF_cad?rowF_cad.FECHA_SO_ACTUAL:null)
-        ||(mesInfoSG.soDaysElapsed||0)
-        ||(soPptoMes2>0?Math.min(dTotal2,Math.max(1,Math.round((soRealMes2/soPptoMes2)*dTotal2))):1);
+      const dDias2=mesInfoSG.soDaysElapsed||1;
+      const dTotal2=mesInfoSG.soDaysTotal||30;
       const soP=dDias2>0?cvCalcProy(soRealMes2,dDias2,dTotal2):0;
       const gap=soP-soPptoMes2;
       const gapColor=gap>=0?'var(--pos)':'var(--neg)';
