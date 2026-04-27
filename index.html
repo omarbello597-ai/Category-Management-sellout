@@ -1647,7 +1647,7 @@ function renderDashboard(){
   const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   // Misma prioridad de días que CV: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
   const _dISO_sg=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
-  const rowF_sg=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
+  const rowF_sg=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.MES===mesInfoSG.mes)||PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
   const dDiasSG=_dISO_sg(rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null)||(mesInfoSG.soDaysElapsed||0)||(soPptoMesActSG>0?Math.min(dTotalSG,Math.max(1,Math.round((soRealMesActSG/soPptoMesActSG)*dTotalSG))):1);
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,dTotalSG):0;
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
@@ -1742,7 +1742,7 @@ function renderDashboard(){
       const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       // Misma prioridad: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
       const _dISO_cad=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
-      const rowF_cad=PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
+      const rowF_cad=PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA)&&r.MES===mesInfoSG.mes)||PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
       const dDias2=_dISO_cad(rowF_cad?rowF_cad.FECHA_SO_ACTUAL:null)
         ||(mesInfoSG.soDaysElapsed||0)
         ||(soPptoMes2>0?Math.min(dTotal2,Math.max(1,Math.round((soRealMes2/soPptoMes2)*dTotal2))):1);
