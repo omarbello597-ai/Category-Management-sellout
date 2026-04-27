@@ -1638,9 +1638,6 @@ function renderDashboard(){
   const varTotal=sp(soRealTotal,soReal25Total||1);
   const cumplColorTotal=cumplTotal>=90?'var(--pos)':cumplTotal>=75?'#F5C800':'var(--neg)';
   const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
-  // ── Proyección SG: calculada directamente desde PPTO filtrado por categoría ─
-  const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
-  const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   // ── Proyección SG: respeta selección de meses (1 mes o multi-mes) ──────────
   const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
   const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
