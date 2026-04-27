@@ -1641,38 +1641,57 @@ function renderDashboard(){
   // ── Proyección SG: calculada directamente desde PPTO filtrado por categoría ─
   const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
   const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  // 1. Determinar mes objetivo:
-  //    - Si hay meses seleccionados: usar el último mes seleccionado
-  //    - Si no hay selección: usar el mes con fecha más reciente (mes activo)
+  // ── Proyección SG: respeta selección de meses (1 mes o multi-mes) ──────────
+  const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
+  const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   const _mesesSelArr = MES_ORD.filter(m => selMeses.has(m));
-  const _mesObjetivo = _mesesSelArr.length > 0
-    ? _mesesSelArr[_mesesSelArr.length - 1]   // último mes seleccionado
-    : null;                                     // sin selección → buscar más reciente
+  const _esMultiSG = _mesesSelArr.length > 1;
 
+  // Mes de corte: último seleccionado, o el más reciente con fecha si no hay selección
+  const _mesCorte = _mesesSelArr.length > 0
+    ? _mesesSelArr[_mesesSelArr.length - 1]
+    : null;
   const _allFechas = PPTO.filter(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
-  const rowF_sg = _mesObjetivo
-    ? (_allFechas.find(r => r.MES === _mesObjetivo)   // fila del mes seleccionado
-       || _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null))
-    : _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null);
+  const rowF_sg = _mesCorte
+    ? (_allFechas.find(r => r.MES === _mesCorte)
+       || _allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b, null))
+    : _allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b, null);
 
-  // 2. Extraer mes y días de esa fila
-  const _mesSG = rowF_sg ? rowF_sg.MES : (_mesObjetivo||'abr.');
-  const _dDiasSGRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : 1;
+  const _mesSG = rowF_sg ? rowF_sg.MES : (_mesCorte||'abr.');
   const _mesKeySG = (_mesSG||'').replace('.','');
-  // Si el mes seleccionado es un mes cerrado (ratio >= 1), usar días totales del mes
-  const _esMesCerrado = _mesObjetivo && rowF_sg && (() => {
-    const _ppCheck = PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSG);
-    const _real = _ppCheck.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-    const _ppto = _ppCheck.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-    return _ppto>0 && (_real/_ppto) >= 0.98;
-  })();
   const dTotalSG = _diasPM[_mesKeySG] || 30;
-  const dDiasSG = _esMesCerrado ? dTotalSG : ((!isNaN(_dDiasSGRaw)&&_dDiasSGRaw>0) ? _dDiasSGRaw : 1);
-  // 3. Real y Ppto del mes activo para la categoría activa
-  const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && r.MES === _mesSG);
+
+  // Días transcurridos del mes de corte
+  const _dRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : 1;
+  const _dCorte = (!isNaN(_dRaw)&&_dRaw>0) ? _dRaw : 1;
+
+  // Mes cerrado = tiene todos los días (ratio real/ppto >= 98%)
+  const _ppCorte = PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSG);
+  const _realCorte = _ppCorte.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const _pptoCorte = _ppCorte.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const _mesCerrado = _pptoCorte>0 && (_realCorte/_pptoCorte)>=0.98;
+
+  // Real y Ppto: suma de TODOS los meses seleccionados (o solo el mes de corte si no hay selección)
+  const _mesesParaSum = _mesesSelArr.length > 0 ? _mesesSelArr : [_mesSG];
+  const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && _mesesParaSum.includes(r.MES));
   const soRealMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_REAL_2026||0), 0);
   const soPptoMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_PPTO_2026||0), 0);
-  const soPrSG = dDiasSG > 0 ? cvCalcProy(soRealMesActSG, dDiasSG, dTotalSG) : 0;
+
+  // Días para proyección:
+  // - Multi-mes: días pasados de meses cerrados + días transcurridos del mes de corte
+  // - Un mes cerrado: días totales (proy = real)
+  // - Un mes en curso: días transcurridos
+  let dDiasSG, _dTotalMulti;
+  if(_esMultiSG){
+    const _diasPasados = _mesesSelArr.slice(0,-1).reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
+    const _diasCorteUlt = _mesCerrado ? dTotalSG : _dCorte;
+    dDiasSG = _diasPasados + _diasCorteUlt;
+    _dTotalMulti = _mesesSelArr.reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
+  } else {
+    dDiasSG = _mesCerrado ? dTotalSG : _dCorte;
+    _dTotalMulti = dTotalSG;
+  }
+  const soPrSG = dDiasSG > 0 ? cvCalcProy(soRealMesActSG, dDiasSG, _dTotalMulti) : 0;
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
@@ -1756,11 +1775,11 @@ function renderDashboard(){
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
       // Proyección con misma fórmula ISO que CÓMO VAMOS
-      // Proyección por cadena — usa _mesSG y dDiasSG calculados arriba
-      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&r.MES===_mesSG));
+      // Proyección por cadena — suma todos los meses seleccionados
+      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&_mesesParaSum.includes(r.MES)));
       const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      const soP=dDiasSG>0?cvCalcProy(soRealMes2,dDiasSG,dTotalSG):0;
+      const soP=dDiasSG>0?cvCalcProy(soRealMes2,dDiasSG,_dTotalMulti):0;
       const gap=soP-soPptoMes2;
       const gapColor=gap>=0?'var(--pos)':'var(--neg)';
       const proyPct=soPptoMes2>0?soP/soPptoMes2*100:0;
