@@ -1638,45 +1638,19 @@ function renderDashboard(){
   const varTotal=sp(soRealTotal,soReal25Total||1);
   const cumplColorTotal=cumplTotal>=90?'var(--pos)':cumplTotal>=75?'#F5C800':'var(--neg)';
   const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
-  // Proyección SG — misma lógica exacta que CÓMO VAMOS
-  const diasPM_sg={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  const mesKSG=(mesInfoSG.mes||'abr').replace('.','');
-  const dTotalSG=diasPM_sg[mesKSG]||30;
-  // Filtrar por mes activo — mesInfoSG.mes debe coincidir con MES en PPTO
-  // Usar cvGetMesActual que ya calcula el mes correcto
-  const ppMesActivo=PPTO.filter(r=>{
-    const _cats2=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-    return _cats2.includes(r.CATEGORIA)&&r.MES===mesInfoSG.mes;
-  });
-  // Si no hay filas, puede ser problema de formato — intentar con mes detectado por FECHA
-  const _ppMesAlt=ppMesActivo.length>0?ppMesActivo:PPTO.filter(r=>{
-    const _cats2=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-    if(!_cats2.includes(r.CATEGORIA)) return false;
-    // Detectar mes activo de la fecha ISO
-    const _f=PPTO.find(x=>x.FECHA_SO_ACTUAL&&_cats2.includes(x.CATEGORIA)&&x===rowF_sg);
-    return _f&&r.MES===_f.MES;
-  });
-  const _ppFinal=_ppMesAlt.length>0?_ppMesAlt:ppMesActivo;
-  const soRealMesActSG=_ppFinal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const soPptoMesActSG=_ppFinal.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  // Misma prioridad de días que CV: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
-  const _dISO_sg=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
-  // Usar directamente mesInfoSG (cvGetMesActual) — misma fuente que CÓMO VAMOS
+   // ── Proyección SG: usa mesInfoSG directamente igual que CÓMO VAMOS ──────────
   const _catsF=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const _mesSGRef=mesInfoSG.mes;
-  const _ppMes=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSGRef);
-  // Si no matchea por string, usar el mes de la fecha ISO (rowF_sg)
+  // Encontrar mes activo por número de mes en la fecha ISO
+  const _midxSG=MES_ORD.indexOf(mesInfoSG.mes);
   const rowF_sg=PPTO.find(r=>{
     if(!r.FECHA_SO_ACTUAL||!_catsF.includes(r.CATEGORIA)) return false;
     const _mp=r.FECHA_SO_ACTUAL.split('-');
-    const _midx=MES_ORD.indexOf(mesInfoSG.mes);
-    return _mp.length===3&&(parseInt(_mp[1],10)-1)===_midx;
+    return _mp.length===3&&(parseInt(_mp[1],10)-1)===_midxSG;
   })||PPTO.find(r=>r.FECHA_SO_ACTUAL&&_catsF.includes(r.CATEGORIA));
-  const _mesFinal=rowF_sg?rowF_sg.MES:_mesSGRef;
+  const _mesFinal=rowF_sg?rowF_sg.MES:mesInfoSG.mes;
   const ppMesActivo=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesFinal);
   const soRealMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
   const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  // Días: usar directamente mesInfoSG — ya calculado correctamente por cvGetMesActual
   const dDiasSG=mesInfoSG.soDaysElapsed||1;
   const dTotalSG=mesInfoSG.soDaysTotal||30;
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,dTotalSG):0;
