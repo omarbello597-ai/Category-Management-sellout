@@ -1646,20 +1646,15 @@ function renderDashboard(){
   const soRealMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
   const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   // Misma prioridad de días que CV: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
-  const dDiasSG=(()=>{
-    function _dISO(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
-    const rowF=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
-    const d=_dISO(rowF?rowF.FECHA_SO_ACTUAL:null);
-    if(d) return d;
-    if(mesInfoSG.soDaysElapsed) return mesInfoSG.soDaysElapsed;
-    // ratio fallback igual que CV
-    return soPptoMesActSG>0?Math.min(dTotalSG,Math.max(1,Math.round((soRealMesActSG/soPptoMesActSG)*dTotalSG))):1;
-  })();
+  const _dISO_sg=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
+  const rowF_sg=PPTO.find(r=>r.FECHA_SO_ACTUAL&&(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA));
+  const dDiasSG=_dISO_sg(rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null)||(mesInfoSG.soDaysElapsed||0)||(soPptoMesActSG>0?Math.min(dTotalSG,Math.max(1,Math.round((soRealMesActSG/soPptoMesActSG)*dTotalSG))):1);
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,dTotalSG):0;
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
   // Build total card HTML sin backticks anidados
+  const fechaISO_sg=rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null;
   const corteHtml=fechaISO_sg?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(fechaISO_sg)+'</div>':'';
   const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+'">'+fmtM(soPrSG)+'</div></div>':'';
   const pptoRowHtml=soPptoMesActSG>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">'+fmtM(soPptoMesActSG)+'</div></div>':'';
@@ -1746,14 +1741,11 @@ function renderDashboard(){
       const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       // Misma prioridad: 1) fecha ISO, 2) mesInfoSG, 3) ratio ppto
-      const dDias2=(()=>{
-        function _dISO2(f){try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}}
-        const rowF2=PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
-        const d2=_dISO2(rowF2?rowF2.FECHA_SO_ACTUAL:null);
-        if(d2) return d2;
-        if(mesInfoSG.soDaysElapsed) return mesInfoSG.soDaysElapsed;
-        return soPptoMes2>0?Math.min(dTotal2,Math.max(1,Math.round((soRealMes2/soPptoMes2)*dTotal2))):1;
-      })();
+      const _dISO_cad=(f=>{try{const p=(f||'').split('-');if(p.length===3){const n=parseInt(p[2],10);if(!isNaN(n)&&n>0&&n<=31)return n;}return null;}catch(e){return null;}});
+      const rowF_cad=PPTO.find(r=>r.FECHA_SO_ACTUAL&&cats.includes(r.CATEGORIA));
+      const dDias2=_dISO_cad(rowF_cad?rowF_cad.FECHA_SO_ACTUAL:null)
+        ||(mesInfoSG.soDaysElapsed||0)
+        ||(soPptoMes2>0?Math.min(dTotal2,Math.max(1,Math.round((soRealMes2/soPptoMes2)*dTotal2))):1);
       const soP=dDias2>0?cvCalcProy(soRealMes2,dDias2,dTotal2):0;
       const gap=soP-soPptoMes2;
       const gapColor=gap>=0?'var(--pos)':'var(--neg)';
