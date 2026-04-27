@@ -759,13 +759,17 @@ function getTotals(){
     return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
       ddi:calcDDI(inv,u26),segs:segsSet.size};
   }
-  // Usar CAD26/CAD25 para consistencia con la tarjeta Total Cadenas
-  let v26=0,v25=0,u26=0,u25=0;
+  // Usar PPTO (SO_REAL_2026) como fuente única — misma que usa Total Cadenas y CÓMO VAMOS
+  const ppFiltro=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
+  const v26=ppFiltro.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const v25=ppFiltro.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  // Unidades y DDI siguen desde CAD26 (PPTO no tiene unidades)
+  let u26=0,u25=0;
   cats.forEach(cat=>{
     (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
-      .forEach(r=>{v26+=r.VENTA||0;u26+=r.UNIDADES||0;});
+      .forEach(r=>{u26+=r.UNIDADES||0;});
     (CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
-      .forEach(r=>{v25+=r.VENTA||0;u25+=r.UNIDADES||0;});
+      .forEach(r=>{u25+=r.UNIDADES||0;});
   });
   const inv=INV.filter(r=>cats.includes(r.CATEGORIA))
     .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
