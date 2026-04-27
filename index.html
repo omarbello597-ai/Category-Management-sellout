@@ -366,11 +366,11 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 /* Amarillo Simoniz: #F5C800 | Azul Binner: #0044A8 */
 nav.cat-autos,#mes-bar.cat-autos{background:rgba(245,200,0,.22);border-bottom:2px solid rgba(245,200,0,.7);}
 nav.cat-hogar,#mes-bar.cat-hogar{background:rgba(0,68,168,.12);border-bottom:2px solid rgba(0,68,168,.45);}
-nav.cat-ferreteria,#mes-bar.cat-ferreteria{background:rgba(156,52,182,.1);border-bottom:2px solid rgba(156,52,182,.4);}
+
 nav.cat-total,#mes-bar.cat-total{background:rgba(245,130,31,.14);border-bottom:2px solid rgba(245,130,31,.55);}
 :root.light nav.cat-autos,:root.light #mes-bar.cat-autos{background:rgba(245,200,0,.28);border-bottom:2px solid rgba(200,155,0,.65);}
 :root.light nav.cat-hogar,:root.light #mes-bar.cat-hogar{background:rgba(0,68,168,.1);border-bottom:2px solid rgba(0,68,168,.4);}
-:root.light nav.cat-ferreteria,:root.light #mes-bar.cat-ferreteria{background:rgba(124,58,237,.09);border-bottom:2px solid rgba(124,58,237,.35);}
+
 :root.light nav.cat-total,:root.light #mes-bar.cat-total{background:rgba(245,130,31,.13);border-bottom:2px solid rgba(245,130,31,.5);}
 /* AUTOS: botones activos negro + amarillo para contraste sobre fondo amarillo */
 nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
@@ -546,7 +546,7 @@ nav.cat-total .brand{color:#4a4a4a;}
 const MES_ORD=['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
 const MES_LBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun',
                'jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
-const CATS=['AUTOS','HOGAR','FERRETERIA'];
+const CATS=['AUTOS','HOGAR'];
 
 const r1=n=>Math.round(n*10)/10;
 const r0=n=>Math.round(n);
@@ -630,7 +630,7 @@ async function load(){
     renderComoVamos();
     initTheme();
     setTimeout(async()=>{
-      for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
+      await loadDet('HOGAR',2026);await loadDet('HOGAR',2025);
       // Re-renderizar si el usuario está en dashboard o segmentos
       if(CUR_PAGE==='dashboard') renderDashboard();
       else if(CUR_PAGE==='segmentos') renderSegmentos();
@@ -707,7 +707,7 @@ function updateNavTheme(cat){
   // Quitar clases previas
   nav.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
   mesBar.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
-  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':cat==='FERRETERIA'?'cat-ferreteria':'cat-total';
+  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':'cat-total';
   nav.classList.add(cls);
   mesBar.classList.add(cls);
 }
@@ -725,7 +725,7 @@ function refreshAll(){
   else if(CUR_PAGE==='explorer') initExplorer();
   else if(CUR_PAGE==='segmentos') renderSegmentos();
 }
-const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='FERRETERIA'?(l?'#7c3aed':'#c084fc'):CUR_CAT==='TOTAL'?(l?'#4b5563':'#aaa'):(l?'#1A3FA3':'#F5C800');};
+const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='TOTAL'?(l?'#F5821F':'#F5821F'):(l?'#1A3FA3':'#F5C800');};
 
 // ── RESUMEN HELPERS ─────────────────────────────────────────────────────────
 function resFilter(arr){
@@ -840,9 +840,9 @@ function initTheme(){
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
-const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3',logoFile:'Logo_BINNER.png'},
-  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
+TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 
 function cvPptoFilter(cat){
   const cats=cat==='TOTAL'?CATS:[cat];
