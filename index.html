@@ -1948,18 +1948,12 @@ function eApplyFilters(){
   document.getElementById('e-count').textContent=pdvs.length+' PDVs';
   const a=ac();
 
-  // Kstrip totals — usar CAD26 para el valor total (igual fuente que Seguimiento SO)
-  // El detalle excluye filas sin PDV, lo que genera diferencias vs otras pestañas
+  // Kstrip totals — usar PPTO como fuente única (igual que CÓMO VAMOS y Seguimiento SO)
   const _eCats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const _eCad26=_eCats.flatMap(cat=>(CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)));
-  const _eCad25=_eCats.flatMap(cat=>(CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)));
-  const _eCadFil=cadFil;
-  const tv26=(_eCadFil
-    ?_eCad26.filter(r=>r.CADENA===_eCadFil)
-    :_eCad26).reduce((s,r)=>s+(r.VENTA||0),0);
-  const tv25=(_eCadFil
-    ?_eCad25.filter(r=>r.CADENA===_eCadFil)
-    :_eCad25).reduce((s,r)=>s+(r.VENTA||0),0);
+  const _ePpto=PPTO.filter(r=>_eCats.includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
+  const _ePptoFil=cadFil?_ePpto.filter(r=>r.CADENA===cadFil):_ePpto;
+  const tv26=_ePptoFil.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const tv25=_ePptoFil.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
   const tu26=pdvs.reduce((s,p)=>s+p.u,0), tinv=pdvs.reduce((s,p)=>s+p.inv,0);
   const tvarV=sp(tv26,tv25||1), tvarU=sp(tu26,pdvs.reduce((s,p)=>s+p.u25,0)||1);
   const ddiT=calcDDI(tinv,tu26);
