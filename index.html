@@ -1641,16 +1641,33 @@ function renderDashboard(){
   // ── Proyección SG: calculada directamente desde PPTO filtrado por categoría ─
   const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
   const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  // 1. Encontrar fila con FECHA_SO_ACTUAL MÁS RECIENTE para la categoría activa
-  // (Todos los meses tienen fecha — el reduce busca la más reciente)
+  // 1. Determinar mes objetivo:
+  //    - Si hay meses seleccionados: usar el último mes seleccionado
+  //    - Si no hay selección: usar el mes con fecha más reciente (mes activo)
+  const _mesesSelArr = MES_ORD.filter(m => selMeses.has(m));
+  const _mesObjetivo = _mesesSelArr.length > 0
+    ? _mesesSelArr[_mesesSelArr.length - 1]   // último mes seleccionado
+    : null;                                     // sin selección → buscar más reciente
+
   const _allFechas = PPTO.filter(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
-  const rowF_sg = _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null);
-  // 2. Extraer mes y días de esa fecha
-  const _mesSG = rowF_sg ? rowF_sg.MES : (mesInfoSG.mes||'abr.');
-  const _dDiasSGRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : (mesInfoSG.soDaysElapsed||1);
+  const rowF_sg = _mesObjetivo
+    ? (_allFechas.find(r => r.MES === _mesObjetivo)   // fila del mes seleccionado
+       || _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null))
+    : _allFechas.reduce((best,r) => (!best||r.FECHA_SO_ACTUAL>best.FECHA_SO_ACTUAL)?r:best, null);
+
+  // 2. Extraer mes y días de esa fila
+  const _mesSG = rowF_sg ? rowF_sg.MES : (_mesObjetivo||'abr.');
+  const _dDiasSGRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : 1;
   const _mesKeySG = (_mesSG||'').replace('.','');
-  const dDiasSG = (!isNaN(_dDiasSGRaw)&&_dDiasSGRaw>0) ? _dDiasSGRaw : 1;
+  // Si el mes seleccionado es un mes cerrado (ratio >= 1), usar días totales del mes
+  const _esMesCerrado = _mesObjetivo && rowF_sg && (() => {
+    const _ppCheck = PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSG);
+    const _real = _ppCheck.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+    const _ppto = _ppCheck.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+    return _ppto>0 && (_real/_ppto) >= 0.98;
+  })();
   const dTotalSG = _diasPM[_mesKeySG] || 30;
+  const dDiasSG = _esMesCerrado ? dTotalSG : ((!isNaN(_dDiasSGRaw)&&_dDiasSGRaw>0) ? _dDiasSGRaw : 1);
   // 3. Real y Ppto del mes activo para la categoría activa
   const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && r.MES === _mesSG);
   const soRealMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_REAL_2026||0), 0);
