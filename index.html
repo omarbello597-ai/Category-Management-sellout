@@ -366,11 +366,11 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 /* Amarillo Simoniz: #F5C800 | Azul Binner: #0044A8 */
 nav.cat-autos,#mes-bar.cat-autos{background:rgba(245,200,0,.22);border-bottom:2px solid rgba(245,200,0,.7);}
 nav.cat-hogar,#mes-bar.cat-hogar{background:rgba(0,68,168,.12);border-bottom:2px solid rgba(0,68,168,.45);}
-
+nav.cat-ferreteria,#mes-bar.cat-ferreteria{background:rgba(156,52,182,.1);border-bottom:2px solid rgba(156,52,182,.4);}
 nav.cat-total,#mes-bar.cat-total{background:rgba(245,130,31,.14);border-bottom:2px solid rgba(245,130,31,.55);}
 :root.light nav.cat-autos,:root.light #mes-bar.cat-autos{background:rgba(245,200,0,.28);border-bottom:2px solid rgba(200,155,0,.65);}
 :root.light nav.cat-hogar,:root.light #mes-bar.cat-hogar{background:rgba(0,68,168,.1);border-bottom:2px solid rgba(0,68,168,.4);}
-
+:root.light nav.cat-ferreteria,:root.light #mes-bar.cat-ferreteria{background:rgba(124,58,237,.09);border-bottom:2px solid rgba(124,58,237,.35);}
 :root.light nav.cat-total,:root.light #mes-bar.cat-total{background:rgba(245,130,31,.13);border-bottom:2px solid rgba(245,130,31,.5);}
 /* AUTOS: botones activos negro + amarillo para contraste sobre fondo amarillo */
 nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
@@ -390,9 +390,147 @@ nav.cat-total .brand{color:#4a4a4a;}
 :root.light nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light #mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light nav.cat-total .brand{color:#4a4a4a;}
+
+/* ── LOGIN SCREEN ─────────────────────────────────────────────────────────── */
+#login-screen{
+  position:fixed;inset:0;z-index:99999;display:flex;align-items:center;
+  justify-content:center;background:#0d0d0d;
+}
+#login-screen::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(245,200,0,.1) 0%,rgba(0,68,168,.1) 100%);
+}
+.login-box{
+  position:relative;z-index:1;width:340px;padding:36px 30px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;backdrop-filter:blur(12px);
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+}
+.login-logo{height:50px;object-fit:contain;margin-bottom:2px;}
+.login-title{font-family:var(--ff);font-size:22px;letter-spacing:3px;color:#fff;text-align:center;line-height:1.2;}
+.login-sub{font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;text-align:center;}
+.login-form{width:100%;display:flex;flex-direction:column;gap:11px;}
+.login-input{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:#fff;padding:11px 14px;border-radius:8px;font-family:var(--fb);font-size:13px;
+  outline:none;transition:border-color .2s;
+}
+.login-input::placeholder{color:rgba(255,255,255,.25);}
+.login-input:focus{border-color:rgba(245,200,0,.6);}
+.login-btn{
+  width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#F5C800,#F5821F);color:#000;
+  font-family:var(--ff);font-size:16px;letter-spacing:2px;transition:opacity .15s;
+}
+.login-btn:hover{opacity:.88;}
+.login-err{font-family:var(--fm);font-size:10px;color:#ff6b6b;text-align:center;min-height:16px;}
+
+/* ── ACCESS PANEL ─────────────────────────────────────────────────────────── */
+#access-panel{
+  display:none;position:fixed;inset:0;z-index:99998;
+  background:rgba(0,0,0,.75);align-items:center;justify-content:center;
+}
+#access-panel.open{display:flex;}
+.ap-box{
+  background:var(--surf);border:1px solid var(--border);border-radius:14px;
+  width:min(720px,96vw);max-height:82vh;display:flex;flex-direction:column;overflow:hidden;
+}
+.ap-hdr{
+  padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.ap-title{font-family:var(--ff);font-size:20px;letter-spacing:2px;color:var(--white);}
+.ap-hdr-btns{display:flex;gap:8px;}
+.ap-btn{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:4px 12px;border-radius:6px;cursor:pointer;
+  font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;
+}
+.ap-btn:hover{border-color:var(--acc);color:var(--acc);}
+.ap-btn.danger:hover{border-color:var(--neg);color:var(--neg);}
+.ap-table-wrap{overflow-y:auto;flex:1;}
+.ap-table{width:100%;border-collapse:collapse;}
+.ap-table th{
+  background:var(--bg);color:var(--acc);font-family:var(--fm);font-size:8px;
+  letter-spacing:1px;text-transform:uppercase;padding:9px 16px;text-align:left;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+}
+.ap-table td{
+  padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:12px;font-family:var(--fm);
+}
+.ap-table tr:hover td{background:rgba(255,255,255,.02);}
+.ap-footer{
+  padding:10px 18px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.ap-footer-info{font-family:var(--fm);font-size:9px;color:var(--muted);}
+/* Botones en nav */
+.nav-auth-btn{
+  background:var(--card);border:1px solid var(--border);color:var(--muted);
+  padding:4px 10px;border-radius:5px;cursor:pointer;
+  font-family:var(--fm);font-size:9px;letter-spacing:1px;
+  transition:all .15s;white-space:nowrap;
+}
+.nav-auth-btn:hover{border-color:var(--acc);color:var(--acc);}
+
 </style>
 </head>
 <body>
+
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <img src="Logo_Total.png" class="login-logo" alt="Simonizco"
+      onerror="this.style.display='none'">
+    <div>
+      <div class="login-title">CATEGORY<br>MANAGEMENT</div>
+      <div class="login-sub" style="margin-top:4px;">Sell Out · Sell In · 2025–2026</div>
+    </div>
+    <div class="login-form">
+      <input class="login-input" id="li-user" type="text"
+        placeholder="Usuario" autocomplete="username"
+        onkeydown="if(event.key==='Enter')document.getElementById('li-pass').focus()">
+      <input class="login-input" id="li-pass" type="password"
+        placeholder="Contraseña" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-err" id="li-err"></div>
+      <button class="login-btn" onclick="doLogin()">INGRESAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACCESS PANEL (CatMan only) ─────────────────────────────────────────── -->
+<div id="access-panel">
+  <div class="ap-box">
+    <div class="ap-hdr">
+      <span class="ap-title">REPORTE DE ACCESOS</span>
+      <div class="ap-hdr-btns">
+        <button class="ap-btn" onclick="exportAccessLog()">⬇ EXPORTAR</button>
+        <button class="ap-btn danger" onclick="clearAccessLog()">🗑 LIMPIAR</button>
+        <button class="ap-btn" onclick="document.getElementById('access-panel').classList.remove('open')">✕ CERRAR</button>
+      </div>
+    </div>
+    <div class="ap-table-wrap">
+      <table class="ap-table">
+        <thead><tr>
+          <th>#</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+          <th>Hora ingreso</th>
+          <th>Hora salida</th>
+          <th>Tiempo en app</th>
+        </tr></thead>
+        <tbody id="ap-tbody"></tbody>
+      </table>
+    </div>
+    <div class="ap-footer">
+      <span class="ap-footer-info" id="ap-total">— registros</span>
+      <span class="ap-footer-info">Solo visible para CatMan</span>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div id="loading-screen">
@@ -425,21 +563,22 @@ nav.cat-total .brand{color:#4a4a4a;}
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;min-height:100vh;flex-direction:column;">
+<div id="app" style="display:none;min-height:100vh;flex-direction:column;" data-auth="1">
 
   <nav>
     <div class="brand">Category Management</div>
     <div class="nav-sep"></div>
     <div class="main-tabs">
       <div class="main-tab active" onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
-      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 SEGUIMIENTO SELL OUT</div>
-      <div class="main-tab"        onclick="showPage('explorer',this)">🏪 SELL OUT × PDV</div>
-      <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SELL OUT × SEGMENTOS</div>
+      <div class="main-tab"        onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
+      <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
+      <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
     </div>
     <div class="nav-sep"></div>
     <div class="cat-pills">
       <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
       <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
+      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)">🔧 FERRETERÍA</div>
       <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
     </div>
     <div style="flex:1"></div>
@@ -546,7 +685,7 @@ nav.cat-total .brand{color:#4a4a4a;}
 const MES_ORD=['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
 const MES_LBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun',
                'jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
-const CATS=['AUTOS','HOGAR'];
+const CATS=['AUTOS','HOGAR','FERRETERIA'];
 
 const r1=n=>Math.round(n*10)/10;
 const r0=n=>Math.round(n);
@@ -630,10 +769,7 @@ async function load(){
     renderComoVamos();
     initTheme();
     setTimeout(async()=>{
-      await loadDet('HOGAR',2026);await loadDet('HOGAR',2025);
-      // Re-renderizar si el usuario está en dashboard o segmentos
-      if(CUR_PAGE==='dashboard') renderDashboard();
-      else if(CUR_PAGE==='segmentos') renderSegmentos();
+      for(const c of ['HOGAR','FERRETERIA']){await loadDet(c,2026);await loadDet(c,2025);}
     },800);
   }catch(e){
     const el=document.getElementById('ld-msg');
@@ -656,17 +792,22 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      const totalDisp=document.querySelectorAll('.mes-btn:not(:disabled)').length;
-      if(selMeses.size===totalDisp){
-        selMeses.clear();
-        document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-        selMeses.add(mes); this.classList.add('active');
-      } else if(selMeses.size===1&&selMeses.has(mes)){
-        selMeses.clear();
-        document.querySelectorAll('.mes-btn').forEach(b=>{
-          if(!b.disabled){b.classList.add('active');selMeses.add(b.dataset.mes);}
-        });
+      if(CUR_PAGE==='comovamos'){
+        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
+        // Si ya es el único activo → deseleccionar (ver todos)
+        if(selMeses.size===1&&selMeses.has(mes)){
+          // Deseleccionar → volver a mostrar mes actual
+          selMeses.clear();
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        } else {
+          // Seleccionar solo este mes
+          selMeses.clear();
+          selMeses.add(mes);
+          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+        }
       } else {
+        // En otras páginas: comportamiento toggle normal
         this.classList.toggle('active');
         if(selMeses.has(mes)) selMeses.delete(mes);
         else selMeses.add(mes);
@@ -707,7 +848,7 @@ function updateNavTheme(cat){
   // Quitar clases previas
   nav.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
   mesBar.classList.remove('cat-autos','cat-hogar','cat-ferreteria','cat-total');
-  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':'cat-total';
+  const cls=cat==='AUTOS'?'cat-autos':cat==='HOGAR'?'cat-hogar':cat==='FERRETERIA'?'cat-ferreteria':'cat-total';
   nav.classList.add(cls);
   mesBar.classList.add(cls);
 }
@@ -725,7 +866,7 @@ function refreshAll(){
   else if(CUR_PAGE==='explorer') initExplorer();
   else if(CUR_PAGE==='segmentos') renderSegmentos();
 }
-const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='TOTAL'?(l?'#F5821F':'#F5821F'):(l?'#1A3FA3':'#F5C800');};
+const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='FERRETERIA'?(l?'#7c3aed':'#c084fc'):CUR_CAT==='TOTAL'?(l?'#4b5563':'#aaa'):(l?'#1A3FA3':'#F5C800');};
 
 // ── RESUMEN HELPERS ─────────────────────────────────────────────────────────
 function resFilter(arr){
@@ -741,62 +882,16 @@ function calcDDI(inv,units){
   return Math.round(inv/(units/days));
 }
 function getTotals(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  if(dSelCad){
-    let v26=0,v25=0,u26=0,u25=0;
-    cats.forEach(cat=>{
-      (CAD26[cat]||[]).filter(r=>r.CADENA===dSelCad&&(selMeses.size===0||selMeses.has(r.MES)))
-        .forEach(r=>{v26+=r.VENTA||0;u26+=r.UNIDADES||0;});
-      (CAD25[cat]||[]).filter(r=>r.CADENA===dSelCad&&(selMeses.size===0||selMeses.has(r.MES)))
-        .forEach(r=>{v25+=r.VENTA||0;u25+=r.UNIDADES||0;});
-    });
-    const inv=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad)
-      .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
-    const segsSet=new Set();
-    cats.forEach(cat=>(DET[cat+'_2026']||[])
-      .filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
-      .forEach(r=>{if(r.G)segsSet.add(r.G);}));
-    return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
-      ddi:calcDDI(inv,u26),segs:segsSet.size};
-  }
-  // Usar PPTO (SO_REAL_2026) como fuente única — misma que usa Total Cadenas y CÓMO VAMOS
-  const ppFiltro=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
-  const v26=ppFiltro.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const v25=ppFiltro.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
-  // Unidades y DDI siguen desde CAD26 (PPTO no tiene unidades)
-  let u26=0,u25=0;
-  cats.forEach(cat=>{
-    (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
-      .forEach(r=>{u26+=r.UNIDADES||0;});
-    (CAD25[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES))
-      .forEach(r=>{u25+=r.UNIDADES||0;});
-  });
-  const inv=INV.filter(r=>cats.includes(r.CATEGORIA))
-    .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
-  const segsSet=new Set();
-  cats.forEach(cat=>(RES26||[]).filter(r=>r.CATEGORIA===cat&&(selMeses.size===0||selMeses.has(r.MES)))
-    .forEach(r=>{if(r.SEGMENTO)segsSet.add(r.SEGMENTO);}));
+  const r26=resFilter(RES26),r25=resFilter(RES25);
+  const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
+  const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
+  const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
+  const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
+  const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
   return{v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),
-    ddi:calcDDI(inv,u26),segs:segsSet.size};
+    ddi:calcDDI(inv,u26),segs:[...new Set(r26.map(r=>r.SEGMENTO))].length};
 }
 function getSegs(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  if(dSelCad){
-    const m={};
-    cats.forEach(cat=>{
-      (DET[cat+'_2026']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
-        .forEach(r=>{if(!r.G)return;if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-          m[r.G].v26+=r.V||0;m[r.G].u26+=r.U||0;});
-      (DET[cat+'_2025']||[]).filter(r=>r.C===dSelCad&&(selMeses.size===0||selMeses.has(r.M)))
-        .forEach(r=>{if(!r.G)return;if(!m[r.G])m[r.G]={seg:r.G,v26:0,u26:0,inv:0,v25:0,u25:0};
-          m[r.G].v25+=r.V||0;m[r.G].u25+=r.U||0;});
-    });
-    INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===dSelCad)
-      .forEach(r=>{if(m[r.SEGMENTO])m[r.SEGMENTO].inv+=r.INVENTARIO_UNDS||0;});
-    return Object.values(m).map(s=>({...s,
-      var:sp(s.v26,s.v25||1),varu:sp(s.u26,s.u25||1),ddi:calcDDI(s.inv,s.u26)
-    })).sort((a,b)=>b.v26-a.v26);
-  }
   const r26=resFilter(RES26),r25=resFilter(RES25);
   const m={};
   r26.forEach(r=>{if(!m[r.SEGMENTO])m[r.SEGMENTO]={seg:r.SEGMENTO,v26:0,u26:0,inv:0,v25:0,u25:0};
@@ -851,9 +946,9 @@ function initTheme(){
 }
 
 // ── COMO VAMOS ────────────────────────────────────────────────────────────────
-const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
+const CV_BRAND_DARK={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#F5C800',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#6699ff',logoFile:'Logo_BINNER.png'},FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#c084fc',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',logoFile:'Logo_SImoniz.png'},HOGAR:{name:'Binner',cat:'Categoría Hogar',color:'#1A3FA3',logoFile:'Logo_BINNER.png'},
-TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
+  FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 
 function cvPptoFilter(cat){
   const cats=cat==='TOTAL'?CATS:[cat];
@@ -1014,42 +1109,37 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
   </div>`;
 }
 
- function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
+function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
   const isSO=tipo==='SO';
+  const typeColor=isSO?'var(--acc)':'#6699ff';
   const barColor=isSO?'var(--acc)':'#6699ff';
-  const hdrBg=isSO?'rgba(245,200,0,.15)':'rgba(26,63,163,.12)';
-  const border=isSO?'rgba(245,200,0,.35)':'rgba(26,63,163,.3)';
   const cumplReal=ppto>0?real/ppto*100:0;
   const cumplProy=ppto>0?proy/ppto*100:0;
   const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
   const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
-  return`<div style="border-radius:10px;overflow:hidden;border:1.5px solid ${border};">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:${hdrBg};">
+  const gap=proy-ppto;
+  return`<div class="cv-mini ${tipo.toLowerCase()}">
+    <div class="cv-mini-hdr">
       <div>
-        <div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:${barColor};">${isSO?'SELL OUT':'SELL IN'}</div>
-        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;letter-spacing:.3px;">Al ${fechaCorte}</div>`:''}
+        <span class="cv-mini-type" style="color:${typeColor}">${isSO?'Sell Out':'Sell In'}</span>
+        ${fechaCorte?`<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al ${fechaCorte}</div>`:''}
       </div>
-      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:8px;">Hoy: ${cumplReal.toFixed(1)}%</span>
-        <span class="pill ${cumplProy>=90?'pos':cumplProy>=75?'':'neg'}" style="font-size:8px;${cumplProy>=75&&cumplProy<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':''}">Proy: ${cumplProy.toFixed(1)}%</span>
-      </div>
+      <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:700;">Hoy: ${cumplReal.toFixed(1)}%</span>
     </div>
-    <div style="padding:8px 12px;">
-      <div class="cv-mini-rows" style="margin-bottom:6px;">
-        <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${barColor}">${fmtM(real)}</div></div>
-        <div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor}">${fmtM(proy)}</div></div>
-        <div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(ppto)}</div></div>
-      </div>
-      <div class="cv-mini-bar-bg" style="margin-bottom:4px;">
-        <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
-        <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;">
-        <span style="font-family:var(--fm);font-size:8px;color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
-        <span style="font-family:var(--fm);font-size:8px;color:${cumplColor};">${cumplProy.toFixed(1)}% proy.</span>
-      </div>
+    <div class="cv-mini-rows">
+      <div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:${typeColor}">${fmtM(real)}</div></div>
+      <div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:${cumplColor}">${fmtM(proy)}</div></div>
+      <div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">${fmtM(ppto)}</div></div>
+    </div>
+    <div class="cv-mini-bar-bg">
+      <div class="cv-mini-bar-p" style="width:${barProy}%;background:${cumplColor};"></div>
+      <div class="cv-mini-bar-r" style="width:${barReal}%;background:${barColor};"></div>
+    </div>
+    <div class="cv-mini-foot" style="display:flex;justify-content:space-between;">
+      <span class="cv-mini-cumpl-l" style="color:${realColor};font-weight:600;">${cumplReal.toFixed(1)}% hoy</span>
+      <span class="cv-mini-cumpl-v" style="color:${cumplColor}">${cumplProy.toFixed(1)}% proy.</span>
     </div>
   </div>`;
 }
@@ -1335,58 +1425,31 @@ function renderComoVamos(){
     </div>
   </div>`;
 
-  // ── Cadenas: ordenar por SO_REAL_2026 ───────────────────────────────────────
+  // ── Cadenas grid ──────────────────────────────────────────────────────
+  // Ordenar cadenas por valor de SO_REAL_2026 descendente
   const cadenasMap={};
   ppAll.forEach(r=>{if(r.CADENA)cadenasMap[r.CADENA]=(cadenasMap[r.CADENA]||0)+(r.SO_REAL_2026||0);});
   const cadenas=Object.keys(cadenasMap).sort((a,b)=>cadenasMap[b]-cadenasMap[a]);
-
-  // ── Sección 3: Tendencia total cadenas ──────────────────────────────────────
-  const totalTrendH=`<div>
-    <div class="cv-section-lbl">Tendencia total cadenas · ${mesLabel} 2026</div>
-    <div class="trend-row">
-      <div class="cbox">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid ${a};background:rgba(255,255,255,.02);">
-          <span class="cbox-label" style="margin:0;color:${a};opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>
-          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-            <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-            <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
-          </div>
-        </div>
-        <div style="position:relative;height:160px"><canvas id="cv-total-so"></canvas></div>
-      </div>
-      <div class="cbox">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid #6699ff;background:rgba(255,255,255,.02);">
-          <span class="cbox-label" style="margin:0;color:#6699ff;opacity:.9;">📦 TENDENCIA SELL IN ($M)</span>
-          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-            <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-            <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
-          </div>
-        </div>
-        <div style="position:relative;height:160px"><canvas id="cv-total-si"></canvas></div>
-      </div>
-    </div>
-  </div>`;
-
-  // ── Sección 4: Por cadena (tarjeta + gráfica SO + gráfica SI) ──────────────
-  const cadRowsH=`<div>
+  const cadH=`<div>
     <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-    ${cadenas.map(cad=>{
+    <div class="cv-cad-grid">${cadenas.map(cad=>{
       const ppC=ppAll.filter(r=>r.CADENA===cad);
+      // Acumulado
+      // Acumulado de todos los meses con real para esta cadena (header)
       const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
       const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
       const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
       const varPct=sp(totSORCad,varC||1);
-      const ppCMes=esMultiMes?ppC:ppC.filter(r=>r.MES===mesFiltro);
+      // Mes actual
+      const ppCMes=ppC.filter(r=>r.MES===mesFiltro);
       const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
       const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
       const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
       const soP=cvCalcProy(csOR,soDias,soDiasT);
       const siP=cvCalcProy(csiR,siDias,siDiasT);
+      // DDI para esta cadena
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
       const ddiCad=calcDDI(invCad,uCad);
@@ -1394,69 +1457,58 @@ function renderComoVamos(){
       const cumplSOProy=csOP>0?soP/csOP*100:0;
       const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
-      const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
-       return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch;">
-        <div class="cv-cad-card">
-          <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-              ${cadLogoHtml(cad,22)}
-              <div style="min-width:0;">
-                <div class="cv-cad-name">${cad}</div>
-                <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
-              </div>
-            </div>
-            <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
-          </div>
-          <div class="cv-cad-body">
-            ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
-            ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
-          </div>
-          <div style="padding:7px 12px;background:${(soP-csOP)>=0?'var(--posL)':'var(--negL)'};border-top:1px solid ${(soP-csOP)>=0?'rgba(10,150,73,.15)':'rgba(229,25,44,.15)'};">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-family:var(--fm);font-size:7px;font-weight:700;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};letter-spacing:.5px;text-transform:uppercase;">Gap proyectado cierre</div>
-                <div style="font-size:8px;color:var(--muted);margin-top:1px;">Faltan ${fmtM(Math.abs(soP-csOP))} en ${soDiasT-soDias} días · ${soDiasT} días</div>
-              </div>
-              <div style="font-family:var(--ff);font-size:18px;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};">${(soP-csOP)>=0?'+':''}${fmtM(soP-csOP)}</div>
+      return`<div class="cv-cad-card">
+        <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            ${cadLogoHtml(cad,28)}
+            <div style="min-width:0;">
+              <div class="cv-cad-name">${cad}</div>
+              <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
             </div>
           </div>
+          <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
         </div>
-        <div class="cbox" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
-          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;padding:4px 6px;background:rgba(255,255,255,.02);border-radius:5px;border-left:2.5px solid ${a};">
-              <span style="font-family:var(--fm);font-size:8px;color:${a};letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>
-              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
-                <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
-                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
-                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
-              </div>
-            </div>
-            <div style="position:relative;flex:1;min-height:85px;margin-top:4px;"><canvas id="cv-so-${cadId}"></canvas></div>
-          </div>
-          <div style="height:10px;flex-shrink:0;"></div>
-          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;padding:4px 6px;background:rgba(255,255,255,.02);border-radius:5px;border-left:2.5px solid #6699ff;">
-              <span style="font-family:var(--fm);font-size:8px;color:#6699ff;letter-spacing:.5px;opacity:.85;">SELL IN ($M)</span>
-              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
-                <span><span style="display:inline-block;width:8px;height:2px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
-                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
-                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
-              </div>
-            </div>
-            <div style="position:relative;flex:1;min-height:85px;margin-top:4px;"><canvas id="cv-si-${cadId}"></canvas></div>
-          </div>
+        <div class="cv-cad-body">
+          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
+          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
         </div>
       </div>`;
     }).join('')}
     </div>
   </div>`;
 
-  destroyCharts(cvCharts);
-  document.getElementById('cv-body').innerHTML=heroH+proyH+totalTrendH+cadRowsH;
-  setTimeout(()=>{
-    buildCvTotalCharts(getTrend(), a);
-    buildCvCadCharts(cadenas, a);
-  }, 50);
+  // ── Recomendaciones ───────────────────────────────────────────────────
+  const recoH=`<div>
+    <div class="cv-section-lbl">Recomendaciones por cadena · Acelerar Sell Out ${mesLabel}</div>
+    <div class="cv-reco-grid">${cadenas.map(cad=>{
+      const ppC=ppAll.filter(r=>r.CADENA===cad);
+      const ppCMesR=ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMesR.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMesR.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMesR.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMesR.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
+      const cumplSO=csOP>0?soP/csOP*100:0;
+      const soGap=soP-csOP;
+      const siGap=cvCalcProy(csiR,siDias,siDiasT)-csiP;
+      const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
+      const ddiCad=calcDDI(invCad,uCad);
+      const reco=cvRecoText(cad,soGap,siGap,cumplSO,ddiCad,mesFiltro);
+      const borderColor=reco.color;
+      return`<div class="cv-reco" style="border-color:${borderColor};background:${borderColor==='var(--pos)'?'rgba(13,183,91,.04)':borderColor==='var(--neg)'?'rgba(229,25,44,.04)':'rgba(245,200,0,.04)'}">
+        <div class="cv-reco-top">
+          <span class="cv-reco-cad" style="color:${borderColor}">${cad}</span>
+          <span class="cv-reco-gap">gap ${sg(soGap)}${fmtM(soGap)} · ${cumplSO.toFixed(0)}% cumpl.</span>
+        </div>
+        <div class="cv-reco-txt">${reco.txt}</div>
+        <div class="cv-reco-chip" style="background:${borderColor==='var(--pos)'?'rgba(13,183,91,.1)':borderColor==='var(--neg)'?'rgba(229,25,44,.1)':'rgba(245,200,0,.1)'};border:1px solid ${borderColor};color:${borderColor}">${reco.chip}</div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+
+  document.getElementById('cv-body').innerHTML=heroH+proyH+cadH+recoH;
 }
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
@@ -1596,27 +1648,39 @@ function renderDashboard(){
   const mLbl=selMeses.size===0?'Acumulado':
     MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m]).join(' · ');
   const nMeses=selMeses.size||4;
+
+  // Filter by cadena if selected
+  const r26all=resFilter(RES26);
+  const r25all=resFilter(RES25);
+  const r26=dSelCad?r26all.filter(r=>{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
+    return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
+  }):r26all;
+
   const t=getTotals(),segs=getSegs(),trend=getTrend();
   const cadenas=getCadenas();
-  const mesInfoSG=cvGetMesActual();
 
   // Populate CADENA dropdown
   const sel=document.getElementById('d-cad-sel');
   if(sel){
+    const current=sel.value;
     sel.innerHTML='<option value="">Todas las cadenas</option>'+
       cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
     if(!cadenas.find(c=>c.cad===dSelCad)) dSelCad='';
   }
+
+  // Value badge
   const badge=document.getElementById('d-val-badge');
-  if(badge) badge.textContent=fmtM(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
+  if(badge) badge.textContent=fmtD(t.v26)+' · '+(t.varV>=0?'+':'')+t.varV.toFixed(1)+'%';
   document.getElementById('d-periodo').textContent=mLbl;
 
-  // ── KPI row ──────────────────────────────────────────────────────────────────
+  // ── KPI row ──────────────────────────────────────────────────────────
   const periodTxt='ACUMULADO · '+
     (selMeses.size===0?'Todo el año':MES_ORD.filter(m=>selMeses.has(m)).map(m=>MES_LBL[m].toUpperCase()).join(' · '));
   const kpis=[
-    {l:'Sell Out Año Actual',  v:fmtM(t.v26), s:'Año Anterior: '+fmtM(t.v25), neg:t.varV<0},
-    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtM(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
+    {l:'Valor Año Actual',  v:fmtD(t.v26), s:'Año Anterior: '+fmtD(t.v25), neg:t.varV<0},
+    {l:'VAR% Valor',        v:sg(t.varV)+t.varV.toFixed(1)+'%', s:'Dif: '+sg(t.v26-t.v25)+fmtD(t.v26-t.v25), neg:t.varV<0, c:t.varV>=0?'var(--pos)':'var(--neg)'},
     {l:'Unidades Año Actual',v:fmtK(t.u26), s:'Año Anterior: '+fmtK(t.u25)},
     {l:'VAR% Unds',         v:sg(t.varU)+t.varU.toFixed(1)+'%', s:'Dif: '+fmtK(Math.abs(t.u26-t.u25)), neg:t.varU<0, c:t.varU>=0?'var(--pos)':'var(--neg)'},
     {l:'Segmentos',         v:t.segs, s:segs.filter(s=>s.var<0).length+' en caída'},
@@ -1628,249 +1692,108 @@ function renderDashboard(){
     <div class="kpi-sub">${k.s||''}</div>
   </div>`).join('')+'</div>';
 
+  // ── Trend charts ──────────────────────────────────────────────────────
+  const trendsH=`<div class="trend-row">
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
+    </div>
+    <div class="cbox">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
+        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+          <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+        </div>
+      </div>
+      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
+    </div>
+  </div>`;
 
-  // ── Fila superior: tarjeta total + gráfica SO ────────────────────────────────
-  const ppTotal=PPTO.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
-  const soRealTotal=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const soPptoTotal=ppTotal.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  const soReal25Total=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
-  const cumplTotal=soPptoTotal>0?soRealTotal/soPptoTotal*100:0;
-  const varTotal=sp(soRealTotal,soReal25Total||1);
-  const cumplColorTotal=cumplTotal>=90?'var(--pos)':cumplTotal>=75?'#F5C800':'var(--neg)';
-  const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
-  // ── Proyección SG: respeta selección de meses (1 mes o multi-mes) ──────────
-  const _catsF = CUR_CAT==='TOTAL' ? CATS : [CUR_CAT];
-  const _diasPM = {ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
-  const _mesesSelArr = MES_ORD.filter(m => selMeses.has(m));
-  const _esMultiSG = _mesesSelArr.length > 1;
-
-  // Mes de corte: último seleccionado, o el más reciente con fecha si no hay selección
-  const _mesCorte = _mesesSelArr.length > 0
-    ? _mesesSelArr[_mesesSelArr.length - 1]
-    : null;
-  const _allFechas = PPTO.filter(r => r.FECHA_SO_ACTUAL && _catsF.includes(r.CATEGORIA));
-  const rowF_sg = _mesCorte
-    ? (_allFechas.find(r => r.MES === _mesCorte)
-       || _allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b, null))
-    : _allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b, null);
-
-  const _mesSG = rowF_sg ? rowF_sg.MES : (_mesCorte||'abr.');
-  const _mesKeySG = (_mesSG||'').replace('.','');
-  const dTotalSG = _diasPM[_mesKeySG] || 30;
-
-  // Días transcurridos del mes de corte
-  const _dRaw = rowF_sg ? parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10) : 1;
-  const _dCorte = (!isNaN(_dRaw)&&_dRaw>0) ? _dRaw : 1;
-
-  // Mes cerrado = tiene todos los días (ratio real/ppto >= 98%)
-  const _ppCorte = PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSG);
-  const _realCorte = _ppCorte.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const _pptoCorte = _ppCorte.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-  const _mesCerrado = _pptoCorte>0 && (_realCorte/_pptoCorte)>=0.98;
-
-  // Real y Ppto: suma de TODOS los meses seleccionados (o solo el mes de corte si no hay selección)
-  const _mesesParaSum = _mesesSelArr.length > 0 ? _mesesSelArr : [_mesSG];
-  const ppMesActivo = PPTO.filter(r => _catsF.includes(r.CATEGORIA) && _mesesParaSum.includes(r.MES));
-  const soRealMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_REAL_2026||0), 0);
-  const soPptoMesActSG = ppMesActivo.reduce((s,r) => s+(r.SO_PPTO_2026||0), 0);
-
-  // Días para proyección:
-  // - Multi-mes: días pasados de meses cerrados + días transcurridos del mes de corte
-  // - Un mes cerrado: días totales (proy = real)
-  // - Un mes en curso: días transcurridos
-  let dDiasSG, _dTotalMulti;
-  if(_esMultiSG){
-    const _diasPasados = _mesesSelArr.slice(0,-1).reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
-    const _diasCorteUlt = _mesCerrado ? dTotalSG : _dCorte;
-    dDiasSG = _diasPasados + _diasCorteUlt;
-    _dTotalMulti = _mesesSelArr.reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
-  } else {
-    dDiasSG = _mesCerrado ? dTotalSG : _dCorte;
-    _dTotalMulti = dTotalSG;
-  }
-  const soPrSG = dDiasSG > 0 ? cvCalcProy(soRealMesActSG, dDiasSG, _dTotalMulti) : 0;
-  const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
-  const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
-  const gapSG=soPrSG-soPptoMesActSG;
-  // Build total card HTML sin backticks anidados
-  const fechaISO_sg=rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null;
-  const corteHtml=fechaISO_sg?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(fechaISO_sg)+'</div>':'';
-  const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+'">'+fmtM(soPrSG)+'</div></div>':'';
-  const pptoRowHtml=soPptoMesActSG>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">'+fmtM(soPptoMesActSG)+'</div></div>':'';
-  const gapRowHtml=gapSG!==0?'<span style="font-family:var(--fm);font-size:8px;color:'+(gapSG>=0?'var(--pos)':'var(--neg)')+';">gap '+sg(gapSG)+fmtM(gapSG)+'</span>':'';
-  const proyPillStyle=proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
-  const proyPillCls=proyPctTotalSG>=90?'pos':proyPctTotalSG>=75?'':'neg';
-
-  const soTrendH='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
-    +'<div class="cv-cad-card">'
-      +'<div class="cv-cad-hdr" style="background:rgba(245,200,0,.05);border-bottom-color:rgba(245,200,0,.2);">'
-        +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
-          +'<div style="min-width:0;">'
-            +'<div class="cv-cad-name">Total Cadenas</div>'
-            +'<div class="cv-cad-meta">'+mLbl+' · '+cadenas.length+' cadenas activas</div>'
-          +'</div>'
-        +'</div>'
-        +'<span class="pill '+(varTotal>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(varTotal)+varTotal.toFixed(1)+'%</span>'
-      +'</div>'
-      +'<div class="cv-cad-body">'
-        +'<div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
-            +'<div>'
-              +'<div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'
-              +corteHtml
-            +'</div>'
-            +'<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">'
-              +'<span class="pill '+(cumplTotal>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplTotal.toFixed(1)+'%</span>'
-              +'<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillStyle+'">Proy: '+proyPctTotalSG.toFixed(1)+'%</span>'
-            +'</div>'
-          +'</div>'
-          +'<div style="padding:8px 12px;">'
-            +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'
-              +'<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc)">'+fmtM(soRealTotal)+'</div></div>'
-              +proyRowHtml
-              +pptoRowHtml
-              +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(varTotal>=0?'var(--pos)':'var(--neg)')+'">'+sg(varTotal)+varTotal.toFixed(1)+'%</div></div>'
-            +'</div>'
-            +'<div class="cv-mini-bar-bg" style="margin-bottom:4px;">'
-              +'<div class="cv-mini-bar-p" style="width:'+Math.min(proyPctTotalSG,100)+'%;background:'+proyColorSG+';"></div>'
-              +'<div class="cv-mini-bar-r" style="width:'+barRealTotal+'%;background:var(--acc);"></div>'
-            +'</div>'
-            +'<div style="display:flex;justify-content:space-between;">'
-              +'<span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplTotal.toFixed(1)+'%</span>'
-              +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColorSG+';">Proy. '+proyPctTotalSG.toFixed(1)+'%</span>'
-              +gapRowHtml
-            +'</div>'
-          +'</div>'
-        +'</div>'
-      +'</div>'
-    +'</div>'
-    +'<div class="cbox" style="padding:10px 12px;">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid '+a+';background:rgba(255,255,255,.02);">'
-        +'<span class="cbox-label" style="margin:0;color:'+a+';opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>'
-        +'<div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">'
-          +'<span><span style="display:inline-block;width:10px;height:3px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:3px"></span>2026</span>'
-          +'<span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>2025</span>'
-          +'<span><span style="display:inline-block;width:14px;border-top:2px dashed '+a+';vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto</span>'
-        +'</div>'
-      +'</div>'
-      +'<div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>'
-    +'</div>'
-  +'</div>';
-
-
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  // ── Cadenas table ─────────────────────────────────────────────────────
+  const cadPeriod='RESUMEN CADENAS — '+mLbl.toUpperCase();
   const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
-  const cadRowsH=(()=>{
-    let html='<div><div class="cv-section-lbl">Sell Out por cadena · '+mLbl+'</div><div style="display:flex;flex-direction:column;gap:8px;">';
-    cadFiltered.forEach(c=>{
-      const ppCad=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===c.cad&&(selMeses.size===0||selMeses.has(r.MES)));
-      const soPpto=ppCad.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      const cumplPct=soPpto>0?c.v26/soPpto*100:0;
-      const cumplColor=cumplPct>=90?'var(--pos)':cumplPct>=75?'#F5C800':'var(--neg)';
-      const ddiCls2=ddiClr(c.ddi);
-      const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
-      const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
-      const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
-      // Proyección con misma fórmula ISO que CÓMO VAMOS
-      // Proyección por cadena — suma todos los meses seleccionados
-      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&_mesesParaSum.includes(r.MES)));
-      const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-      const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
-      const soP=dDiasSG>0?cvCalcProy(soRealMes2,dDiasSG,_dTotalMulti):0;
-      const gap=soP-soPptoMes2;
-      const gapColor=gap>=0?'var(--pos)':'var(--neg)';
-      const proyPct=soPptoMes2>0?soP/soPptoMes2*100:0;
-      const proyColor=proyPct>=90?'var(--pos)':proyPct>=75?'#F5C800':'var(--neg)';
-      // Build HTML
-      const cumplPill='<span class="pill '+(cumplPct>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplPct.toFixed(1)+'%</span>';
-      const proyPillSty=proyPct>=75&&proyPct<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
-      const proyPillCls=proyPct>=90?'pos':proyPct>=75?'':'neg';
-      const proyPill='<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillSty+'">Proy: '+proyPct.toFixed(1)+'%</span>';
-      const realRow='<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">'+fmtM(c.v26)+'</div></div>';
-      const proyRow=soP>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColor+';font-size:14px;">'+fmtM(soP)+'</div></div>':'';
-      const pptoRow=soPptoMes2>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">'+fmtM(soPptoMes2)+'</div></div>':'';
-      const varRow='<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(c.varV>=0?'var(--pos)':'var(--neg)')+';font-size:14px;">'+sg(c.varV)+c.varV.toFixed(1)+'%</div></div>';
-      const barHtml=soPptoMes2>0
-        ?'<div class="cv-mini-bar-bg"><div class="cv-mini-bar-p" style="width:'+Math.min(proyPct,100)+'%;background:'+proyColor+';"></div><div class="cv-mini-bar-r" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:var(--acc);"></div></div>'
-          +'<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplPct.toFixed(1)+'%</span>'
-          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColor+';">Proy. '+proyPct.toFixed(1)+'%</span>'
-          +(soP>0?'<span style="font-family:var(--fm);font-size:8px;color:'+gapColor+';">gap '+sg(gap)+fmtM(gap)+'</span>':'')+'</div>'
-        :'';
-      html+='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
-        +'<div class="cv-cad-card">'
-          +'<div class="cv-cad-hdr" style="background:'+headerBg+';border-bottom-color:'+headerBorder+'20;">'
-            +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'
-              +cadLogoHtml(c.cad,22)
-              +'<div style="min-width:0;">'
-                +'<div class="cv-cad-name">'+c.cad+'</div>'
-                +'<div class="cv-cad-meta">'+c.part.toFixed(1)+'% part. · <span class="ddi '+ddiCls2+'" style="font-size:9px;">'+ddiLbl(c.ddi)+'</span></div>'
-              +'</div>'
-            +'</div>'
-            +'<span class="pill '+(c.varV>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(c.varV)+c.varV.toFixed(1)+'%</span>'
-          +'</div>'
-          +'<div class="cv-cad-body">'
-            +'<div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
-              +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
-                +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div></div>'
-                +'<div style="display:flex;gap:4px;align-items:center;">'+cumplPill+proyPill+'</div>'
-              +'</div>'
-              +'<div style="padding:8px 12px;">'
-                +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'+realRow+proyRow+pptoRow+varRow+'</div>'
-                +barHtml
-              +'</div>'
-            +'</div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="cbox" style="padding:10px 12px;min-height:150px;">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;padding:4px 8px;border-radius:5px;border-left:2.5px solid '+a+';background:rgba(255,255,255,.02);">'
-            +'<span style="font-family:var(--fm);font-size:8px;color:'+a+';letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>'
-            +'<div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">'
-              +'<span><span style="display:inline-block;width:8px;height:2px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>'
-              +'<span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>'
-              +'<span><span style="display:inline-block;width:10px;border-top:1.5px dashed '+a+';vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>'
-            +'</div>'
-          +'</div>'
-          +'<div style="position:relative;height:130px;"><canvas id="sg-so-'+cadId+'"></canvas></div>'
-        +'</div>'
-      +'</div>';
-    });
-    html+='</div></div>';
-    return html;
-  })();
+  const cadTableH=`<div class="cad-wrap"><div class="cad-hdr">
+    <span class="cad-hdr-title">⚡ ${cadPeriod}</span>
+  </div>
+  <table class="cad-table"><thead><tr>
+    <th style="width:200px">CADENA</th>
+    <th style="text-align:right">PART%</th>
+    <th style="text-align:right">VALOR AÑO ACT.</th>
+    <th style="text-align:right">VALOR AÑO ANT.</th>
+    <th style="text-align:center">VAR% VALOR</th>
+    <th style="text-align:right">UNDS AÑO ACT.</th>
+    <th style="text-align:right">UNDS AÑO ANT.</th>
+    <th style="text-align:center">VAR% UNDS</th>
+    <th style="text-align:right">INV UNDS</th>
+    <th style="text-align:center">DDI</th>
+    <th style="text-align:center">STATUS</th>
+  </tr></thead><tbody>
+  ${cadFiltered.map(c=>`<tr>
+    <td class="cad-name">${c.cad}</td>
+    <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
+    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtD(c.v26)}</td>
+    <td class="mono cad-ant" style="text-align:right">${fmtD(c.v25)}</td>
+    <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
+    <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
+    <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
+    <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
+    <td class="mono" style="text-align:right;color:var(--sub)">${r0(c.invUnds).toLocaleString()}</td>
+    <td style="text-align:center"><span class="ddi ${ddiClr(c.ddi)}">${ddiLbl(c.ddi)}</span></td>
+    <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
 
-  // ── Segment matrix ────────────────────────────────────────────────────────────
+  // ── Segment matrix ────────────────────────────────────────────────────
   const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
     ?buildSegCards(segs,cadenas,a)
     :'<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:9px;">Cargando detalle de segmentos…</div>';
 
-  destroyCharts(sgCharts);
-  document.getElementById('d-body').innerHTML=kpiH+soTrendH+cadRowsH+segMatrixH;
+  document.getElementById('d-body').innerHTML=kpiH+trendsH+cadTableH+segMatrixH;
+  setTimeout(()=>buildDCharts(trend,a),0);
+}
 
-  setTimeout(()=>{
-    // SO total chart
-    const isLight=document.documentElement.classList.contains('light');
-    const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
-    const tickC=isLight?'#7a8499':'#5a5a7a';
-    const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
-    const base={responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-        callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
-      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
-        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}}};
-    const lbs=trend.map(t=>t.mes);
-    const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
-    const ctxSO=document.getElementById('d-cv')?.getContext('2d');
-    if(ctxSO){
-      if(dCharts.v) dCharts.v.destroy();
-      dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
-        {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-        {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-        {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-      ]},options:base});
-    }
-    // Per-cadena SO charts
-    buildSgCadCharts(cadFiltered.map(c=>c.cad), a);
-  }, 0);
+function buildDCharts(trend,a){
+  const isLight=document.documentElement.classList.contains('light');
+  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
+  const tickC=isLight?'#7a8499':'#5a5a7a';
+  const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
+  const base={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
+    scales:{
+      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
+      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}
+    }};
+  const lbs=trend.map(t=>t.mes);
+  const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
+  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
+  if(ctxSO){
+    if(dCharts.v) dCharts.v.destroy();
+    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
+  const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
+  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
+  if(ctxSI){
+    if(dCharts.u) dCharts.u.destroy();
+    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
+      {label:'SI Real 2025',data:trend.map(t=>t.siReal25||null),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Real 2026',data:trend.map(t=>t.siReal26||null),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+    ]},options:base});
+  }
 }
 
 // ── PDV EXPLORER ─────────────────────────────────────────────────────────────
@@ -1948,12 +1871,8 @@ function eApplyFilters(){
   document.getElementById('e-count').textContent=pdvs.length+' PDVs';
   const a=ac();
 
-  // Kstrip totals — usar PPTO como fuente única (igual que CÓMO VAMOS y Seguimiento SO)
-  const _eCats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  const _ePpto=PPTO.filter(r=>_eCats.includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
-  const _ePptoFil=cadFil?_ePpto.filter(r=>r.CADENA===cadFil):_ePpto;
-  const tv26=_ePptoFil.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
-  const tv25=_ePptoFil.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  // Kstrip totals
+  const tv26=pdvs.reduce((s,p)=>s+p.v,0), tv25=pdvs.reduce((s,p)=>s+p.v25,0);
   const tu26=pdvs.reduce((s,p)=>s+p.u,0), tinv=pdvs.reduce((s,p)=>s+p.inv,0);
   const tvarV=sp(tv26,tv25||1), tvarU=sp(tu26,pdvs.reduce((s,p)=>s+p.u25,0)||1);
   const ddiT=calcDDI(tinv,tu26);
@@ -2111,94 +2030,178 @@ function renderSegDetail(seg){
 }
 
 
-// ── CHART HELPERS ─────────────────────────────────────────────────────────────
-let cvCharts={}, sgCharts={};
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+const USERS = {
+  'GteTMK': '14b4d4527ed67af425a6e066de86bc291d2eede7a46428c36b93fe592f536a24',
+  'DCC':    '5cd6cf36c749a10a85b79cc692d3cfabfe31e6d9bb1464559a29a5ac3698bd50',
+  'CatMan': '64245f0b7b89dfd8e48d385d9f7a96bc3024666f84e3d70005aba93121c9437f',
+};
+const MASTER = 'CatMan';
+const LOG_KEY = 'catmgmt_access_log';
+let _curUser = null;
+let _loginTs = null;
 
-function destroyCharts(registry){
-  Object.values(registry).forEach(c=>{try{c.destroy();}catch(e){}});
-  Object.keys(registry).forEach(k=>delete registry[k]);
+async function _sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-function getCadTrend(cad){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
-  return MES_ORD.map(m=>{
-    const rows=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&r.CADENA===cad);
-    const z={mes:MES_LBL[m]||m,soReal26:null,soReal25:null,soPpto:null,siReal26:null,siReal25:null,siPpto:null};
-    if(!rows.length) return z;
-    const sum=f=>{ const v=rows.reduce((s,r)=>s+(r[f]||0),0)/1e6; return v>0?v:null; };
-    return{mes:z.mes,soReal26:sum('SO_REAL_2026'),soReal25:sum('SO_REAL_2025'),soPpto:sum('SO_PPTO_2026'),
-      siReal26:sum('SI_REAL_2026'),siReal25:sum('SI_REAL_2025'),siPpto:sum('SI_PPTO_2026')};
+async function doLogin(){
+  const user = document.getElementById('li-user').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  const err  = document.getElementById('li-err');
+  err.textContent = '';
+  if(!user || !pass){ err.textContent='Ingresa usuario y contraseña.'; return; }
+  const hash = await _sha256(pass);
+  if(USERS[user] && USERS[user] === hash){
+    _curUser = user;
+    _loginTs = Date.now();
+    document.getElementById('login-screen').style.display = 'none';
+    // Agregar botones de auth al nav
+    _injectNavButtons();
+    // Registrar el ingreso (sin tiempo de salida aún)
+    _appendLog(_curUser, _loginTs, null);
+    // Iniciar la app
+    load();
+  } else {
+    err.textContent = 'Usuario o contraseña incorrectos.';
+    document.getElementById('li-pass').value = '';
+    document.getElementById('li-pass').focus();
+  }
+}
+
+function _injectNavButtons(){
+  const nav = document.querySelector('nav');
+  if(!nav) return;
+  // Contenedor de botones auth
+  const wrap = document.createElement('div');
+  wrap.id = 'nav-auth-wrap';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-left:6px;';
+  // Saludo usuario
+  const greet = document.createElement('span');
+  greet.style.cssText = 'font-family:var(--fm);font-size:9px;color:var(--muted);white-space:nowrap;';
+  greet.textContent = '👤 ' + _curUser;
+  wrap.appendChild(greet);
+  // Botón accesos (solo CatMan)
+  if(_curUser === MASTER){
+    const btnAcc = document.createElement('button');
+    btnAcc.className = 'nav-auth-btn';
+    btnAcc.textContent = '📋 ACCESOS';
+    btnAcc.onclick = showAccessPanel;
+    wrap.appendChild(btnAcc);
+  }
+  // Botón logout
+  const btnOut = document.createElement('button');
+  btnOut.className = 'nav-auth-btn';
+  btnOut.textContent = '🚪 SALIR';
+  btnOut.onclick = doLogout;
+  wrap.appendChild(btnOut);
+  nav.appendChild(wrap);
+}
+
+function doLogout(){
+  // Actualizar log con tiempo de salida
+  _updateLogLogout(_curUser, _loginTs, Date.now());
+  // Limpiar sesión
+  _curUser = null; _loginTs = null;
+  // Ocultar app y mostrar login
+  document.getElementById('app').style.display = 'none';
+  const ls = document.getElementById('login-screen');
+  ls.style.display = 'flex';
+  document.getElementById('li-user').value = '';
+  document.getElementById('li-pass').value = '';
+  document.getElementById('li-err').textContent = '';
+  // Quitar botones nav
+  const w = document.getElementById('nav-auth-wrap');
+  if(w) w.remove();
+}
+
+// ── LOG HELPERS ───────────────────────────────────────────────────────────────
+function _getLogs(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||'[]'); }catch(e){ return []; } }
+function _saveLogs(logs){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(logs.slice(0,1000))); }catch(e){} }
+
+function _appendLog(user, loginTs, logoutTs){
+  const logs = _getLogs();
+  const d = new Date(loginTs);
+  logs.unshift({
+    id: loginTs,
+    user,
+    fecha: d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    horaIn: d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    horaOut: logoutTs ? new Date(logoutTs).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—',
+    dur: logoutTs ? _fmtDur(logoutTs - loginTs) : 'En sesión',
+    loginTs, logoutTs
   });
+  _saveLogs(logs);
 }
 
-function buildMiniChart(id,lbs,datasets,reg){
-  const ctx=document.getElementById(id)?.getContext('2d');
-  if(!ctx) return;
-  if(reg[id]){try{reg[id].destroy();}catch(e){} delete reg[id];}
-  const isLight=document.documentElement.classList.contains('light');
-  const gridC=isLight?'rgba(0,0,0,.04)':'rgba(255,255,255,.05)';
-  const tickC=isLight?'#7a8499':'#5a5a7a';
-  reg[id]=new Chart(ctx,{type:'line',data:{labels:lbs,datasets},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-        callbacks:{label:c=>c.parsed.y===null?' —':' '+c.dataset.label+': $'+c.parsed.y.toFixed(2)+'M'}}},
-      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5}},border:{color:gridC}},
-        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5},
-          callback:v=>v==null?'':'$'+v.toFixed(1)+'M'},border:{color:gridC}}}}});
+function _updateLogLogout(user, loginTs, logoutTs){
+  const logs = _getLogs();
+  const entry = logs.find(l => l.loginTs === loginTs && l.user === user);
+  if(entry){
+    entry.horaOut = new Date(logoutTs).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    entry.dur = _fmtDur(logoutTs - loginTs);
+    entry.logoutTs = logoutTs;
+  } else {
+    // Si no existe, agregar como entrada completa
+    _appendLog(user, loginTs, logoutTs);
+    return;
+  }
+  _saveLogs(logs);
 }
 
-function buildCvTotalCharts(trend,a){
-  const lbs=trend.map(t=>t.mes);
-  const isLight=document.documentElement.classList.contains('light');
-  const bgSO=isLight?'rgba(26,63,163,.05)':'rgba(245,200,0,.06)';
-  const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.06)';
-  buildMiniChart('cv-total-so',lbs,[
-    {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-    {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
-    {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
-  ],cvCharts);
-  buildMiniChart('cv-total-si',lbs,[
-    {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-    {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
-    {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
-  ],cvCharts);
+function _fmtDur(ms){
+  if(ms < 60000) return Math.round(ms/1000)+'s';
+  const m = Math.floor(ms/60000), s = Math.round((ms%60000)/1000);
+  if(m < 60) return m+'m '+s+'s';
+  return Math.floor(m/60)+'h '+( m%60)+'m';
 }
 
-function buildCvCadCharts(cadenas,a){
-  cadenas.forEach(cad=>{
-    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
-    const trend=getCadTrend(cad);
-    const lbs=trend.map(t=>t.mes);
-    const isLight=document.documentElement.classList.contains('light');
-    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
-    const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.05)';
-    buildMiniChart('cv-so-'+cadId,lbs,[
-      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
-      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
-    ],cvCharts);
-    buildMiniChart('cv-si-'+cadId,lbs,[
-      {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
-      {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
-    ],cvCharts);
-  });
+// Actualizar duración al cerrar ventana
+window.addEventListener('beforeunload', ()=>{
+  if(_curUser && _loginTs) _updateLogLogout(_curUser, _loginTs, Date.now());
+});
+
+// ── ACCESS PANEL ──────────────────────────────────────────────────────────────
+function showAccessPanel(){
+  if(_curUser !== MASTER) return;
+  const logs = _getLogs();
+  const tbody = document.getElementById('ap-tbody');
+  const total = document.getElementById('ap-total');
+  total.textContent = logs.length + ' registro' + (logs.length===1?'':'s');
+  tbody.innerHTML = logs.length === 0
+    ? '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">Sin registros aún</td></tr>'
+    : logs.map((l,i) => `<tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td style="color:var(--acc);font-weight:600">${l.user}</td>
+        <td>${l.fecha}</td>
+        <td>${l.horaIn}</td>
+        <td style="color:${l.horaOut==='—'?'var(--muted)':'var(--text)'}">${l.horaOut}</td>
+        <td style="color:${l.dur==='En sesión'?'var(--pos)':'var(--sub)'}">${l.dur}</td>
+      </tr>`).join('');
+  document.getElementById('access-panel').classList.add('open');
 }
 
-function buildSgCadCharts(cadNames,a){
-  cadNames.forEach(cad=>{
-    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
-    const trend=getCadTrend(cad);
-    const lbs=trend.map(t=>t.mes);
-    const isLight=document.documentElement.classList.contains('light');
-    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
-    buildMiniChart('sg-so-'+cadId,lbs,[
-      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
-      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
-    ],sgCharts);
-  });
+function clearAccessLog(){
+  if(_curUser !== MASTER) return;
+  if(!confirm('¿Eliminar todos los registros de acceso?')) return;
+  localStorage.removeItem(LOG_KEY);
+  showAccessPanel();
 }
+
+function exportAccessLog(){
+  if(_curUser !== MASTER) return;
+  const logs = _getLogs();
+  if(!logs.length){ alert('Sin registros para exportar.'); return; }
+  const rows = ['#,Usuario,Fecha,Hora Ingreso,Hora Salida,Tiempo en App'];
+  logs.forEach((l,i) => rows.push(`${i+1},${l.user},${l.fecha},${l.horaIn},${l.horaOut},${l.dur}`));
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'accesos_category_management.csv';
+  a.click();
+}
+
 
 load();
 </script>
