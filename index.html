@@ -940,8 +940,18 @@ function initTheme(){
   try{
     const saved=localStorage.getItem('cv_theme');
     // Modo claro por defecto; solo oscuro si el usuario lo eligió explícitamente
-    if(saved!=='dark') toggleTheme();
-  }catch(e){ toggleTheme(); }
+    if(saved==='dark') toggleTheme();
+    else{
+      // Aplicar modo claro sin llamar toggleTheme (ya está en claro por defecto)
+      document.documentElement.classList.add('light');
+      document.getElementById('theme-icon').textContent='🌙';
+      document.getElementById('theme-txt').textContent='MODO OSCURO';
+      const btn=document.getElementById('theme-btn');
+      btn.style.background='#edf0f7';btn.style.color='#1A3FA3';btn.style.borderColor='#1A3FA3';
+    }
+  }catch(e){
+    document.documentElement.classList.add('light');
+  }
   updateNavTheme(CUR_CAT);
 }
 
@@ -2077,11 +2087,12 @@ function _injectNavButtons(){
   const wrap = document.createElement('div');
   wrap.id = 'nav-auth-wrap';
   wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-left:6px;';
-  // Saludo usuario
-  const greet = document.createElement('span');
-  greet.style.cssText = 'font-family:var(--fm);font-size:9px;color:var(--muted);white-space:nowrap;';
-  greet.textContent = '👤 ' + _curUser;
-  wrap.appendChild(greet);
+  // Botón logout — primero a la izquierda
+  const btnOut = document.createElement('button');
+  btnOut.className = 'nav-auth-btn';
+  btnOut.textContent = '🚪 SALIR';
+  btnOut.onclick = doLogout;
+  wrap.appendChild(btnOut);
   // Botón accesos (solo CatMan)
   if(_curUser === MASTER){
     const btnAcc = document.createElement('button');
@@ -2090,12 +2101,11 @@ function _injectNavButtons(){
     btnAcc.onclick = showAccessPanel;
     wrap.appendChild(btnAcc);
   }
-  // Botón logout
-  const btnOut = document.createElement('button');
-  btnOut.className = 'nav-auth-btn';
-  btnOut.textContent = '🚪 SALIR';
-  btnOut.onclick = doLogout;
-  wrap.appendChild(btnOut);
+  // Saludo usuario — al final (derecha)
+  const greet = document.createElement('span');
+  greet.style.cssText = 'font-family:var(--fm);font-size:9px;color:var(--muted);white-space:nowrap;';
+  greet.textContent = '👤 ' + _curUser;
+  wrap.appendChild(greet);
   nav.appendChild(wrap);
 }
 
