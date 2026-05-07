@@ -730,22 +730,20 @@ function buildMesButtons(meses){
     btn.disabled=!has; btn.dataset.mes=m;
     if(has) btn.addEventListener('click',function(){
       const mes=this.dataset.mes;
-      if(CUR_PAGE==='comovamos'){
-        // En CÓMO VAMOS: clic = seleccionar SOLO ese mes
-        // Si ya es el único activo → deseleccionar (ver todos)
-        if(selMeses.size===1&&selMeses.has(mes)){
-          // Deseleccionar → volver a mostrar mes actual
-          selMeses.clear();
-          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-        } else {
-          // Seleccionar solo este mes
-          selMeses.clear();
-          selMeses.add(mes);
-          document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
-          this.classList.add('active');
-        }
+      const totalDisp=document.querySelectorAll('.mes-btn:not(:disabled)').length;
+      if(selMeses.size===totalDisp){
+        // Todos activos → clic selecciona SOLO ese mes
+        selMeses.clear();
+        document.querySelectorAll('.mes-btn').forEach(b=>b.classList.remove('active'));
+        selMeses.add(mes); this.classList.add('active');
+      } else if(selMeses.size===1&&selMeses.has(mes)){
+        // Solo uno activo y es este → volver a todos
+        selMeses.clear();
+        document.querySelectorAll('.mes-btn').forEach(b=>{
+          if(!b.disabled){b.classList.add('active');selMeses.add(b.dataset.mes);}
+        });
       } else {
-        // En otras páginas: comportamiento toggle normal
+        // Toggle normal — permite multi-selección
         this.classList.toggle('active');
         if(selMeses.has(mes)) selMeses.delete(mes);
         else selMeses.add(mes);
