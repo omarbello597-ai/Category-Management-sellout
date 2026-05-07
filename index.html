@@ -59,7 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px
 .ld-pct{font-family:var(--ff);font-size:12px;color:rgba(255,255,255,.2);text-align:right;letter-spacing:1px;}
 
 /* ── NAV ── */
-nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0;z-index:50;transition:background .3s,border-color .3s;}
+nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:56px;flex-shrink:0;z-index:50;transition:background .3s,border-color .3s;}
 .brand{font-family:var(--ff);font-size:18px;color:var(--acc);letter-spacing:2px;white-space:nowrap;}
 .nav-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;}
 .main-tabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:2px;}
@@ -504,7 +504,10 @@ nav.cat-total .brand{color:#4a4a4a;}
 <div id="app" style="display:none;min-height:100vh;flex-direction:column;">
 
   <nav>
-    <div class="brand">Category Management</div>
+    <div style="display:flex;flex-direction:column;justify-content:center;">
+      <div class="brand">Category Management</div>
+      <div id="nav-auth-row" style="display:flex;gap:5px;margin-top:2px;"></div>
+    </div>
     <div class="nav-sep"></div>
     <div class="main-tabs">
       <div class="main-tab active" onclick="showPage('comovamos',this)">🎯 CÓMO VAMOS</div>
@@ -2307,24 +2310,24 @@ async function doLogin(){
   }
 }
 function _injectNavButtons(){
-  const nav=document.querySelector('nav');
-  if(!nav) return;
-  const wrap=document.createElement('div');
-  wrap.id='nav-auth-wrap';
-  wrap.style.cssText='display:flex;align-items:center;gap:6px;margin-left:6px;';
+  const row=document.getElementById('nav-auth-row');
+  if(!row) return;
+  row.id='nav-auth-wrap';
+  // Salir
   const btnOut=document.createElement('button');
   btnOut.className='nav-auth-btn';btnOut.textContent='🚪 SALIR';btnOut.onclick=doLogout;
-  wrap.appendChild(btnOut);
+  row.appendChild(btnOut);
+  // Accesos (solo CatMan)
   if(_curUser===MASTER){
     const btnAcc=document.createElement('button');
     btnAcc.className='nav-auth-btn';btnAcc.textContent='📋 ACCESOS';btnAcc.onclick=showAccessPanel;
-    wrap.appendChild(btnAcc);
+    row.appendChild(btnAcc);
   }
+  // Usuario
   const greet=document.createElement('span');
-  greet.style.cssText='font-family:var(--fm);font-size:9px;color:var(--muted);white-space:nowrap;';
+  greet.style.cssText='font-family:var(--fm);font-size:8px;color:var(--muted);white-space:nowrap;';
   greet.textContent='👤 '+_curUser;
-  wrap.appendChild(greet);
-  nav.appendChild(wrap);
+  row.appendChild(greet);
 }
 function doLogout(){
   _updateLogLogout(_curUser,_loginTs,Date.now());
@@ -2334,7 +2337,8 @@ function doLogout(){
   document.getElementById('li-user').value='';
   document.getElementById('li-pass').value='';
   document.getElementById('li-err').textContent='';
-  const w=document.getElementById('nav-auth-wrap');if(w)w.remove();
+  const w=document.getElementById('nav-auth-wrap');
+  if(w){w.innerHTML='';w.id='nav-auth-row';}
 }
 function _getLogs(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]');}catch(e){return[];}}
 function _saveLogs(l){try{localStorage.setItem(LOG_KEY,JSON.stringify(l.slice(0,1000)));}catch(e){}}
