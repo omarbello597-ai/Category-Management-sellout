@@ -1752,110 +1752,206 @@ function renderDashboard(){
     <div class="kpi-sub">${k.s||''}</div>
   </div>`).join('')+'</div>';
 
-  // ── Trend charts ──────────────────────────────────────────────────────
-  const trendsH=`<div class="trend-row">
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0">📈 TENDENCIA SELL OUT ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
-        </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>
-    </div>
-    <div class="cbox">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span class="cbox-label" style="margin:0">📦 TENDENCIA SELL IN ($M)</span>
-        <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
-          <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
-          <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
-        </div>
-      </div>
-      <div style="position:relative;height:160px"><canvas id="d-cu"></canvas></div>
-    </div>
-  </div>`;
+  // ── Fila superior: tarjeta total + gráfica SO ─────────────────────────────
+  const ppTotal=PPTO.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
+  const soRealTotal=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const soPptoTotal=ppTotal.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const soReal25Total=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+  const cumplTotal=soPptoTotal>0?soRealTotal/soPptoTotal*100:0;
+  const varTotal=sp(soRealTotal,soReal25Total||1);
+  const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
 
-  // ── Cadenas table ─────────────────────────────────────────────────────
-  const cadPeriod='RESUMEN CADENAS — '+mLbl.toUpperCase();
+  const _catsF=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const _diasPM={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
+  const _mesesSelArr=MES_ORD.filter(m=>selMeses.has(m));
+  const _esMultiSG=_mesesSelArr.length>1;
+  const _mesCorte=_mesesSelArr.length>0?_mesesSelArr[_mesesSelArr.length-1]:null;
+  const _allFechas=PPTO.filter(r=>r.FECHA_SO_ACTUAL&&_catsF.includes(r.CATEGORIA));
+  const rowF_sg=_mesCorte
+    ?(_allFechas.find(r=>r.MES===_mesCorte)||_allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b,null))
+    :_allFechas.reduce((b,r)=>(!b||r.FECHA_SO_ACTUAL>b.FECHA_SO_ACTUAL)?r:b,null);
+  const _mesSG=rowF_sg?rowF_sg.MES:(_mesCorte||'abr.');
+  const _mesKeySG=(_mesSG||'').replace('.','');
+  const dTotalSG=_diasPM[_mesKeySG]||30;
+  const _dRaw=rowF_sg?parseInt((rowF_sg.FECHA_SO_ACTUAL||'').split('-')[2]||'1',10):1;
+  const _dCorte=(!isNaN(_dRaw)&&_dRaw>0)?_dRaw:1;
+  const _ppCorte=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&r.MES===_mesSG);
+  const _realCorte=_ppCorte.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const _pptoCorte=_ppCorte.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  const _mesCerrado=_pptoCorte>0&&(_realCorte/_pptoCorte)>=0.98;
+  const _mesesParaSum=_mesesSelArr.length>0?_mesesSelArr:[_mesSG];
+  const ppMesActivo=PPTO.filter(r=>_catsF.includes(r.CATEGORIA)&&_mesesParaSum.includes(r.MES));
+  const soRealMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+  const soPptoMesActSG=ppMesActivo.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+  let dDiasSG,_dTotalMulti;
+  if(_esMultiSG){
+    const _diasPasados=_mesesSelArr.slice(0,-1).reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
+    dDiasSG=_diasPasados+(_mesCerrado?dTotalSG:_dCorte);
+    _dTotalMulti=_mesesSelArr.reduce((s,m)=>s+(_diasPM[m.replace('.','')]||30),0);
+  }else{
+    dDiasSG=_mesCerrado?dTotalSG:_dCorte;
+    _dTotalMulti=dTotalSG;
+  }
+  const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,_dTotalMulti):0;
+  const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
+  const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
+  const gapSG=soPrSG-soPptoMesActSG;
+  const fechaISO_sg=rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null;
+  const corteHtml=fechaISO_sg?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(fechaISO_sg)+'</div>':'';
+  const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+'">'+fmtM(soPrSG)+'</div></div>':'';
+  const pptoRowHtml=soPptoMesActSG>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">'+fmtM(soPptoMesActSG)+'</div></div>':'';
+  const gapRowHtml=gapSG!==0?'<span style="font-family:var(--fm);font-size:8px;color:'+(gapSG>=0?'var(--pos)':'var(--neg)')+';">gap '+sg(gapSG)+fmtM(gapSG)+'</span>':'';
+  const proyPillStyle=proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+  const proyPillCls=proyPctTotalSG>=90?'pos':proyPctTotalSG>=75?'':'neg';
+
+  const soTrendH='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
+    +'<div class="cv-cad-card"><div class="cv-cad-hdr" style="background:rgba(245,200,0,.05);border-bottom-color:rgba(245,200,0,.2);">'
+      +'<div style="display:flex;align-items:center;gap:8px;min-width:0;"><div style="min-width:0;">'
+        +'<div class="cv-cad-name">Total Cadenas</div>'
+        +'<div class="cv-cad-meta">'+mLbl+' · '+cadenas.length+' cadenas activas</div>'
+      +'</div></div>'
+      +'<span class="pill '+(varTotal>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(varTotal)+varTotal.toFixed(1)+'%</span>'
+    +'</div>'
+    +'<div class="cv-cad-body"><div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
+        +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'+corteHtml+'</div>'
+        +'<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">'
+          +'<span class="pill '+(cumplTotal>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplTotal.toFixed(1)+'%</span>'
+          +'<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillStyle+'">Proy: '+proyPctTotalSG.toFixed(1)+'%</span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="padding:8px 12px;">'
+        +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'
+          +'<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc)">'+fmtM(soRealTotal)+'</div></div>'
+          +proyRowHtml+pptoRowHtml
+          +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(varTotal>=0?'var(--pos)':'var(--neg)')+'">'+sg(varTotal)+varTotal.toFixed(1)+'%</div></div>'
+        +'</div>'
+        +'<div class="cv-mini-bar-bg" style="margin-bottom:4px;">'
+          +'<div class="cv-mini-bar-p" style="width:'+Math.min(proyPctTotalSG,100)+'%;background:'+proyColorSG+';"></div>'
+          +'<div class="cv-mini-bar-r" style="width:'+barRealTotal+'%;background:var(--acc);"></div>'
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;">'
+          +'<span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplTotal.toFixed(1)+'%</span>'
+          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColorSG+';">Proy. '+proyPctTotalSG.toFixed(1)+'%</span>'
+          +gapRowHtml
+        +'</div>'
+      +'</div>'
+    +'</div></div></div>'
+    +'<div class="cbox" style="padding:10px 12px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid '+a+';background:rgba(255,255,255,.02);">'
+        +'<span class="cbox-label" style="margin:0;color:'+a+';opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>'
+        +'<div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">'
+          +'<span><span style="display:inline-block;width:10px;height:3px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:3px"></span>2026</span>'
+          +'<span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>2025</span>'
+          +'<span><span style="display:inline-block;width:14px;border-top:2px dashed '+a+';vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto</span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="position:relative;height:160px"><canvas id="d-cv"></canvas></div>'
+    +'</div>'
+  +'</div>';
+
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
   const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
-  const cadTableH=`<div class="cad-wrap"><div class="cad-hdr">
-    <span class="cad-hdr-title">⚡ ${cadPeriod}</span>
-  </div>
-  <table class="cad-table"><thead><tr>
-    <th style="width:200px">CADENA</th>
-    <th style="text-align:right">PART%</th>
-    <th style="text-align:right">VALOR AÑO ACT.</th>
-    <th style="text-align:right">VALOR AÑO ANT.</th>
-    <th style="text-align:center">VAR% VALOR</th>
-    <th style="text-align:right">UNDS AÑO ACT.</th>
-    <th style="text-align:right">UNDS AÑO ANT.</th>
-    <th style="text-align:center">VAR% UNDS</th>
-    <th style="text-align:right">INV UNDS</th>
-    <th style="text-align:center">DDI</th>
-    <th style="text-align:center">STATUS</th>
-  </tr></thead><tbody>
-  ${cadFiltered.map(c=>`<tr>
-    <td class="cad-name">${c.cad}</td>
-    <td class="cad-part" style="text-align:right">${c.part.toFixed(1)}%</td>
-    <td class="mono" style="text-align:right;font-weight:700;color:${a}">${fmtD(c.v26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtD(c.v25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varV>=0?'pos':'neg'}">${sg(c.varV)}${c.varV.toFixed(1)}%</span></td>
-    <td class="mono" style="text-align:right">${fmtK(c.u26)}</td>
-    <td class="mono cad-ant" style="text-align:right">${fmtK(c.u25)}</td>
-    <td style="text-align:center"><span class="pill ${c.varU>=0?'pos':'neg'}">${sg(c.varU)}${c.varU.toFixed(1)}%</span></td>
-    <td class="mono" style="text-align:right;color:var(--sub)">${r0(c.invUnds).toLocaleString()}</td>
-    <td style="text-align:center"><span class="ddi ${ddiClr(c.ddi)}">${ddiLbl(c.ddi)}</span></td>
-    <td style="text-align:center"><span class="dot ${dotCls(c.varV)}"></span></td>
-  </tr>`).join('')}
-  </tbody></table></div>`;
+  const cadRowsH=(()=>{
+    let html='<div><div class="cv-section-lbl">Sell Out por cadena · '+mLbl+'</div><div style="display:flex;flex-direction:column;gap:8px;">';
+    cadFiltered.forEach(c=>{
+      const ppCad=PPTO.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===c.cad&&(selMeses.size===0||selMeses.has(r.MES)));
+      const soPpto=ppCad.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const cumplPct=soPpto>0?c.v26/soPpto*100:0;
+      const ddiCls2=ddiClr(c.ddi);
+      const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
+      const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
+      const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
+      const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&_mesesParaSum.includes(r.MES)));
+      const soRealMes2=ppCadMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const soPptoMes2=ppCadMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const soP=dDiasSG>0?cvCalcProy(soRealMes2,dDiasSG,_dTotalMulti):0;
+      const gap=soP-soPptoMes2;
+      const proyPct=soPptoMes2>0?soP/soPptoMes2*100:0;
+      const proyColor=proyPct>=90?'var(--pos)':proyPct>=75?'#F5C800':'var(--neg)';
+      const gapColor=gap>=0?'var(--pos)':'var(--neg)';
+      const cumplPill='<span class="pill '+(cumplPct>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplPct.toFixed(1)+'%</span>';
+      const pPS=proyPct>=75&&proyPct<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+      const pPC=proyPct>=90?'pos':proyPct>=75?'':'neg';
+      const proyPill='<span class="pill '+pPC+'" style="font-size:8px;'+pPS+'">Proy: '+proyPct.toFixed(1)+'%</span>';
+      const barHtml=soPptoMes2>0
+        ?'<div class="cv-mini-bar-bg"><div class="cv-mini-bar-p" style="width:'+Math.min(proyPct,100)+'%;background:'+proyColor+';"></div>'
+          +'<div class="cv-mini-bar-r" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:var(--acc);"></div></div>'
+          +'<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplPct.toFixed(1)+'%</span>'
+          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColor+';">Proy. '+proyPct.toFixed(1)+'%</span>'
+          +(soP>0?'<span style="font-family:var(--fm);font-size:8px;color:'+gapColor+';">gap '+sg(gap)+fmtM(gap)+'</span>':'')+'</div>'
+        :'';
+      html+='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
+        +'<div class="cv-cad-card">'
+          +'<div class="cv-cad-hdr" style="background:'+headerBg+';border-bottom-color:'+headerBorder+'20;">'
+            +'<div style="display:flex;align-items:center;gap:8px;min-width:0;">'+cadLogoHtml(c.cad,22)
+            +'<div style="min-width:0;"><div class="cv-cad-name">'+c.cad+'</div>'
+            +'<div class="cv-cad-meta">'+c.part.toFixed(1)+'% part. · <span class="ddi '+ddiCls2+'" style="font-size:9px;">'+ddiLbl(c.ddi)+'</span></div></div></div>'
+            +'<span class="pill '+(c.varV>=0?'pos':'neg')+'" style="font-size:8px;flex-shrink:0;">'+sg(c.varV)+c.varV.toFixed(1)+'%</span>'
+          +'</div>'
+          +'<div class="cv-cad-body"><div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
+              +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div></div>'
+              +'<div style="display:flex;gap:4px;align-items:center;">'+cumplPill+proyPill+'</div>'
+            +'</div>'
+            +'<div style="padding:8px 12px;">'
+              +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'
+                +'<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">'+fmtM(c.v26)+'</div></div>'
+                +(soP>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColor+';font-size:14px;">'+fmtM(soP)+'</div></div>':'')
+                +(soPptoMes2>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">'+fmtM(soPptoMes2)+'</div></div>':'')
+                +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(c.varV>=0?'var(--pos)':'var(--neg)')+';font-size:14px;">'+sg(c.varV)+c.varV.toFixed(1)+'%</div></div>'
+              +'</div>'+barHtml
+            +'</div>'
+          +'</div></div>'
+        +'</div>'
+        +'<div class="cbox" style="padding:10px 12px;min-height:150px;">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;padding:4px 8px;border-radius:5px;border-left:2.5px solid '+a+';background:rgba(255,255,255,.02);">'
+            +'<span style="font-family:var(--fm);font-size:8px;color:'+a+';letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>'
+            +'<div style="display:flex;gap:8px;font-family:var(--fm);font-size:7px;color:var(--muted);">'
+              +'<span><span style="display:inline-block;width:8px;height:2px;background:'+a+';border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>'
+              +'<span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>'
+              +'<span><span style="display:inline-block;width:10px;border-top:1.5px dashed '+a+';vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>'
+            +'</div>'
+          +'</div>'
+          +'<div style="position:relative;height:130px;"><canvas id="sg-so-'+cadId+'"></canvas></div>'
+        +'</div>'
+      +'</div>';
+    });
+    html+='</div></div>';
+    return html;
+  })();
 
-  // ── Segment matrix ────────────────────────────────────────────────────
   const segMatrixH=DET[CUR_CAT+'_2026']||DET['AUTOS_2026']
     ?buildSegCards(segs,cadenas,a)
     :'<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:9px;">Cargando detalle de segmentos…</div>';
 
-  document.getElementById('d-body').innerHTML=kpiH+trendsH+cadTableH+segMatrixH;
-  setTimeout(()=>buildDCharts(trend,a),0);
-}
+  destroyCharts(sgCharts);
+  document.getElementById('d-body').innerHTML=kpiH+soTrendH+cadRowsH+segMatrixH;
 
-function buildDCharts(trend,a){
-  const isLight=document.documentElement.classList.contains('light');
-  const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
-  const tickC=isLight?'#7a8499':'#5a5a7a';
-  const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
-  const base={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-      callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
-    scales:{
-      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
-      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}
-    }};
-  const lbs=trend.map(t=>t.mes);
-  const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
-  const ctxSO=document.getElementById('d-cv')?.getContext('2d');
-  if(ctxSO){
-    if(dCharts.v) dCharts.v.destroy();
-    dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
-  const bgSI=isLight?'rgba(26,63,163,.05)':'rgba(102,153,255,.07)';
-  const ctxSI=document.getElementById('d-cu')?.getContext('2d');
-  if(ctxSI){
-    if(dCharts.u) dCharts.u.destroy();
-    dCharts.u=new Chart(ctxSI,{type:'line',data:{labels:lbs,datasets:[
-      {label:'SI Real 2025',data:trend.map(t=>t.siReal25||null),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Real 2026',data:trend.map(t=>t.siReal26||null),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
-      {label:'SI Ppto 2026',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
-    ]},options:base});
-  }
+  setTimeout(()=>{
+    const isLight=document.documentElement.classList.contains('light');
+    const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
+    const tickC=isLight?'#7a8499':'#5a5a7a';
+    const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
+    const base={responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
+      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9}},border:{color:gridC}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9},callback:fmtY},border:{color:gridC}}}};
+    const lbs=trend.map(t=>t.mes);
+    const bgSO=isLight?'rgba(26,63,163,.06)':'rgba(245,200,0,.07)';
+    const ctxSO=document.getElementById('d-cv')?.getContext('2d');
+    if(ctxSO){
+      if(dCharts.v) dCharts.v.destroy();
+      dCharts.v=new Chart(ctxSO,{type:'line',data:{labels:lbs,datasets:[
+        {label:'SO Real 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.06)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+        {label:'SO Real 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2.5,pointRadius:3,fill:true,tension:.3,spanGaps:true},
+        {label:'SO Ppto 2026',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:2,tension:.3,spanGaps:true},
+      ]},options:base});
+    }
+    buildSgCadCharts(cadFiltered.map(c=>c.cad), a);
+  }, 0);
 }
-
 // ── PDV EXPLORER ─────────────────────────────────────────────────────────────
 async function initExplorer(){
   document.getElementById('e-pdv-list').innerHTML=
