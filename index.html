@@ -36,20 +36,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px
   background:linear-gradient(to bottom,transparent,rgba(255,255,255,.08) 30%,rgba(255,255,255,.08) 70%,transparent);
   pointer-events:none;
 }
-.ld-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px;}
-/* Logos lado a lado */
-.ld-logos{display:flex;align-items:center;gap:32px;margin-bottom:4px;}
-.ld-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
-.ld-logo-img{height:48px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4));}
-.ld-logo-label{font-family:var(--fm);font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:.4;color:#fff;}
-.ld-divider{width:1px;height:56px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.2),transparent);}
-/* Título */
-.ld-brand{font-family:var(--ff);font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-top:4px;}
-.ld-tagline{font-family:var(--ff);font-size:28px;letter-spacing:3px;color:#fff;text-align:center;line-height:1.2;}
-.ld-tagline span.acc-y{color:#F5C800;}
-.ld-tagline span.acc-b{color:#4d8cff;}
+.ld-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px;}
+/* Título principal — protagonista */
+.ld-brand{font-family:var(--ff);font-size:42px;letter-spacing:6px;color:#fff;text-transform:uppercase;text-align:center;line-height:1;margin-bottom:4px;}
+.ld-brand span.acc-y{color:#F5C800;}
+.ld-brand span.acc-b{color:#4d8cff;}
+/* Subtítulo */
+.ld-tagline{font-family:var(--fm);font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.35);text-transform:uppercase;text-align:center;margin-bottom:8px;}
+/* Logos lado a lado — sin fondo */
+.ld-logos{display:flex;align-items:center;gap:36px;margin:4px 0;}
+.ld-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ld-logo-img{height:44px;object-fit:contain;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6)) brightness(1.05);}
+.ld-logo-label{font-family:var(--fm);font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:.35;color:#fff;}
+.ld-divider{width:1px;height:52px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.15),transparent);}
 /* Barra de progreso */
-.ld-bar-wrap{width:320px;display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.ld-bar-wrap{width:340px;display:flex;flex-direction:column;gap:6px;margin-top:12px;}
 .ld-bar{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
 .ld-fill{height:100%;border-radius:2px;width:0%;transition:width .35s ease;
   background:linear-gradient(90deg,#F5C800,#F5821F,#4d8cff);}
@@ -388,28 +390,106 @@ nav.cat-total .brand{color:#4a4a4a;}
 :root.light nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light #mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light nav.cat-total .brand{color:#4a4a4a;}
+
+/* ── LOGIN ───────────────────────────────────────────────────────────────── */
+#login-screen{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0d0d0d;}
+#login-screen::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(245,200,0,.1) 0%,rgba(0,68,168,.1) 100%);}
+.login-box{position:relative;z-index:1;width:340px;padding:36px 30px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;gap:18px;}
+.login-logo{height:50px;object-fit:contain;}
+.login-title{font-family:var(--ff);font-size:22px;letter-spacing:3px;color:#fff;text-align:center;line-height:1.2;}
+.login-sub{font-family:var(--fm);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;text-align:center;}
+.login-form{width:100%;display:flex;flex-direction:column;gap:11px;}
+.login-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;padding:11px 14px;border-radius:8px;font-family:var(--fb);font-size:13px;outline:none;transition:border-color .2s;}
+.login-input::placeholder{color:rgba(255,255,255,.25);}
+.login-input:focus{border-color:rgba(245,200,0,.6);}
+.login-btn{width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,#F5C800,#F5821F);color:#000;font-family:var(--ff);font-size:16px;letter-spacing:2px;transition:opacity .15s;}
+.login-btn:hover{opacity:.88;}
+.login-err{font-family:var(--fm);font-size:10px;color:#ff6b6b;text-align:center;min-height:16px;}
+#access-panel{display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.75);align-items:center;justify-content:center;}
+#access-panel.open{display:flex;}
+.ap-box{background:var(--surf);border:1px solid var(--border);border-radius:14px;width:min(720px,96vw);max-height:82vh;display:flex;flex-direction:column;overflow:hidden;}
+.ap-hdr{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ap-title{font-family:var(--ff);font-size:20px;letter-spacing:2px;color:var(--white);}
+.ap-hdr-btns{display:flex;gap:8px;}
+.ap-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:6px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;}
+.ap-btn:hover{border-color:var(--acc);color:var(--acc);}
+.ap-btn.danger:hover{border-color:var(--neg);color:var(--neg);}
+.ap-table-wrap{overflow-y:auto;flex:1;}
+.ap-table{width:100%;border-collapse:collapse;}
+.ap-table th{background:var(--bg);color:var(--acc);font-family:var(--fm);font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:9px 16px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;}
+.ap-table td{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;font-family:var(--fm);}
+.ap-table tr:hover td{background:rgba(255,255,255,.02);}
+.ap-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.ap-footer-info{font-family:var(--fm);font-size:9px;color:var(--muted);}
+.nav-auth-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;}
+.nav-auth-btn:hover{border-color:var(--acc);color:var(--acc);}
+
 </style>
 </head>
 <body>
 
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <img src="Logo_Total.png" class="login-logo" alt="Logo" onerror="this.style.display='none'">
+    <div>
+      <div class="login-title">CATEGORY<br>MANAGEMENT</div>
+      <div class="login-sub" style="margin-top:4px;">Sell Out · Sell In · 2025–2026</div>
+    </div>
+    <div class="login-form">
+      <input class="login-input" id="li-user" type="text" placeholder="Usuario" autocomplete="username"
+        onkeydown="if(event.key==='Enter')document.getElementById('li-pass').focus()">
+      <input class="login-input" id="li-pass" type="password" placeholder="Contraseña" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-err" id="li-err"></div>
+      <button class="login-btn" onclick="doLogin()">INGRESAR</button>
+    </div>
+  </div>
+</div>
+<!-- ACCESS PANEL (CatMan only) -->
+<div id="access-panel">
+  <div class="ap-box">
+    <div class="ap-hdr">
+      <span class="ap-title">REPORTE DE ACCESOS</span>
+      <div class="ap-hdr-btns">
+        <button class="ap-btn" onclick="exportAccessLog()">⬇ EXPORTAR</button>
+        <button class="ap-btn danger" onclick="clearAccessLog()">🗑 LIMPIAR</button>
+        <button class="ap-btn" onclick="document.getElementById('access-panel').classList.remove('open')">✕ CERRAR</button>
+      </div>
+    </div>
+    <div class="ap-table-wrap">
+      <table class="ap-table">
+        <thead><tr><th>#</th><th>Usuario</th><th>Fecha</th><th>Hora ingreso</th><th>Hora salida</th><th>Tiempo en app</th></tr></thead>
+        <tbody id="ap-tbody"></tbody>
+      </table>
+    </div>
+    <div class="ap-footer">
+      <span class="ap-footer-info" id="ap-total">— registros</span>
+      <span class="ap-footer-info">Solo visible para CatMan</span>
+    </div>
+  </div>
+</div>
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="ld-inner">
+    <div class="ld-brand">CATEGORY<br><span class="acc-y">MANAGE</span><span class="acc-b">MENT</span></div>
+    <div class="ld-tagline">Sell Out · Sell In · 2025 – 2026</div>
     <div class="ld-logos">
       <div class="ld-logo-wrap">
         <img src="Logo_SImoniz.png" class="ld-logo-img" alt="Simoniz"
+          style="mix-blend-mode:lighten;"
           onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#F5C800;letter-spacing:3px;\'>SIMONIZ</div>'">
         <span class="ld-logo-label">Autos</span>
       </div>
       <div class="ld-divider"></div>
       <div class="ld-logo-wrap">
         <img src="Logo_BINNER.png" class="ld-logo-img" alt="Binner"
+          style="mix-blend-mode:lighten;"
           onerror="this.outerHTML='<div style=\'font-family:Bebas Neue,sans-serif;font-size:28px;color:#4d8cff;letter-spacing:3px;\'>BINNER</div>'">
         <span class="ld-logo-label">Hogar</span>
       </div>
     </div>
-    <div class="ld-brand">Category Management</div>
-    <div class="ld-tagline"><span class="acc-y">SELL OUT</span> · <span class="acc-b">SELL IN</span><br>2025 – 2026</div>
     <div class="ld-bar-wrap">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div class="ld-msg" id="ld-msg">Iniciando…</div>
@@ -797,9 +877,15 @@ function toggleTheme(){
 function initTheme(){
   try{
     const saved=localStorage.getItem('cv_theme');
-    // Modo claro por defecto; solo oscuro si el usuario lo eligió explícitamente
-    if(saved!=='dark') toggleTheme();
-  }catch(e){ toggleTheme(); }
+    if(saved==='dark') toggleTheme();
+    else{
+      document.documentElement.classList.add('light');
+      document.getElementById('theme-icon').textContent='🌙';
+      document.getElementById('theme-txt').textContent='MODO OSCURO';
+      const btn=document.getElementById('theme-btn');
+      btn.style.background='#edf0f7';btn.style.color='#1A3FA3';btn.style.borderColor='#1A3FA3';
+    }
+  }catch(e){document.documentElement.classList.add('light');}
   updateNavTheme(CUR_CAT);
 }
 
@@ -1366,7 +1452,123 @@ function renderComoVamos(){
     </div>
   </div>`;
 
-  document.getElementById('cv-body').innerHTML=heroH+proyH+cadH+recoH;
+  // ── Sección 3: Tendencia total ────────────────────────────────────────────
+  const totalTrendH=`<div>
+    <div class="cv-section-lbl">Tendencia total cadenas · ${mesLabel} 2026</div>
+    <div class="trend-row">
+      <div class="cbox">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid ${a};background:rgba(255,255,255,.02);">
+          <span class="cbox-label" style="margin:0;color:${a};opacity:.9;">📈 TENDENCIA SELL OUT ($M)</span>
+          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:${a};border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+            <span><span style="display:inline-block;width:14px;border-top:2px dashed ${a};vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+          </div>
+        </div>
+        <div style="position:relative;height:160px"><canvas id="cv-total-so"></canvas></div>
+      </div>
+      <div class="cbox">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:5px 8px;border-radius:6px;border-left:3px solid #6699ff;background:rgba(255,255,255,.02);">
+          <span class="cbox-label" style="margin:0;color:#6699ff;opacity:.9;">📦 TENDENCIA SELL IN ($M)</span>
+          <div style="display:flex;gap:10px;font-family:var(--fm);font-size:8px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2026</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:3px"></span>Real 2025</span>
+            <span><span style="display:inline-block;width:14px;border-top:2px dashed #6699ff;vertical-align:middle;margin-right:3px;opacity:.6"></span>Ppto 2026</span>
+          </div>
+        </div>
+        <div style="position:relative;height:160px"><canvas id="cv-total-si"></canvas></div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Sección 4: Por cadena con gráficas ────────────────────────────────────
+  const cadRowsH=`<div>
+    <div class="cv-section-lbl">Sell Out · Sell In por cadena · ${mesLabel} 2026${esMesActual?" (proyección cierre)":""}</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+    ${cadenas.map(cad=>{
+      const ppC=ppAll.filter(r=>r.CADENA===cad);
+      const ppCReal=ppC.filter(r=>mesesConReal.includes(r.MES));
+      const totSORCad=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const partPct=totSOReal26>0?totSORCad/totSOReal26*100:0;
+      const varC=ppCReal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
+      const varPct=sp(totSORCad,varC||1);
+      const ppCMes=esMultiMes?ppC:ppC.filter(r=>r.MES===mesFiltro);
+      const csOR=ppCMes.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
+      const csOP=ppCMes.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
+      const csiR=ppCMes.reduce((s,r)=>s+(r.SI_REAL_2026||0),0);
+      const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
+      const soP=cvCalcProy(csOR,soDias,soDiasT);
+      const siP=cvCalcProy(csiR,siDias,siDiasT);
+      const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
+      const ddiCad=calcDDI(invCad,uCad);
+      const ddiCls2=ddiClr(ddiCad);
+      const cumplSOProy=csOP>0?soP/csOP*100:0;
+      const headerBg=cumplSOProy>=90?'rgba(13,183,91,.05)':cumplSOProy>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
+      const headerBorder=cumplSOProy>=90?'#0DB75B':cumplSOProy>=75?'#F5C800':'#E5192C';
+      const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+      return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch;">
+        <div class="cv-cad-card">
+          <div class="cv-cad-hdr" style="background:${headerBg};border-bottom-color:${headerBorder}20;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              ${cadLogoHtml(cad,22)}
+              <div style="min-width:0;">
+                <div class="cv-cad-name">${cad}</div>
+                <div class="cv-cad-meta">${partPct.toFixed(1)}% part. · <span class="ddi ${ddiCls2}" style="font-size:9px;">${ddiLbl(ddiCad)}</span></div>
+              </div>
+            </div>
+            <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
+          </div>
+          <div class="cv-cad-body">
+            ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
+            ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+          </div>
+          <div style="padding:7px 12px;background:${(soP-csOP)>=0?'var(--posL)':'var(--negL)'};border-top:1px solid ${(soP-csOP)>=0?'rgba(10,150,73,.15)':'rgba(229,25,44,.15)'};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-family:var(--fm);font-size:7px;font-weight:700;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};letter-spacing:.5px;text-transform:uppercase;">Gap proyectado cierre</div>
+                <div style="font-size:8px;color:var(--muted);margin-top:1px;">Faltan ${fmtM(Math.abs(soP-csOP))} en ${soDiasT-soDias} días · ${soDiasT} días</div>
+              </div>
+              <div style="font-family:var(--ff);font-size:18px;color:${(soP-csOP)>=0?'var(--pos)':'var(--neg)'};">${(soP-csOP)>=0?'+':''}${fmtM(soP-csOP)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="cbox" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;padding:4px 6px;background:rgba(255,255,255,.02);border-radius:5px;border-left:2.5px solid ${a};">
+              <span style="font-family:var(--fm);font-size:8px;color:${a};letter-spacing:.5px;opacity:.85;">SELL OUT ($M)</span>
+              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+                <span><span style="display:inline-block;width:8px;height:2px;background:${a};border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed ${a};vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+              </div>
+            </div>
+            <div style="position:relative;flex:1;min-height:85px;margin-top:4px;"><canvas id="cv-so-${cadId}"></canvas></div>
+          </div>
+          <div style="height:10px;flex-shrink:0;"></div>
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;padding:4px 6px;background:rgba(255,255,255,.02);border-radius:5px;border-left:2.5px solid #6699ff;">
+              <span style="font-family:var(--fm);font-size:8px;color:#6699ff;letter-spacing:.5px;opacity:.85;">SELL IN ($M)</span>
+              <div style="display:flex;gap:6px;font-family:var(--fm);font-size:7px;color:var(--muted);">
+                <span><span style="display:inline-block;width:8px;height:2px;background:#6699ff;border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2026</span>
+                <span><span style="display:inline-block;width:8px;height:2px;background:rgba(229,25,44,.8);border-radius:1px;vertical-align:middle;margin-right:2px;"></span>2025</span>
+                <span><span style="display:inline-block;width:10px;border-top:1.5px dashed #6699ff;vertical-align:middle;margin-right:2px;opacity:.6;"></span>Ppto</span>
+              </div>
+            </div>
+            <div style="position:relative;flex:1;min-height:85px;margin-top:4px;"><canvas id="cv-si-${cadId}"></canvas></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+
+  destroyCharts(cvCharts);
+  document.getElementById('cv-body').innerHTML=heroH+proyH+totalTrendH+cadRowsH;
+  setTimeout(()=>{
+    buildCvTotalCharts(getTrend(), a);
+    buildCvCadCharts(cadenas, a);
+  }, 50);
 }
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
@@ -1886,6 +2088,210 @@ function renderSegDetail(seg){
       <td style="text-align:center"><span class="ddi ${ddiClr(r.ddi)}">${ddiLbl(r.ddi)}</span></td>
     </tr>`).join('')}</tbody></table>`;
 }
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+let cvCharts={}, sgCharts={};
+
+function destroyCharts(registry){
+  Object.values(registry).forEach(c=>{try{c.destroy();}catch(e){}});
+  Object.keys(registry).forEach(k=>delete registry[k]);
+}
+
+function getCadTrend(cad){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return MES_ORD.map(m=>{
+    const rows=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&r.CADENA===cad);
+    const z={mes:MES_LBL[m]||m,soReal26:null,soReal25:null,soPpto:null,siReal26:null,siReal25:null,siPpto:null};
+    if(!rows.length) return z;
+    const sum=f=>{ const v=rows.reduce((s,r)=>s+(r[f]||0),0)/1e6; return v>0?v:null; };
+    return{mes:z.mes,soReal26:sum('SO_REAL_2026'),soReal25:sum('SO_REAL_2025'),soPpto:sum('SO_PPTO_2026'),
+      siReal26:sum('SI_REAL_2026'),siReal25:sum('SI_REAL_2025'),siPpto:sum('SI_PPTO_2026')};
+  });
+}
+
+function buildMiniChart(id,lbs,datasets,reg){
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  if(reg[id]){try{reg[id].destroy();}catch(e){} delete reg[id];}
+  const isLight=document.documentElement.classList.contains('light');
+  const gridC=isLight?'rgba(0,0,0,.04)':'rgba(255,255,255,.05)';
+  const tickC=isLight?'#7a8499':'#5a5a7a';
+  reg[id]=new Chart(ctx,{type:'line',data:{labels:lbs,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:c=>c.parsed.y===null?' —':' '+c.dataset.label+': $'+c.parsed.y.toFixed(2)+'M'}}},
+      scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5}},border:{color:gridC}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:7.5},
+          callback:v=>v==null?'':'$'+v.toFixed(1)+'M'},border:{color:gridC}}}}});
+}
+
+function buildCvTotalCharts(trend,a){
+  const lbs=trend.map(t=>t.mes);
+  const isLight=document.documentElement.classList.contains('light');
+  const bgSO=isLight?'rgba(26,63,163,.05)':'rgba(245,200,0,.06)';
+  const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.06)';
+  buildMiniChart('cv-total-so',lbs,[
+    {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+    {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
+    {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
+  ],cvCharts);
+  buildMiniChart('cv-total-si',lbs,[
+    {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',backgroundColor:'rgba(229,25,44,.05)',borderWidth:1.5,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+    {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:2,pointRadius:2.5,fill:true,tension:.3,spanGaps:true},
+    {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',backgroundColor:'transparent',borderWidth:1.2,borderDash:[5,3],pointRadius:1.5,tension:.3,spanGaps:true},
+  ],cvCharts);
+}
+
+function buildCvCadCharts(cadenas,a){
+  cadenas.forEach(cad=>{
+    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+    const trend=getCadTrend(cad);
+    const lbs=trend.map(t=>t.mes);
+    const isLight=document.documentElement.classList.contains('light');
+    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
+    const bgSI=isLight?'rgba(26,63,163,.04)':'rgba(102,153,255,.05)';
+    buildMiniChart('cv-so-'+cadId,lbs,[
+      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],cvCharts);
+    buildMiniChart('cv-si-'+cadId,lbs,[
+      {label:'SI 2025',data:trend.map(t=>t.siReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SI 2026',data:trend.map(t=>t.siReal26),borderColor:'#6699ff',backgroundColor:bgSI,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.siPpto),borderColor:'#6699ff',borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],cvCharts);
+  });
+}
+
+function buildSgCadCharts(cadNames,a){
+  cadNames.forEach(cad=>{
+    const cadId=cad.replace(/[^a-zA-Z0-9]/g,'_');
+    const trend=getCadTrend(cad);
+    const lbs=trend.map(t=>t.mes);
+    const isLight=document.documentElement.classList.contains('light');
+    const bgSO=isLight?'rgba(26,63,163,.04)':'rgba(245,200,0,.05)';
+    buildMiniChart('sg-so-'+cadId,lbs,[
+      {label:'SO 2025',data:trend.map(t=>t.soReal25),borderColor:'rgba(229,25,44,.7)',borderWidth:1.2,pointRadius:1.5,tension:.3,spanGaps:true},
+      {label:'SO 2026',data:trend.map(t=>t.soReal26),borderColor:a,backgroundColor:bgSO,borderWidth:1.8,pointRadius:2,fill:true,tension:.3,spanGaps:true},
+      {label:'Ppto',data:trend.map(t=>t.soPpto),borderColor:a,borderWidth:1,borderDash:[4,3],pointRadius:1.2,tension:.3,spanGaps:true},
+    ],sgCharts);
+  });
+}
+
+
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+const USERS = {
+  'GteTMK': '14b4d4527ed67af425a6e066de86bc291d2eede7a46428c36b93fe592f536a24',
+  'DCC':    '5cd6cf36c749a10a85b79cc692d3cfabfe31e6d9bb1464559a29a5ac3698bd50',
+  'CatMan': '64245f0b7b89dfd8e48d385d9f7a96bc3024666f84e3d70005aba93121c9437f',
+};
+const MASTER='CatMan', LOG_KEY='catmgmt_access_log';
+let _curUser=null, _loginTs=null;
+
+async function _sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function doLogin(){
+  const user=document.getElementById('li-user').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  const err=document.getElementById('li-err');
+  err.textContent='';
+  if(!user||!pass){err.textContent='Ingresa usuario y contraseña.';return;}
+  const hash=await _sha256(pass);
+  if(USERS[user]&&USERS[user]===hash){
+    _curUser=user;_loginTs=Date.now();
+    document.getElementById('login-screen').style.display='none';
+    _injectNavButtons();
+    _appendLog(_curUser,_loginTs,null);
+    load();
+  }else{
+    err.textContent='Usuario o contraseña incorrectos.';
+    document.getElementById('li-pass').value='';
+    document.getElementById('li-pass').focus();
+  }
+}
+function _injectNavButtons(){
+  const nav=document.querySelector('nav');
+  if(!nav) return;
+  const wrap=document.createElement('div');
+  wrap.id='nav-auth-wrap';
+  wrap.style.cssText='display:flex;align-items:center;gap:6px;margin-left:6px;';
+  const btnOut=document.createElement('button');
+  btnOut.className='nav-auth-btn';btnOut.textContent='🚪 SALIR';btnOut.onclick=doLogout;
+  wrap.appendChild(btnOut);
+  if(_curUser===MASTER){
+    const btnAcc=document.createElement('button');
+    btnAcc.className='nav-auth-btn';btnAcc.textContent='📋 ACCESOS';btnAcc.onclick=showAccessPanel;
+    wrap.appendChild(btnAcc);
+  }
+  const greet=document.createElement('span');
+  greet.style.cssText='font-family:var(--fm);font-size:9px;color:var(--muted);white-space:nowrap;';
+  greet.textContent='👤 '+_curUser;
+  wrap.appendChild(greet);
+  nav.appendChild(wrap);
+}
+function doLogout(){
+  _updateLogLogout(_curUser,_loginTs,Date.now());
+  _curUser=null;_loginTs=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('li-user').value='';
+  document.getElementById('li-pass').value='';
+  document.getElementById('li-err').textContent='';
+  const w=document.getElementById('nav-auth-wrap');if(w)w.remove();
+}
+function _getLogs(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]');}catch(e){return[];}}
+function _saveLogs(l){try{localStorage.setItem(LOG_KEY,JSON.stringify(l.slice(0,1000)));}catch(e){}}
+function _fmtDur(ms){
+  if(ms<60000)return Math.round(ms/1000)+'s';
+  const m=Math.floor(ms/60000),s=Math.round((ms%60000)/1000);
+  return m<60?m+'m '+s+'s':Math.floor(m/60)+'h '+(m%60)+'m';
+}
+function _appendLog(user,loginTs,logoutTs){
+  const logs=_getLogs(),d=new Date(loginTs);
+  logs.unshift({id:loginTs,user,
+    fecha:d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    horaIn:d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    horaOut:logoutTs?new Date(logoutTs).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—',
+    dur:logoutTs?_fmtDur(logoutTs-loginTs):'En sesión',loginTs,logoutTs});
+  _saveLogs(logs);
+}
+function _updateLogLogout(user,loginTs,logoutTs){
+  const logs=_getLogs(),e=logs.find(l=>l.loginTs===loginTs&&l.user===user);
+  if(e){e.horaOut=new Date(logoutTs).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    e.dur=_fmtDur(logoutTs-loginTs);e.logoutTs=logoutTs;_saveLogs(logs);}
+}
+window.addEventListener('beforeunload',()=>{if(_curUser&&_loginTs)_updateLogLogout(_curUser,_loginTs,Date.now());});
+function showAccessPanel(){
+  if(_curUser!==MASTER)return;
+  const logs=_getLogs();
+  document.getElementById('ap-total').textContent=logs.length+' registro'+(logs.length===1?'':'s');
+  document.getElementById('ap-tbody').innerHTML=logs.length===0
+    ?'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">Sin registros aún</td></tr>'
+    :logs.map((l,i)=>`<tr><td style="color:var(--muted)">${i+1}</td><td style="color:var(--acc);font-weight:600">${l.user}</td>
+      <td>${l.fecha}</td><td>${l.horaIn}</td>
+      <td style="color:${l.horaOut==='—'?'var(--muted)':'var(--text)'}">${l.horaOut}</td>
+      <td style="color:${l.dur==='En sesión'?'var(--pos)':'var(--sub)'}">${l.dur}</td></tr>`).join('');
+  document.getElementById('access-panel').classList.add('open');
+}
+function clearAccessLog(){
+  if(_curUser!==MASTER)return;
+  if(!confirm('¿Eliminar todos los registros?'))return;
+  localStorage.removeItem(LOG_KEY);showAccessPanel();
+}
+function exportAccessLog(){
+  if(_curUser!==MASTER)return;
+  const logs=_getLogs();
+  if(!logs.length){alert('Sin registros.');return;}
+  const rows=['#,Usuario,Fecha,Hora Ingreso,Hora Salida,Tiempo'];
+  logs.forEach((l,i)=>rows.push(`${i+1},${l.user},${l.fecha},${l.horaIn},${l.horaOut},${l.dur}`));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download='accesos_catmgmt.csv';a.click();
+}
+
 
 load();
 </script>
