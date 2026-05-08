@@ -424,6 +424,13 @@ nav.cat-total .brand{color:#4a4a4a;}
 .nav-auth-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;}
 .nav-auth-btn:hover{border-color:var(--acc);color:var(--acc);}
 
+
+/* ── BARRA DE RITMO (SG dashboard) ───────────────────────────────────────── */
+.pace-bar-wrap{position:relative;height:10px;background:var(--border);border-radius:5px;overflow:visible;margin-bottom:5px;}
+.pace-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:5px;transition:width .4s;}
+.pace-bar-target{position:absolute;top:-3px;width:3px;height:16px;border-radius:2px;background:#fff;opacity:.9;box-shadow:0 0 4px rgba(0,0,0,.5);z-index:2;}
+.pace-bar-labels{display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;margin-top:3px;}
+
 </style>
 </head>
 <body>
@@ -1794,6 +1801,7 @@ function renderDashboard(){
     _dTotalMulti=dTotalSG;
   }
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,_dTotalMulti):0;
+  const pacePosSG=_dTotalMulti>0?Math.min(dDiasSG/_dTotalMulti,1):0; // fracción días transcurridos
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
   const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
@@ -1827,13 +1835,13 @@ function renderDashboard(){
           +proyRowHtml+pptoRowHtml
           +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(varTotal>=0?'var(--pos)':'var(--neg)')+'">'+sg(varTotal)+varTotal.toFixed(1)+'%</div></div>'
         +'</div>'
-        +'<div class="cv-mini-bar-bg" style="margin-bottom:4px;">'
-          +'<div class="cv-mini-bar-p" style="width:'+Math.min(proyPctTotalSG,100)+'%;background:'+proyColorSG+';"></div>'
-          +'<div class="cv-mini-bar-r" style="width:'+barRealTotal+'%;background:var(--acc);"></div>'
+        +'<div class="pace-bar-wrap">'
+          +'<div class="pace-bar-real" style="width:'+Math.min(barRealTotal,100)+'%;background:'+(barRealTotal>=pacePosSG*100?'var(--pos)':'var(--neg)')+'; "></div>'
+          +'<div class="pace-bar-target" style="left:'+Math.min(pacePosSG*100,100)+'%;"></div>'
         +'</div>'
-        +'<div style="display:flex;justify-content:space-between;">'
-          +'<span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplTotal.toFixed(1)+'%</span>'
-          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColorSG+';">Proy. '+proyPctTotalSG.toFixed(1)+'%</span>'
+        +'<div class="pace-bar-labels">'
+          +'<span style="color:var(--acc);font-weight:600;">Real: '+barRealTotal.toFixed(1)+'%</span>'
+          +'<span style="color:var(--muted);">Ritmo esperado: '+(pacePosSG*100).toFixed(1)+'%</span>'
           +gapRowHtml
         +'</div>'
       +'</div>'
@@ -1876,11 +1884,14 @@ function renderDashboard(){
       const pPC=proyPct>=90?'pos':proyPct>=75?'':'neg';
       const proyPill='<span class="pill '+pPC+'" style="font-size:8px;'+pPS+'">Proy: '+proyPct.toFixed(1)+'%</span>';
       const barHtml=soPptoMes2>0
-        ?'<div class="cv-mini-bar-bg"><div class="cv-mini-bar-p" style="width:'+Math.min(proyPct,100)+'%;background:'+proyColor+';"></div>'
-          +'<div class="cv-mini-bar-r" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:var(--acc);"></div></div>'
-          +'<div class="cv-mini-foot"><span style="font-family:var(--fm);font-size:8px;color:var(--acc);font-weight:600;">Hoy '+cumplPct.toFixed(1)+'%</span>'
-          +'<span style="font-family:var(--fm);font-size:8px;color:'+proyColor+';">Proy. '+proyPct.toFixed(1)+'%</span>'
-          +(soP>0?'<span style="font-family:var(--fm);font-size:8px;color:'+gapColor+';">gap '+sg(gap)+fmtM(gap)+'</span>':'')+'</div>'
+        ?'<div class="pace-bar-wrap">'
+          +'<div class="pace-bar-real" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:'+(c.v26/soPptoMes2>=pacePosSG?'var(--pos)':'var(--neg)')+';"></div>'
+          +'<div class="pace-bar-target" style="left:'+Math.min(pacePosSG*100,100)+'%;"></div>'
+          +'</div>'
+          +'<div class="pace-bar-labels">'
+          +'<span style="color:'+(c.v26/soPptoMes2>=pacePosSG?'var(--pos)':'var(--neg)')+';font-weight:600;">Real: '+cumplPct.toFixed(1)+'%</span>'
+          +'<span style="color:var(--muted);">Esperado: '+(pacePosSG*100).toFixed(1)+'%</span>'
+          +(soP>0?'<span style="color:'+gapColor+';">gap '+sg(gap)+fmtM(gap)+'</span>':'')+'</div>'
         :'';
       html+='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
         +'<div class="cv-cad-card">'
