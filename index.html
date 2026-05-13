@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Category Management · Sell Out</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -430,6 +430,99 @@ nav.cat-total .brand{color:#4a4a4a;}
 .pace-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:5px;transition:width .4s;}
 .pace-bar-target{position:absolute;top:-3px;width:3px;height:16px;border-radius:2px;background:#fff;opacity:.9;box-shadow:0 0 4px rgba(0,0,0,.5);z-index:2;}
 .pace-bar-labels{display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;margin-top:3px;}
+
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE  — max 768px
+══════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+
+  /* ── NAV ── */
+  nav{padding:0 8px;gap:4px;height:auto;min-height:48px;flex-wrap:wrap;padding-top:6px;padding-bottom:6px;}
+  .brand{font-size:14px;letter-spacing:1px;}
+  .main-tabs{gap:1px;overflow-x:auto;flex-wrap:nowrap;}
+  .main-tab{padding:4px 7px;font-size:8px;letter-spacing:0;white-space:nowrap;}
+  .cat-pills{gap:2px;}
+  .cat-pill{padding:3px 8px;font-size:8px;}
+  #data-badge{display:none;}
+  #theme-btn span:last-child{display:none;}
+  #theme-btn{padding:4px 8px;}
+  #nav-auth-wrap{gap:4px;}
+  .nav-auth-btn{padding:3px 7px;font-size:8px;}
+
+  /* ── MES BAR ── */
+  #mes-bar{padding:4px 8px;gap:3px;overflow-x:auto;}
+  #mes-bar::-webkit-scrollbar{display:none;}
+  .mes-btn{padding:2px 7px;font-size:8px;min-width:28px;}
+
+  /* ── COMO VAMOS ── */
+  .cv-body{padding:8px;gap:10px;}
+  .cv-brand-hero{grid-template-columns:1fr 1fr;gap:1px;}
+  .cv-bh-main{grid-column:1/-1;padding:10px 12px;}
+  .cv-bh-logo{width:60px;height:40px;}
+  .cv-bh-val{font-size:22px;}
+  .cv-proy-row{grid-template-columns:1fr;}
+  .cv-pc-metrics{grid-template-columns:1fr 1fr;}
+  .cv-pc-m-v{font-size:20px;}
+  .cv-gap-val{font-size:20px;}
+  .trend-row{grid-template-columns:1fr;}
+
+  /* ── DASHBOARD ── */
+  .d-body{padding:8px;}
+  .d-filters{padding:4px 8px;gap:6px;flex-wrap:wrap;}
+  .kpi-row{grid-template-columns:1fr 1fr;gap:6px;}
+  .kpi-val{font-size:18px;}
+
+  /* Per-cadena rows: stack vertically */
+  div[style*="grid-template-columns:500px 1fr"]{
+    display:flex!important;flex-direction:column!important;gap:6px!important;
+  }
+  div[style*="grid-template-columns:1fr 1fr;gap:8px;align-items:stretch"]{
+    display:flex!important;flex-direction:column!important;gap:6px!important;
+  }
+
+  /* ── PDV EXPLORER ── */
+  .e-filters{padding:4px 8px;gap:5px;flex-wrap:wrap;}
+  .split-body{flex-direction:column;}
+  .p-left{width:100%;max-height:200px;border-right:none;border-bottom:1px solid var(--border);}
+  .p-right{flex:1;}
+
+  /* ── KSTRIP ── */
+  .kstrip{overflow-x:auto;flex-wrap:nowrap;}
+  .kstrip::-webkit-scrollbar{display:none;}
+  .ks-item{min-width:80px;flex-shrink:0;}
+  .ks-val{font-size:13px;}
+
+  /* ── TABLES ── */
+  table{font-size:11px;}
+  th,td{padding:4px 6px;}
+
+  /* ── SEGMENTOS ── */
+  .seg-cards-wrap{overflow-x:auto;}
+
+  /* ── LOADING ── */
+  .ld-brand{font-size:28px;letter-spacing:3px;}
+  .ld-bar-wrap{width:260px;}
+  .ld-logos{gap:20px;}
+  .ld-logo-img{height:32px;}
+}
+
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:1fr;}
+  .cv-brand-hero{grid-template-columns:1fr;}
+  .main-tab{padding:3px 6px;font-size:7px;}
+  .cat-pill{padding:2px 7px;font-size:7px;}
+  .cv-proy-row{grid-template-columns:1fr;}
+}
+
+/* iPhone notch safe areas */
+nav{
+  padding-left:max(8px,env(safe-area-inset-left));
+  padding-right:max(8px,env(safe-area-inset-right));
+}
+body{
+  padding-bottom:env(safe-area-inset-bottom);
+}
 
 </style>
 </head>
@@ -2290,9 +2383,10 @@ function buildSgCadCharts(cadNames,a){
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 const USERS = {
-  'GteTMK': '14b4d4527ed67af425a6e066de86bc291d2eede7a46428c36b93fe592f536a24',
-  'DCC':    '5cd6cf36c749a10a85b79cc692d3cfabfe31e6d9bb1464559a29a5ac3698bd50',
-  'CatMan': '64245f0b7b89dfd8e48d385d9f7a96bc3024666f84e3d70005aba93121c9437f',
+  'GteTMK':       '14b4d4527ed67af425a6e066de86bc291d2eede7a46428c36b93fe592f536a24',
+  'DCC':          '5cd6cf36c749a10a85b79cc692d3cfabfe31e6d9bb1464559a29a5ac3698bd50',
+  'CatMan':       '81312c55f4a79ea1df158edbd9982a2f52d23cd67e7e14dbcabdca2b758de385',
+  'LuisaMorales': '3489d2312ed134290a2f72cf6f8ff72e3f9f88225e503291fb9a2f851fab9be0',
 };
 const MASTER='CatMan', LOG_KEY='catmgmt_access_log';
 let _curUser=null, _loginTs=null;
