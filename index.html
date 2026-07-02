@@ -87,6 +87,34 @@ select:focus,input:focus{border-color:var(--acc);}
 .mes-btn.active{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700;}
 .mes-btn:disabled{opacity:.25;cursor:not-allowed;}
 
+/* ── ÁRBOL ── */
+.arb-tree{font-family:var(--fm);}
+.arb-tree *{box-sizing:border-box;}
+.arb-subtree{display:flex;flex-direction:column;align-items:center;}
+.arb-nd{border:1px solid var(--border);border-radius:8px;padding:8px 11px;cursor:pointer;background:var(--card);transition:background .15s;width:198px;text-align:left;}
+.arb-nd:hover{background:var(--bg);}
+.arb-leaf{cursor:default;}
+.arb-grp{border-style:dashed;}
+.arb-nm{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:space-between;gap:6px;letter-spacing:.3px;}
+.arb-wt{font-size:9px;color:var(--muted);font-weight:400;}
+.arb-val{font-size:11px;color:var(--sub);margin-top:4px;font-weight:700;}
+.arb-vln{font-size:9px;margin-top:2px;white-space:nowrap;color:var(--sub);}
+.arb-vln b{font-weight:700;}
+.arb-pos{color:#2e8b3d;}
+.arb-neg{color:#d64545;}
+.arb-chld{display:flex;flex-direction:row;align-items:flex-start;justify-content:center;gap:12px;}
+.arb-vstem{width:1px;height:16px;background:var(--border);}
+.arb-seglist{display:flex;flex-direction:column;gap:6px;position:relative;padding-left:20px;margin-top:4px;}
+.arb-seglist::before{content:"";position:absolute;left:8px;top:0;bottom:18px;width:1px;background:var(--border);}
+.arb-segwrap{position:relative;}
+.arb-segwrap::before{content:"";position:absolute;left:-12px;top:20px;width:12px;height:1px;background:var(--border);}
+.arb-seg{border:1px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);width:252px;text-align:left;}
+.arb-snm{font-size:10px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;gap:6px;}
+.arb-swt{font-size:9px;color:var(--muted);font-weight:400;}
+.arb-sv{font-size:10px;color:var(--sub);margin-top:3px;font-weight:700;}
+.arb-sln{font-size:9px;margin-top:1px;white-space:nowrap;color:var(--sub);}
+.arb-sln b{font-weight:700;}
+
 /* ── PAGES ── */
 .page{display:none;flex:1;flex-direction:column;min-height:0;}
 .page.active{display:flex;}
@@ -614,6 +642,7 @@ body{
       <div class="main-tab"        onclick="showPage('dashboard',this)">📊 DASHBOARD</div>
       <div class="main-tab"        onclick="showPage('explorer',this)">🏪 PDV EXPLORER</div>
       <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
+      <div class="main-tab"        onclick="showPage('arbol',this)">🌳 ÁRBOL</div>
     </div>
     <div class="nav-sep"></div>
     <div class="cat-pills">
@@ -712,6 +741,24 @@ body{
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ARBOL -->
+  <div class="page" id="page-arbol">
+    <div class="d-filters">
+      <span class="flabel">Cadena</span>
+      <select id="a-cad-sel" onchange="dSelCad=this.value;renderArbol()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
+        <option value="">Todas las cadenas</option>
+      </select>
+      <div class="badge" id="a-periodo">—</div>
+      <div class="badge" id="a-val-badge" style="margin-left:auto;">—</div>
+    </div>
+    <div id="arbol-legend" style="display:flex;gap:16px;font-family:var(--fm);font-size:9px;color:var(--sub);padding:6px 12px;flex-wrap:wrap;align-items:center;">
+      <span><span style="color:#2e8b3d;">■</span> crece vs 2025</span>
+      <span><span style="color:#d64545;">■</span> decrece vs 2025</span>
+      <span style="color:var(--muted);">peso = % dentro de su nivel · V = valor · U = unidades · Δ = variación absoluta · clic para abrir/cerrar</span>
+    </div>
+    <div id="arbol-body" style="padding:10px 12px;overflow-x:auto;"></div>
   </div>
 
 </div>
@@ -879,6 +926,7 @@ function showPage(page,el){
   else if(page==='resultados') initResultados();
   else if(page==='explorer') initExplorer();
   else if(page==='segmentos') renderSegmentos();
+  else if(page==='arbol') renderArbol();
 }
 function updateNavTheme(cat){
   const nav=document.querySelector('nav');
@@ -904,6 +952,7 @@ function refreshAll(){
   else if(CUR_PAGE==='comovamos') renderComoVamos();
   else if(CUR_PAGE==='explorer') initExplorer();
   else if(CUR_PAGE==='segmentos') renderSegmentos();
+  else if(CUR_PAGE==='arbol') renderArbol();
 }
 const ac=()=>{const l=document.documentElement.classList.contains('light');return CUR_CAT==='HOGAR'?(l?'#1A3FA3':'#6699ff'):CUR_CAT==='FERRETERIA'?(l?'#7c3aed':'#c084fc'):CUR_CAT==='TOTAL'?(l?'#4b5563':'#aaa'):(l?'#1A3FA3':'#F5C800');};
 
@@ -1696,6 +1745,178 @@ function getCadenas(){
     invUnds:cats2.reduce((s,cat)=>s+INV.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad).reduce((s2,r)=>s2+(r.INVENTARIO_UNDS||0),0),0)
   })).map(c=>({...c,ddi:calcDDI(c.invUnds,c.u26)}))
   .sort((a,b)=>b.v26-a.v26);
+}
+
+// ── ÁRBOL DE CATEGORÍA ──────────────────────────────────────────────────────
+let _arbolTop=5;
+
+function _arbFmtV(v){const a=Math.abs(v);let s;
+  if(a>=1e9)s=(v/1e9).toFixed(2)+'B';else if(a>=1e6)s=(v/1e6).toFixed(0)+'M';
+  else if(a>=1e3)s=(v/1e3).toFixed(0)+'K';else s=Math.round(v)+'';return s;}
+function _arbFmtVs(v){return (v>=0?'+':'-')+'$'+_arbFmtV(Math.abs(v));}
+function _arbFmtU(u){const a=Math.abs(u);return a>=1e3?(u/1e3).toFixed(1)+'K':Math.round(u)+'';}
+function _arbFmtUs(u){return (u>=0?'+':'-')+_arbFmtU(Math.abs(u))+'u';}
+function _arbPct(x){return (x>=0?'+':'')+x.toFixed(1)+'%';}
+function _arbCls(x){return x>=0?'arb-pos':'arb-neg';}
+function _arbCap(s){return s?s.charAt(0)+s.slice(1).toLowerCase():s;}
+function _arbNode(name,v26,v25,u26,u25,pv,pu){
+  return {name,v:v26,
+    vv:v25?(v26/v25-1)*100:0, va:v26-v25,
+    uv:u25?(u26/u25-1)*100:0, ua:u26-u25,
+    pv:pv, pu:pu};
+}
+
+// Construye el árbol a partir de DET, respetando filtros globales
+function buildArbolData(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  // Agregado por subcategoría y por subcategoría|segmento
+  const sub26={},sub25={},seg26={},seg25={};
+  let tv26=0,tv25=0,tu26=0,tu25=0;
+  cats.forEach(cat=>{
+    (DET[cat+'_2026']||[]).forEach(r=>{
+      if(selMeses.size>0 && !selMeses.has(r.M)) return;
+      if(dSelCad && r.C!==dSelCad) return;
+      const s=r.S; if(!s) return;
+      const V=r.V||0,U=r.U||0;
+      sub26[s]=sub26[s]||{v:0,u:0}; sub26[s].v+=V; sub26[s].u+=U;
+      tv26+=V; tu26+=U;
+      const g=r.G; if(g){const k=s+'|||'+g;
+        seg26[k]=seg26[k]||{v:0,u:0}; seg26[k].v+=V; seg26[k].u+=U;}
+    });
+    (DET[cat+'_2025']||[]).forEach(r=>{
+      if(selMeses.size>0 && !selMeses.has(r.M)) return;
+      if(dSelCad && r.C!==dSelCad) return;
+      const s=r.S; if(!s) return;
+      const V=r.V||0,U=r.U||0;
+      sub25[s]=sub25[s]||{v:0,u:0}; sub25[s].v+=V; sub25[s].u+=U;
+      tv25+=V; tu25+=U;
+      const g=r.G; if(g){const k=s+'|||'+g;
+        seg25[k]=seg25[k]||{v:0,u:0}; seg25[k].v+=V; seg25[k].u+=U;}
+    });
+  });
+  if(tv26===0 && tv25===0) return null;
+
+  const root=_arbNode(CUR_CAT, tv26,tv25,tu26,tu25, 100,100);
+  root.children=[];
+  const order=Object.keys(sub26).sort((a,b)=>sub26[b].v-sub26[a].v);
+  const top=order.slice(0,_arbolTop);
+  const rest=order.slice(_arbolTop);
+
+  function segChildrenOf(s){
+    const segs=Object.keys(seg26).filter(k=>k.startsWith(s+'|||'));
+    const totV=segs.reduce((a,k)=>a+seg26[k].v,0);
+    const totU=segs.reduce((a,k)=>a+seg26[k].u,0);
+    return segs.map(k=>{const g=k.split('|||')[1];
+      const s26=seg26[k],s25v=seg25[k]||{v:0,u:0};
+      return _arbNode(g, s26.v,s25v.v, s26.u,s25v.u,
+        totV>0?s26.v/totV*100:0, totU>0?s26.u/totU*100:0);
+    }).sort((a,b)=>b.v-a.v);
+  }
+
+  top.forEach(s=>{
+    const c26=sub26[s],c25=sub25[s]||{v:0,u:0};
+    const n=_arbNode(s, c26.v,c25.v, c26.u,c25.u,
+      tv26>0?c26.v/tv26*100:0, tu26>0?c26.u/tu26*100:0);
+    n.children=segChildrenOf(s);
+    root.children.push(n);
+  });
+
+  if(rest.length){
+    let ov26=0,ov25=0,ou26=0,ou25=0;
+    rest.forEach(s=>{ov26+=sub26[s].v; ov25+=(sub25[s]||{v:0}).v;
+      ou26+=sub26[s].u; ou25+=(sub25[s]||{u:0}).u;});
+    const otras=_arbNode('OTRAS SUBCATEGORÍAS', ov26,ov25, ou26,ou25,
+      tv26>0?ov26/tv26*100:0, tu26>0?ou26/tu26*100:0);
+    otras.grp=true; otras.children=[];
+    rest.forEach(s=>{const c26=sub26[s],c25=sub25[s]||{v:0,u:0};
+      otras.children.push(_arbNode(s, c26.v,c25.v, c26.u,c25.u,
+        ov26>0?c26.v/ov26*100:0, ou26>0?c26.u/ou26*100:0));
+    });
+    root.children.push(otras);
+  }
+  return root;
+}
+
+function _arbSegRow(n){
+  return `<div class="arb-segwrap"><div class="arb-seg">
+    <div class="arb-snm"><span>${_arbCap(n.name)}</span><span class="arb-swt">${n.pv.toFixed(0)}%</span></div>
+    <div class="arb-sv">$${_arbFmtV(n.v)}</div>
+    <div class="arb-sln">V <b class="${_arbCls(n.vv)}">${_arbPct(n.vv)}</b> <span class="${_arbCls(n.va)}">Δ${_arbFmtVs(n.va)}</span></div>
+    <div class="arb-sln">U <b class="${_arbCls(n.uv)}">${_arbPct(n.uv)}</b> <span class="${_arbCls(n.ua)}">Δ${_arbFmtUs(n.ua)}</span></div>
+  </div></div>`;
+}
+
+function _arbBuildSubtree(node){
+  const st=document.createElement('div'); st.className='arb-subtree';
+  const hasKids=node.children && node.children.length>0;
+  const disp=node.grp?node.name:_arbCap(node.name);
+  const box=document.createElement('div');
+  box.className='arb-nd'+(hasKids?'':' arb-leaf')+(node.grp?' arb-grp':'');
+  box.innerHTML=`<div class="arb-nm"><span>${hasKids?'▸ ':''}${disp}</span><span class="arb-wt">${node.pv.toFixed(0)}%</span></div>
+    <div class="arb-val">$${_arbFmtV(node.v)}</div>
+    <div class="arb-vln">V <b class="${_arbCls(node.vv)}">${_arbPct(node.vv)}</b> <span class="${_arbCls(node.va)}">Δ${_arbFmtVs(node.va)}</span></div>
+    <div class="arb-vln">U <b class="${_arbCls(node.uv)}">${_arbPct(node.uv)}</b> <span class="${_arbCls(node.ua)}">Δ${_arbFmtUs(node.ua)}</span></div>`;
+  st.appendChild(box);
+
+  if(hasKids){
+    const allLeaves=node.children.every(c=>!c.children||c.children.length===0);
+    if(allLeaves){
+      const list=document.createElement('div'); list.className='arb-seglist'; list.style.display='none';
+      list.innerHTML=node.children.map(_arbSegRow).join('');
+      st.appendChild(list);
+      box.onclick=()=>{const open=list.style.display!=='none';
+        list.style.display=open?'none':'flex';
+        box.querySelector('.arb-nm span').innerHTML=(open?'▸ ':'▾ ')+disp;};
+    } else {
+      const stem=document.createElement('div'); stem.className='arb-vstem'; stem.style.display='none';
+      const kids=document.createElement('div'); kids.className='arb-chld'; kids.style.display='none';
+      node.children.forEach(ch=>kids.appendChild(_arbBuildSubtree(ch)));
+      st.appendChild(stem); st.appendChild(kids);
+      box.onclick=()=>{const open=kids.style.display!=='none';
+        kids.style.display=open?'none':'flex'; stem.style.display=open?'none':'block';
+        box.querySelector('.arb-nm span').innerHTML=(open?'▸ ':'▾ ')+disp;};
+    }
+  }
+  return st;
+}
+
+function renderArbol(){
+  // Poblar select de cadenas (reutiliza getCadenas para respetar categoría/mes)
+  try{
+    const cadenas=getCadenas();
+    const sel=document.getElementById('a-cad-sel');
+    if(sel){
+      sel.innerHTML='<option value="">Todas las cadenas</option>'+
+        cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
+    }
+  }catch(e){}
+
+  // Badges de periodo y valor
+  const per=document.getElementById('a-periodo');
+  if(per){const ms=selMeses.size>0?[...selMeses].map(m=>MES_LBL[m]||m).join(', '):'Acumulado';
+    per.textContent=ms;}
+
+  const body=document.getElementById('arbol-body');
+  if(!body) return;
+  if(!DET[CUR_CAT+'_2026'] && CUR_CAT!=='TOTAL'){
+    body.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px;letter-spacing:2px;">DETALLE NO DISPONIBLE — Sube detalle_'+CUR_CAT.toLowerCase()+'_2026.json al repositorio</div>';
+    return;
+  }
+  const data=buildArbolData();
+  if(!data){
+    body.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px;letter-spacing:2px;">SIN DATOS PARA LOS FILTROS SELECCIONADOS</div>';
+    const vb=document.getElementById('a-val-badge'); if(vb)vb.textContent='—';
+    return;
+  }
+  const vb=document.getElementById('a-val-badge');
+  if(vb)vb.textContent='$'+_arbFmtV(data.v)+' · '+_arbPct(data.vv);
+
+  body.innerHTML='';
+  const root=document.createElement('div'); root.className='arb-tree';
+  root.appendChild(_arbBuildSubtree(data));
+  body.appendChild(root);
+  // Abrir la raíz por defecto para mostrar las subcategorías
+  const rb=root.querySelector('.arb-nd'); if(rb) rb.click();
 }
 
 function getDetSeg(){
