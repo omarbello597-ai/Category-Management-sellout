@@ -774,8 +774,12 @@ body{
   <div class="page" id="page-arbol">
     <div class="d-filters">
       <span class="flabel">Cadena</span>
-      <select id="a-cad-sel" onchange="dSelCad=this.value;renderArbol()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
+      <select id="a-cad-sel" onchange="dSelCad=this.value;arbSelTienda='';renderArbol()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
         <option value="">Todas las cadenas</option>
+      </select>
+      <span class="flabel">Tienda</span>
+      <select id="a-pdv-sel" onchange="arbSelTienda=this.value;renderArbol()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;max-width:200px;">
+        <option value="">Todas las tiendas</option>
       </select>
       <div class="badge" id="a-periodo">—</div>
       <div class="badge" id="a-val-badge" style="margin-left:auto;">—</div>
@@ -821,6 +825,7 @@ let CUR_CAT='AUTOS',CUR_PAGE='dashboard';
 let selMeses=new Set();
 let eAllRows=[],eFiltered=[],eSelPdv=null,selSeg=null;
 let dCharts={},rCanal='SO',dSelSubcat='TODAS',dSelCad='';
+let arbSelTienda='';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
 async function safeJson(url){
@@ -1803,6 +1808,7 @@ function buildArbolData(){
     (DET[cat+'_2026']||[]).forEach(r=>{
       if(selMeses.size>0 && !selMeses.has(r.M)) return;
       if(dSelCad && r.C!==dSelCad) return;
+      if(arbSelTienda && r.P!==arbSelTienda) return;
       const s=r.S; if(!s) return;
       const V=r.V||0,U=r.U||0;
       sub26[s]=sub26[s]||{v:0,u:0}; sub26[s].v+=V; sub26[s].u+=U;
@@ -1813,6 +1819,7 @@ function buildArbolData(){
     (DET[cat+'_2025']||[]).forEach(r=>{
       if(selMeses.size>0 && !selMeses.has(r.M)) return;
       if(dSelCad && r.C!==dSelCad) return;
+      if(arbSelTienda && r.P!==arbSelTienda) return;
       const s=r.S; if(!s) return;
       const V=r.V||0,U=r.U||0;
       sub25[s]=sub25[s]||{v:0,u:0}; sub25[s].v+=V; sub25[s].u+=U;
@@ -1879,6 +1886,7 @@ function arbolTopCaidas(segName){
       if(r.G!==segName) return;
       if(selMeses.size>0 && !selMeses.has(r.M)) return;
       if(dSelCad && r.C!==dSelCad) return;
+      if(arbSelTienda && r.P!==arbSelTienda) return;
       const p=r.P; if(!p) return;
       if(!p26[p])p26[p]={v:0,c:r.C||'',f:r.F||''};
       p26[p].v+=r.V||0;
@@ -1887,6 +1895,7 @@ function arbolTopCaidas(segName){
       if(r.G!==segName) return;
       if(selMeses.size>0 && !selMeses.has(r.M)) return;
       if(dSelCad && r.C!==dSelCad) return;
+      if(arbSelTienda && r.P!==arbSelTienda) return;
       const p=r.P; if(!p) return;
       if(!p25[p])p25[p]={v:0,c:r.C||'',f:r.F||''};
       p25[p].v+=r.V||0;
@@ -1913,11 +1922,12 @@ function arbolShowTiendas(segName,anchorEl){
   // Contexto: cadena y meses activos
   const ctxCad=dSelCad?_arbCap(dSelCad):'Todas las cadenas';
   const ctxMes=selMeses.size>0?[...selMeses].map(m=>MES_LBL[m]||m).join(', '):'Acumulado';
+  const ctxPdv=arbSelTienda?' · '+_arbCleanPdv(arbSelTienda):'';
   pop=document.createElement('div');
   pop.id='arb-pop'; pop.className='arb-pop';
   let inner=`<div class="arb-pop-hdr">
     <div class="arb-pop-ttl"><span class="arb-pop-seg">📉 Tiendas en caída · ${_arbCap(segName)}</span>
-      <span class="arb-pop-ctx">${ctxCad} · ${ctxMes}</span></div>
+      <span class="arb-pop-ctx">${ctxCad} · ${ctxMes}${ctxPdv}</span></div>
     <span class="arb-pop-x" onclick="document.getElementById('arb-pop').remove()">✕</span></div>`;
   if(!rows.length){
     inner+=`<div class="arb-pop-empty">Sin tiendas en caída para los filtros actuales.</div>`;
@@ -2000,6 +2010,27 @@ function renderArbol(){
     if(sel){
       sel.innerHTML='<option value="">Todas las cadenas</option>'+
         cadenas.map(c=>`<option value="${c.cad}" ${c.cad===dSelCad?'selected':''}>${c.cad}</option>`).join('');
+    }
+  }catch(e){}
+
+  // Poblar select de tiendas (PDV), respetando cadena y meses
+  try{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const pdvMap={};
+    cats.forEach(cat=>{
+      (DET[cat+'_2026']||[]).forEach(r=>{
+        if(selMeses.size>0 && !selMeses.has(r.M)) return;
+        if(dSelCad && r.C!==dSelCad) return;
+        if(r.P && !pdvMap[r.P]) pdvMap[r.P]=_arbCleanPdv(r.P);
+      });
+    });
+    // Si la tienda seleccionada ya no existe con los filtros, resetear
+    if(arbSelTienda && !pdvMap[arbSelTienda]) arbSelTienda='';
+    const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[a].localeCompare(pdvMap[b]));
+    const psel=document.getElementById('a-pdv-sel');
+    if(psel){
+      psel.innerHTML='<option value="">Todas las tiendas</option>'+
+        pdvs.map(p=>`<option value="${p.replace(/"/g,'&quot;')}" ${p===arbSelTienda?'selected':''}>${pdvMap[p]}</option>`).join('');
     }
   }catch(e){}
 
