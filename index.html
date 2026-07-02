@@ -749,6 +749,13 @@ body{
 
   <!-- SEGMENTOS -->
   <div class="page" id="page-segmentos">
+    <div class="d-filters">
+      <span class="flabel">Cadena</span>
+      <select id="s-cad-sel" onchange="sSelCad=this.value;renderSegmentos()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
+        <option value="">Todas las cadenas</option>
+      </select>
+      <div class="badge" id="s-periodo">—</div>
+    </div>
     <div class="kstrip" id="s-kstrip"></div>
     <div class="split-body">
       <div class="p-left">
@@ -762,6 +769,10 @@ body{
         <div class="r-hdr">
           <span class="r-title" id="s-r-title">Selecciona un segmento</span>
           <div id="s-r-kpis" style="display:flex;gap:8px;font-family:var(--fm);font-size:9px;color:var(--sub);flex-shrink:0;"></div>
+        </div>
+        <div id="s-chart-wrap" style="display:none;padding:10px 12px 4px;">
+          <div style="font-family:var(--fm);font-size:9px;color:var(--sub);letter-spacing:1px;margin-bottom:6px;">TENDENCIA VENTA EN VALOR · 2026 vs 2025</div>
+          <div style="position:relative;height:180px;"><canvas id="s-trend-chart"></canvas></div>
         </div>
         <div class="tbl-panel" id="s-tbl">
           <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:2px;">SELECCIONA UN SEGMENTO</div>
@@ -826,6 +837,7 @@ let selMeses=new Set();
 let eAllRows=[],eFiltered=[],eSelPdv=null,selSeg=null;
 let dCharts={},rCanal='SO',dSelSubcat='TODAS',dSelCad='';
 let arbSelTienda='';
+let sSelCad='';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
 async function safeJson(url){
@@ -2578,8 +2590,102 @@ function eClear(){
 }
 
 // ── SEGMENTOS ────────────────────────────────────────────────────────────────
+// ── SEGMENTOS: helpers basados en DET (soportan filtro de cadena) ──────────────
+// Agrega valor/unidades del segmento por mes desde DET, respetando cat/mes/cadena
+function segDetAgg(){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const m={};
+  cats.forEach(cat=>{
+    (DET[cat+'_2026']||[]).forEach(r=>{
+      if(selMeses.size>0 && !selMeses.has(r.M)) return;
+      if(sSelCad && r.C!==sSelCad) return;
+      const g=r.G; if(!g) return;
+      m[g]=m[g]||{seg:g,v26:0,u26:0,v25:0,u25:0};
+      m[g].v26+=r.V||0; m[g].u26+=r.U||0;
+    });
+    (DET[cat+'_2025']||[]).forEach(r=>{
+      if(selMeses.size>0 && !selMeses.has(r.M)) return;
+      if(sSelCad && r.C!==sSelCad) return;
+      const g=r.G; if(!g) return;
+      m[g]=m[g]||{seg:g,v26:0,u26:0,v25:0,u25:0};
+      m[g].v25+=r.V||0; m[g].u25+=r.U||0;
+    });
+  });
+  return m;
+}
+
+// Inventario actual del segmento (o total) desde INV, filtrado por cat y cadena
+function segInv(segName){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  return INV.filter(r=>cats.includes(r.CATEGORIA)
+    && (!segName || r.SEGMENTO===segName)
+    && (!sSelCad || r.CADENA===sSelCad))
+    .reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+}
+
+// Nº de meses con venta del año actual (2026) para el segmento/categoría con filtros
+function segMesesConVenta(segName){
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const meses=new Set();
+  cats.forEach(cat=>{
+    (DET[cat+'_2026']||[]).forEach(r=>{
+      if(selMeses.size>0 && !selMeses.has(r.M)) return;
+      if(sSelCad && r.C!==sSelCad) return;
+      if(segName && r.G!==segName) return;
+      if((r.V||0)>0) meses.add(r.M);
+    });
+  });
+  return meses.size;
+}
+
+// DDI sobre promedio de venta mensual del año: inv / (unds2026 / nMeses / 30)
+function segDDI(invUnds,u26,nMeses){
+  if(!u26 || u26<=0 || !nMeses) return null;
+  const ventaDiariaProm=(u26/nMeses)/30;
+  if(ventaDiariaProm<=0) return null;
+  return Math.round(invUnds/ventaDiariaProm);
+}
+
+function getSegsDET(){
+  const m=segDetAgg();
+  return Object.values(m).map(s=>({...s,
+    var:sp(s.v26,s.v25||1), varu:sp(s.u26,s.u25||1)
+  })).sort((a,b)=>b.v26-a.v26);
+}
+
+function getTotalsDET(){
+  const m=segDetAgg();
+  const vals=Object.values(m);
+  const v26=vals.reduce((s,x)=>s+x.v26,0), v25=vals.reduce((s,x)=>s+x.v25,0);
+  const u26=vals.reduce((s,x)=>s+x.u26,0), u25=vals.reduce((s,x)=>s+x.u25,0);
+  const inv=segInv(null);
+  const nMeses=segMesesConVenta(null);
+  return{v26,v25,u26,u25,inv,nMeses,
+    varV:sp(v26,v25||1),varU:sp(u26,u25||1),
+    ddi:segDDI(inv,u26,nMeses),segs:vals.length};
+}
+
 function renderSegmentos(){
-  const segs=getSegs(), t=getTotals(), a=ac();
+  // Poblar filtro de cadena (desde INV que tiene todas las cadenas por categoría)
+  try{
+    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const cadSet=new Set();
+    cats.forEach(cat=>{
+      (DET[cat+'_2026']||[]).forEach(r=>{if(r.C)cadSet.add(r.C);});
+    });
+    const cadenas=[...cadSet].sort();
+    if(sSelCad && !cadSet.has(sSelCad)) sSelCad='';
+    const sel=document.getElementById('s-cad-sel');
+    if(sel){
+      sel.innerHTML='<option value="">Todas las cadenas</option>'+
+        cadenas.map(c=>`<option value="${c}" ${c===sSelCad?'selected':''}>${c}</option>`).join('');
+    }
+  }catch(e){}
+
+  const per=document.getElementById('s-periodo');
+  if(per){per.textContent=selMeses.size>0?[...selMeses].map(m=>MES_LBL[m]||m).join(', '):'Acumulado';}
+
+  const segs=getSegsDET(), t=getTotalsDET(), a=ac();
   document.getElementById('s-kstrip').innerHTML=[
     ['Valor Cat',fmtM(t.v26),t.varV],['VAR% Val',sg(t.varV)+t.varV.toFixed(1)+'%',t.varV],
     ['Unds Cat',fmtK(t.u26),t.varU],['VAR% Unds',sg(t.varU)+t.varU.toFixed(1)+'%',t.varU],
@@ -2598,6 +2704,13 @@ function renderSegmentos(){
       <span class="item-var ${s.var>=0?'pos':'neg'}">${sg(s.var)}${s.var.toFixed(1)}%</span>
     </div>`).join('');
 
+  // Si el segmento seleccionado ya no existe con el filtro, limpiar
+  if(selSeg && !segs.some(s=>s.seg===selSeg)){selSeg=null;
+    document.getElementById('s-chart-wrap').style.display='none';
+    document.getElementById('s-tbl').innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:2px;">SELECCIONA UN SEGMENTO</div>';
+    document.getElementById('s-r-title').textContent='Selecciona un segmento';
+    document.getElementById('s-r-kpis').innerHTML='';
+  }
   if(selSeg) renderSegDetail(selSeg);
 }
 
@@ -2611,35 +2724,52 @@ function selectSeg(seg){
 
 function renderSegDetail(seg){
   const a=ac();
-  const meses=MES_ORD.filter(m=>RES26.some(r=>r.MES===m));
-  const rows=meses.map(m=>{
-    const f=arr=>arr.filter(r=>r.MES===m&&r.SEGMENTO===seg&&(CUR_CAT==='TOTAL'||r.CATEGORIA===CUR_CAT));
-    const r26=f(RES26),r25=f(RES25);
-    const v26=r26.reduce((s,r)=>s+(r.VENTA||0),0);
-    const v25=r25.reduce((s,r)=>s+(r.VENTA||0),0);
-    const u26=r26.reduce((s,r)=>s+(r.UNIDADES||0),0);
-    const u25=r25.reduce((s,r)=>s+(r.UNIDADES||0),0);
-    const inv=r26.reduce((s,r)=>s+(r.INV_UNDS||0),0);
-    return{m,v26,v25,u26,u25,inv,varV:sp(v26,v25||1),varU:sp(u26,u25||1),ddi:calcDDI(inv,u26)};
-  }).filter(r=>r.v26>0||r.v25>0);
+  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  // Serie mensual desde DET (valor y unidades), respetando cadena y meses
+  const rows=MES_ORD.map(m=>{
+    if(selMeses.size>0 && !selMeses.has(m)) return null;
+    let v26=0,v25=0,u26=0,u25=0;
+    cats.forEach(cat=>{
+      (DET[cat+'_2026']||[]).forEach(r=>{
+        if(r.M!==m||r.G!==seg) return;
+        if(sSelCad && r.C!==sSelCad) return;
+        v26+=r.V||0; u26+=r.U||0;
+      });
+      (DET[cat+'_2025']||[]).forEach(r=>{
+        if(r.M!==m||r.G!==seg) return;
+        if(sSelCad && r.C!==sSelCad) return;
+        v25+=r.V||0; u25+=r.U||0;
+      });
+    });
+    return{m,v26,v25,u26,u25,varV:sp(v26,v25||1),varU:sp(u26,u25||1)};
+  }).filter(r=>r && (r.v26>0||r.v25>0));
 
   const tv26=rows.reduce((s,r)=>s+r.v26,0),tv25=rows.reduce((s,r)=>s+r.v25,0);
-  const tinv=rows.reduce((s,r)=>s+r.inv,0),tu26=rows.reduce((s,r)=>s+r.u26,0);
-  const tvarV=sp(tv26,tv25||1), ddiT=calcDDI(tinv,tu26);
+  const tu26=rows.reduce((s,r)=>s+r.u26,0);
+  const tvarV=sp(tv26,tv25||1);
+  // Inventario de corte (foto actual) y DDI sobre promedio mensual del año
+  const invSeg=segInv(seg);
+  const nMeses=segMesesConVenta(seg);
+  const ddiSeg=segDDI(invSeg,tu26,nMeses);
 
   document.getElementById('s-r-title').textContent='📦 '+seg;
   document.getElementById('s-r-kpis').innerHTML=`
     <span style="color:${a};font-family:var(--fm);font-size:10px;font-weight:600">${fmtM(tv26)}</span>
     <span class="pill ${tvarV>=0?'pos':'neg'}">${sg(tvarV)}${tvarV.toFixed(1)}%</span>
-    <span class="ddi ${ddiClr(ddiT)}" style="font-size:10px">📦 ${ddiLbl(ddiT)}</span>`;
+    <span style="font-family:var(--fm);font-size:9px;color:var(--sub)">Inv: ${fmtK(invSeg)}u</span>
+    <span class="ddi ${ddiClr(ddiSeg)}" style="font-size:10px">📦 ${ddiLbl(ddiSeg)}</span>`;
 
+  // Gráfico de tendencia 2026 vs 2025
+  document.getElementById('s-chart-wrap').style.display='block';
+  drawSegTrend(rows);
+
+  // Tabla mensual: solo flujos (valor y unidades), sin inventario/DDI
   document.getElementById('s-tbl').innerHTML=`<table>
     <thead><tr>
       <th style="width:50px">MES</th>
       <th style="text-align:right">VALOR 2026</th><th style="text-align:right">VALOR 2025</th>
       <th style="text-align:right">DIF $</th><th style="text-align:center">VAR%</th>
-      <th style="text-align:right">UNDS 2026</th><th style="text-align:center">VAR% U</th>
-      <th style="text-align:right">INVENTARIO</th><th style="text-align:center">DDI</th>
+      <th style="text-align:right">UNDS 2026</th><th style="text-align:right">UNDS 2025</th><th style="text-align:center">VAR% U</th>
     </tr></thead>
     <tbody>${rows.map(r=>`<tr class="${r.varV<-5?'nr':''}">
       <td class="mono" style="color:${a};font-weight:700">${MES_LBL[r.m]||r.m}</td>
@@ -2648,10 +2778,37 @@ function renderSegDetail(seg){
       <td class="mono" style="text-align:right;color:${r.v26-r.v25>=0?'var(--pos)':'var(--neg)'}">${sg(r.v26-r.v25)}${fmtM(r.v26-r.v25)}</td>
       <td style="text-align:center"><span class="pill ${r.varV>=0?'pos':'neg'}">${sg(r.varV)}${r.varV.toFixed(1)}%</span></td>
       <td class="mono" style="text-align:right;color:var(--sub)">${fmtK(r.u26)}</td>
+      <td class="mono" style="text-align:right;color:var(--muted)">${fmtK(r.u25)}</td>
       <td style="text-align:center"><span class="pill ${r.varU>=0?'pos':'neg'}">${sg(r.varU)}${r.varU.toFixed(1)}%</span></td>
-      <td class="mono" style="text-align:right;color:var(--sub)">${fmtM(r.inv)}</td>
-      <td style="text-align:center"><span class="ddi ${ddiClr(r.ddi)}">${ddiLbl(r.ddi)}</span></td>
     </tr>`).join('')}</tbody></table>`;
+}
+
+let _segTrendChart=null;
+function drawSegTrend(rows){
+  const ctx=document.getElementById('s-trend-chart');
+  if(!ctx) return;
+  if(_segTrendChart){try{_segTrendChart.destroy();}catch(e){} _segTrendChart=null;}
+  const isLight=document.documentElement.classList.contains('light');
+  const labels=rows.map(r=>MES_LBL[r.m]||r.m);
+  const d26=rows.map(r=>+(r.v26/1e6).toFixed(1));
+  const d25=rows.map(r=>+(r.v25/1e6).toFixed(1));
+  const c26=ac();
+  const c25=isLight?'#c0392b':'#e57373';
+  const gridC=isLight?'rgba(0,0,0,.06)':'rgba(255,255,255,.06)';
+  const tickC=isLight?'#7a8499':'#8888aa';
+  _segTrendChart=new Chart(ctx.getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'2026',data:d26,borderColor:c26,backgroundColor:c26,tension:.3,borderWidth:2,pointRadius:3,pointBackgroundColor:c26},
+      {label:'2025',data:d25,borderColor:c25,backgroundColor:c25,tension:.3,borderWidth:2,pointRadius:3,pointBackgroundColor:c25,borderDash:[5,4]}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:tickC,font:{size:10,family:'monospace'},boxWidth:12}}},
+      scales:{
+        x:{grid:{color:gridC},ticks:{color:tickC,font:{size:9,family:'monospace'}}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:9,family:'monospace'},callback:v=>'$'+v+'M'}}
+      }}
+  });
 }
 
 // ── CHART HELPERS ─────────────────────────────────────────────────────────────
