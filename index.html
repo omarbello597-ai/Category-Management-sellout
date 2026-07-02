@@ -91,10 +91,15 @@ select:focus,input:focus{border-color:var(--acc);}
 .arb-tree{font-family:var(--fm);}
 .arb-tree *{box-sizing:border-box;}
 .arb-subtree{display:flex;flex-direction:column;align-items:center;}
-.arb-nd{border:1px solid var(--border);border-radius:8px;padding:8px 11px;cursor:pointer;background:var(--card);transition:background .15s;width:198px;text-align:left;}
+.arb-nd{border:1px solid var(--border);border-radius:8px;padding:8px 11px;cursor:pointer;background:var(--card);transition:background .15s;width:198px;text-align:left;border-left-width:4px;}
 .arb-nd:hover{background:var(--bg);}
 .arb-leaf{cursor:default;}
-.arb-grp{border-style:dashed;}
+.arb-grp{border-style:dashed;border-left-style:solid;}
+.arb-up{border-left-color:#2e8b3d;background:rgba(46,139,61,.06);}
+.arb-dn{border-left-color:#d64545;background:rgba(214,69,69,.06);}
+.arb-flat{border-left-color:var(--muted);}
+.arb-up:hover{background:rgba(46,139,61,.12);}
+.arb-dn:hover{background:rgba(214,69,69,.12);}
 .arb-nm{font-size:10px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:space-between;gap:6px;letter-spacing:.3px;}
 .arb-wt{font-size:9px;color:var(--muted);font-weight:400;}
 .arb-val{font-size:11px;color:var(--sub);margin-top:4px;font-weight:700;}
@@ -108,7 +113,10 @@ select:focus,input:focus{border-color:var(--acc);}
 .arb-seglist::before{content:"";position:absolute;left:8px;top:0;bottom:18px;width:1px;background:var(--border);}
 .arb-segwrap{position:relative;}
 .arb-segwrap::before{content:"";position:absolute;left:-12px;top:20px;width:12px;height:1px;background:var(--border);}
-.arb-seg{border:1px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);width:252px;text-align:left;}
+.arb-seg{border:1px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);width:252px;text-align:left;border-left-width:4px;}
+.arb-seg.arb-up{border-left-color:#2e8b3d;background:rgba(46,139,61,.06);}
+.arb-seg.arb-dn{border-left-color:#d64545;background:rgba(214,69,69,.06);}
+.arb-seg.arb-flat{border-left-color:var(--muted);}
 .arb-snm{font-size:10px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;gap:6px;}
 .arb-swt{font-size:9px;color:var(--muted);font-weight:400;}
 .arb-sv{font-size:10px;color:var(--sub);margin-top:3px;font-weight:700;}
@@ -754,8 +762,8 @@ body{
       <div class="badge" id="a-val-badge" style="margin-left:auto;">—</div>
     </div>
     <div id="arbol-legend" style="display:flex;gap:16px;font-family:var(--fm);font-size:9px;color:var(--sub);padding:6px 12px;flex-wrap:wrap;align-items:center;">
-      <span><span style="color:#2e8b3d;">■</span> crece vs 2025</span>
-      <span><span style="color:#d64545;">■</span> decrece vs 2025</span>
+      <span><span style="color:#2e8b3d;">■</span> crece en valor vs 2025</span>
+      <span><span style="color:#d64545;">■</span> decrece en valor vs 2025</span>
       <span style="color:var(--muted);">peso = % dentro de su nivel · V = valor · U = unidades · Δ = variación absoluta · clic para abrir/cerrar</span>
     </div>
     <div id="arbol-body" style="padding:10px 12px;overflow-x:auto;"></div>
@@ -1838,7 +1846,8 @@ function buildArbolData(){
 }
 
 function _arbSegRow(n){
-  return `<div class="arb-segwrap"><div class="arb-seg">
+  const tone=n.vv>0?'arb-up':n.vv<0?'arb-dn':'arb-flat';
+  return `<div class="arb-segwrap"><div class="arb-seg ${tone}">
     <div class="arb-snm"><span>${_arbCap(n.name)}</span><span class="arb-swt">${n.pv.toFixed(0)}%</span></div>
     <div class="arb-sv">$${_arbFmtV(n.v)}</div>
     <div class="arb-sln">V <b class="${_arbCls(n.vv)}">${_arbPct(n.vv)}</b> <span class="${_arbCls(n.va)}">Δ${_arbFmtVs(n.va)}</span></div>
@@ -1851,7 +1860,8 @@ function _arbBuildSubtree(node){
   const hasKids=node.children && node.children.length>0;
   const disp=node.grp?node.name:_arbCap(node.name);
   const box=document.createElement('div');
-  box.className='arb-nd'+(hasKids?'':' arb-leaf')+(node.grp?' arb-grp':'');
+  const tone=node.vv>0?'arb-up':node.vv<0?'arb-dn':'arb-flat';
+  box.className='arb-nd '+tone+(hasKids?'':' arb-leaf')+(node.grp?' arb-grp':'');
   box.innerHTML=`<div class="arb-nm"><span>${hasKids?'▸ ':''}${disp}</span><span class="arb-wt">${node.pv.toFixed(0)}%</span></div>
     <div class="arb-val">$${_arbFmtV(node.v)}</div>
     <div class="arb-vln">V <b class="${_arbCls(node.vv)}">${_arbPct(node.vv)}</b> <span class="${_arbCls(node.va)}">Δ${_arbFmtVs(node.va)}</span></div>
