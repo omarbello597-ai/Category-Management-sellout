@@ -789,9 +789,9 @@ body{
         <option value="">Todas las cadenas</option>
       </select>
       <span class="flabel">Tienda</span>
-      <select id="a-pdv-sel" onchange="arbSelTienda=this.value;renderArbol()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;max-width:200px;">
-        <option value="">Todas las tiendas</option>
-      </select>
+      <input id="a-pdv-input" list="a-pdv-list" placeholder="Escribe para buscar tienda…" oninput="arbolPdvInput(this.value)" autocomplete="off" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;width:210px;">
+      <datalist id="a-pdv-list"></datalist>
+      <button onclick="arbolPdvClear()" title="Limpiar tienda" style="background:var(--card);color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:var(--fm);font-size:9px;cursor:pointer;">✕</button>
       <div class="badge" id="a-periodo">—</div>
       <div class="badge" id="a-val-badge" style="margin-left:auto;">—</div>
     </div>
@@ -837,6 +837,7 @@ let selMeses=new Set();
 let eAllRows=[],eFiltered=[],eSelPdv=null,selSeg=null;
 let dCharts={},rCanal='SO',dSelSubcat='TODAS',dSelCad='';
 let arbSelTienda='';
+let _arbPdvNameToCode={};
 let sSelCad='';
 
 // ── FETCH ───────────────────────────────────────────────────────────────────
@@ -2014,6 +2015,30 @@ function _arbBuildSubtree(node){
   return st;
 }
 
+function arbolPdvInput(val){
+  const v=(val||'').trim();
+  if(v==='' ){ arbSelTienda=''; renderArbol(); return; }
+  // Coincidencia exacta con un nombre del datalist
+  if(_arbPdvNameToCode[v]){
+    arbSelTienda=_arbPdvNameToCode[v];
+    renderArbol();
+    return;
+  }
+  // Coincidencia única por texto parcial (case-insensitive)
+  const q=v.toLowerCase();
+  const matches=Object.keys(_arbPdvNameToCode).filter(n=>n.toLowerCase().includes(q));
+  if(matches.length===1){
+    arbSelTienda=_arbPdvNameToCode[matches[0]];
+    renderArbol();
+  }
+  // Si hay varias coincidencias, espera a que el usuario elija/termine; no recalcula aún
+}
+function arbolPdvClear(){
+  arbSelTienda='';
+  const inp=document.getElementById('a-pdv-input'); if(inp) inp.value='';
+  renderArbol();
+}
+
 function renderArbol(){
   // Poblar select de cadenas (reutiliza getCadenas para respetar categoría/mes)
   try{
@@ -2025,7 +2050,7 @@ function renderArbol(){
     }
   }catch(e){}
 
-  // Poblar select de tiendas (PDV), respetando cadena y meses
+  // Poblar datalist de tiendas (PDV) buscable, respetando cadena y meses
   try{
     const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
     const pdvMap={};
@@ -2038,12 +2063,17 @@ function renderArbol(){
     });
     // Si la tienda seleccionada ya no existe con los filtros, resetear
     if(arbSelTienda && !pdvMap[arbSelTienda]) arbSelTienda='';
-    const pdvs=Object.keys(pdvMap).sort((a,b)=>pdvMap[a].localeCompare(pdvMap[b]));
-    const psel=document.getElementById('a-pdv-sel');
-    if(psel){
-      psel.innerHTML='<option value="">Todas las tiendas</option>'+
-        pdvs.map(p=>`<option value="${p.replace(/"/g,'&quot;')}" ${p===arbSelTienda?'selected':''}>${pdvMap[p]}</option>`).join('');
+    // Construir mapa nombre-limpio -> código (para resolver lo que escribe el usuario)
+    _arbPdvNameToCode={};
+    const codes=Object.keys(pdvMap).sort((a,b)=>pdvMap[a].localeCompare(pdvMap[b]));
+    codes.forEach(code=>{ _arbPdvNameToCode[pdvMap[code]]=code; });
+    const dl=document.getElementById('a-pdv-list');
+    if(dl){
+      dl.innerHTML=codes.map(code=>`<option value="${pdvMap[code].replace(/"/g,'&quot;')}"></option>`).join('');
     }
+    // Reflejar la tienda activa en el input
+    const inp=document.getElementById('a-pdv-input');
+    if(inp){ inp.value=arbSelTienda?(pdvMap[arbSelTienda]||''):''; }
   }catch(e){}
 
   // Badges de periodo y valor
