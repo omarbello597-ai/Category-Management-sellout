@@ -6,6 +6,7 @@
 <title>Category Management · Sell Out</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
 <style>
 :root{
   --bg:#08080f;--surf:#111119;--card:#16161f;--border:#1e1e2c;
@@ -625,7 +626,7 @@ body{
     </div>
   </div>
 </div>
-<!--  LOADING -->
+<!-- LOADING -->
 <div id="loading-screen">
   <div class="ld-inner">
     <div class="ld-brand">CATEGORY<br><span class="acc-y">MANAGE</span><span class="acc-b">MENT</span></div>
@@ -2982,6 +2983,9 @@ function _injectNavButtons(){
     const btnAcc=document.createElement('button');
     btnAcc.className='nav-auth-btn';btnAcc.textContent='📋 ACCESOS';btnAcc.onclick=showAccessPanel;
     row.appendChild(btnAcc);
+    const btnInf=document.createElement('button');
+    btnInf.className='nav-auth-btn';btnInf.textContent='📊 GENERAR INFORME';btnInf.onclick=generarInforme;
+    row.appendChild(btnInf);
   }
   // Usuario
   const greet=document.createElement('span');
@@ -3052,6 +3056,204 @@ function exportAccessLog(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
   a.download='accesos_catmgmt.csv';a.click();
+}
+
+// ═══════════════ GENERADOR DE INFORME POWERPOINT ═══════════════
+const INF={NAVY:"1E2761",INK:"2C2C2A",MUT:"8A8A85",LINE:"D8D8D2",SO_C:"B8860B",SI_C:"185FA5",
+  POS:"2E8B3D",NEG:"C0392B",SO_BG:"EAF3DE",SI_BG:"E6F1FB",CORP_Y:"FDF001",CORP_K:"1A1A1A",CORP_O:"E8820E",FONT:"Trebuchet MS"};
+const _im=(v)=>"$"+Math.round(v).toLocaleString("es-CO")+"M";
+const _ip=(v)=>(v>=0?"+":"")+v.toFixed(1)+"%";
+const _idias={'ene.':31,'feb.':28,'mar.':31,'abr.':30,'may.':31,'jun.':30,'jul.':31,'ago.':31,'sep.':30,'oct.':31,'nov.':30,'dic.':31};
+function _iproy(real,tr,tot){ if(!tr||tr<=0)return real; return (real/tr)*tot; }
+
+// Calcula un bloque (header + rows por cadena) para meses y categorías dados
+function _iCalc(meses, cats){
+  const cad={}, t={so26:0,so25:0,so_p:0,si26:0,si25:0,si_p:0,so_proy:0,si_proy:0};
+  PPTO.forEach(r=>{
+    const c=r.CADENA;
+    if(!c || !meses.includes(r.MES)) return;
+    if(cats && !cats.includes(r.CATEGORIA)) return;
+    if(!cad[c]) cad[c]={so_r:0,so_p:0,so25:0,si_r:0,si_p:0,si25:0,so_proy:0,si_proy:0};
+    const so=r.SO_REAL_2026||0, si=r.SI_REAL_2026||0;
+    const soTr=r.SO_DIAS_TRANSCURRIDOS, soTot=r.SO_DIAS_DEL_MES||_idias[r.MES]||30;
+    const siTr=r.SI_DIAS_TRANSCURRIDOS, siTot=r.SI_DIAS_DEL_MES||_idias[r.MES]||30;
+    cad[c].so_r+=so; cad[c].so_p+=r.SO_PPTO_2026||0; cad[c].so25+=r.SO_REAL_2025||0;
+    cad[c].si_r+=si; cad[c].si_p+=r.SI_PPTO_2026||0; cad[c].si25+=r.SI_REAL_2025||0;
+    cad[c].so_proy+=_iproy(so,soTr,soTot); cad[c].si_proy+=_iproy(si,siTr,siTot);
+    t.so26+=so; t.so25+=r.SO_REAL_2025||0; t.so_p+=r.SO_PPTO_2026||0;
+    t.si26+=si; t.si25+=r.SI_REAL_2025||0; t.si_p+=r.SI_PPTO_2026||0;
+    t.so_proy+=_iproy(so,soTr,soTot); t.si_proy+=_iproy(si,siTr,siTot);
+  });
+  const totSo=Object.values(cad).reduce((s,d)=>s+d.so_r,0);
+  const rows=Object.entries(cad).filter(([c,d])=>d.so_r>0||d.si_r>0)
+    .sort((a,b)=>b[1].so_r-a[1].so_r).map(([c,d])=>({cadena:c,
+      so_r:d.so_r/1e6,so_proy:d.so_proy/1e6,so_p:d.so_p/1e6,so_cum:d.so_p?d.so_r/d.so_p*100:0,so_var:d.so25?(d.so_r/d.so25-1)*100:0,
+      si_r:d.si_r/1e6,si_proy:d.si_proy/1e6,si_p:d.si_p/1e6,si_cum:d.si_p?d.si_r/d.si_p*100:0,si_var:d.si25?(d.si_r/d.si25-1)*100:0,
+      part:totSo?d.so_r/totSo*100:0}));
+  const hd={so_r:t.so26/1e6,so_proy:t.so_proy/1e6,so_p:t.so_p/1e6,si_r:t.si26/1e6,si_proy:t.si_proy/1e6,si_p:t.si_p/1e6,
+    so_var:t.so25?(t.so26/t.so25-1)*100:0,si_var:t.si25?(t.si26/t.si25-1)*100:0,
+    so_cum:t.so_p?t.so26/t.so_p*100:0,si_cum:t.si_p?t.si26/t.si_p*100:0};
+  hd.so_gap=hd.so_proy-hd.so_p; hd.si_gap=hd.si_proy-hd.si_p;
+  return {header:hd,rows};
+}
+function _iLectura(h,per){
+  const st=h.so_var>=0?'crece':'cae', it=h.si_var>=0?'crece':'cae';
+  return `En ${per}, el sell-out ${st} ${Math.abs(h.so_var).toFixed(1)}% vs año anterior y cumple ${h.so_cum.toFixed(0)}% del presupuesto. El sell-in ${it} ${Math.abs(h.si_var).toFixed(1)}% con ${h.si_cum.toFixed(0)}% de cumplimiento.`;
+}
+function _iBloque(cats,nombre,meses,mesCierre,mLbl){
+  const ac=_iCalc(meses,cats), ci=_iCalc([mesCierre],cats);
+  const rango=mLbl[meses[0]]+'–'+mLbl[mesCierre];
+  ac.titulo=nombre+' · Acumulado '+rango+' 2026'; ac.sub='Suma meses seleccionados · vs mismo periodo 2025';
+  ac.lectura=_iLectura(ac.header,'el acumulado del año');
+  ci.titulo=nombre+' · Cierre '+mLbl[mesCierre]+' 2026'; ci.sub='Mes cerrado · vs '+mLbl[mesCierre]+' 2025';
+  ci.lectura=_iLectura(ci.header,mLbl[mesCierre].toLowerCase());
+  return {acum:ac,cierre:ci};
+}
+// Hallazgos desde DET (detalle) de una categoría
+function _iHallazgos(cat,mesCierre){
+  const d26=DET[cat+'_2026']||[], d25=DET[cat+'_2025']||[];
+  if(!d26.length){ return {disponible:false,cat:cat.charAt(0)+cat.slice(1).toLowerCase()}; }
+  const sub=(data)=>{const m={};data.forEach(r=>{if(r.M===mesCierre){m[r.S]=(m[r.S]||0)+(r.V||0);}});return m;};
+  const s26=sub(d26),s25=sub(d25);
+  const caidas=Object.keys(s26).filter(s=>s).map(s=>[s,s26[s]-(s25[s]||0)]).sort((a,b)=>a[1]-b[1]).slice(0,3);
+  const pdv=(data)=>{const m={};data.forEach(r=>{if(r.M===mesCierre&&r.P){if(!m[r.P])m[r.P]={v:0,c:r.C||''};m[r.P].v+=r.V||0;}});return m;};
+  const p26=pdv(d26),p25=pdv(d25), keys=new Set([...Object.keys(p26),...Object.keys(p25)]);
+  const tiendas=[];
+  keys.forEach(pv=>{
+    const dd=((p26[pv]||{v:0}).v)-((p25[pv]||{v:0}).v);
+    if(dd<0){
+      const c=(p26[pv]||{}).c||(p25[pv]||{}).c||'';
+      let nm=String(pv).replace(/^\s*\d+\s*-\s*/,'').replace(/-\d{6,}.*$/,'').trim().replace(/\s+/g,' ');
+      const cadN=c.replace(/ S A.*| SA$| COLOMBIA.*/i,'').trim();
+      tiendas.push({pdv:nm,cad:cadN.charAt(0)+cadN.slice(1).toLowerCase(),d:dd/1e6});
+    }
+  });
+  tiendas.sort((a,b)=>a.d-b.d);
+  const cap=(s)=>s.charAt(0)+s.slice(1).toLowerCase();
+  return {disponible:true,cat:cat.charAt(0)+cat.slice(1).toLowerCase(),
+    caidas:caidas.map(([s,d])=>({seg:cap(s),d:d/1e6})),tiendas:tiendas.slice(0,6)};
+}
+
+async function generarInforme(){
+  if(_curUser!==MASTER)return;
+  if(typeof PptxGenJS==='undefined'){alert('La librería de PowerPoint aún se está cargando. Intenta en unos segundos.');return;}
+  const meses=MES_ORD.filter(m=>selMeses.has(m));
+  if(!meses.length){alert('Selecciona al menos un mes para generar el informe.');return;}
+  const mesCierre=meses[meses.length-1];
+  const MLBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun','jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
+
+  const btn=event&&event.target; if(btn){btn.textContent='⏳ GENERANDO...';btn.disabled=true;}
+  try{
+    // Asegurar que DET de autos y hogar estén cargados para hallazgos
+    for(const cat of ['AUTOS','HOGAR']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){await loadDet(cat,y);} } }
+
+    const D={
+      total:_iBloque(null,'Autos + Hogar',meses,mesCierre,MLBL),
+      autos:_iBloque(['AUTOS'],'Autos',meses,mesCierre,MLBL),
+      hogar:_iBloque(['HOGAR'],'Hogar',meses,mesCierre,MLBL),
+      hall_autos:_iHallazgos('AUTOS',mesCierre),
+      hall_hogar:_iHallazgos('HOGAR',mesCierre),
+    };
+
+    const pptx=new PptxGenJS();
+    pptx.defineLayout({name:"W",width:13.333,height:7.5}); pptx.layout="W";
+    _infPortada(pptx,MLBL[mesCierre]);
+    _infSlide(pptx,D.total.acum); _infSlide(pptx,D.total.cierre);
+    _infSlide(pptx,D.autos.acum); _infSlide(pptx,D.autos.cierre); _infHall(pptx,D.hall_autos,MLBL[mesCierre]);
+    _infSlide(pptx,D.hogar.acum); _infSlide(pptx,D.hogar.cierre); _infHall(pptx,D.hall_hogar,MLBL[mesCierre]);
+    await pptx.writeFile({fileName:`Informe_CategoryManagement_${MLBL[mesCierre]}2026.pptx`});
+  }catch(e){ alert('Error generando el informe: '+e.message); console.error(e); }
+  finally{ if(btn){btn.textContent='📊 GENERAR INFORME';btn.disabled=false;} }
+}
+
+function _infPortada(pptx,mesLbl){
+  const s=pptx.addSlide(); s.background={color:"FFFFFF"};
+  s.addShape("triangle",{x:0,y:0,w:4.5,h:3.2,fill:{color:INF.CORP_O},rotate:180,flipH:true});
+  s.addShape("triangle",{x:0.3,y:0,w:3,h:2.3,fill:{color:INF.CORP_Y},rotate:180,flipH:true});
+  s.addShape("triangle",{x:11.3,y:5.5,w:2.6,h:2.6,fill:{color:INF.CORP_O}});
+  s.addShape("triangle",{x:12,y:6.2,w:1.8,h:1.8,fill:{color:INF.CORP_Y}});
+  s.addText("CATEGORY MANAGEMENT",{x:1,y:2.5,w:11.33,h:0.7,fontFace:INF.FONT,fontSize:40,bold:true,color:INF.CORP_K,align:"center"});
+  s.addText("Dashboard desempeño general · Sell-out / Sell-in",{x:1,y:3.4,w:11.33,h:0.5,fontFace:INF.FONT,fontSize:20,color:INF.INK,align:"center"});
+  s.addText("Principales cadenas · Acumulado y Cierre "+mesLbl+" · 2026 vs 2025",{x:1,y:3.95,w:11.33,h:0.4,fontFace:INF.FONT,fontSize:14,color:INF.MUT,align:"center"});
+  s.addShape("roundRect",{x:4.67,y:4.8,w:4,h:0.55,fill:{color:INF.CORP_Y},line:{type:"none"},rectRadius:0.05});
+  s.addText("INFORME DE CIERRE · "+mesLbl.toUpperCase()+" 2026",{x:4.67,y:4.8,w:4,h:0.55,fontFace:INF.FONT,fontSize:14,bold:true,color:INF.CORP_K,align:"center",valign:"middle"});
+}
+
+function _infSlide(pptx,DATA){
+  const s=pptx.addSlide(); s.background={color:"FFFFFF"};
+  s.addText(DATA.titulo,{x:0.4,y:0.25,w:7,h:0.5,fontFace:INF.FONT,fontSize:22,bold:true,color:INF.NAVY});
+  s.addText(DATA.sub,{x:0.4,y:0.72,w:7,h:0.3,fontFace:INF.FONT,fontSize:11,color:INF.MUT});
+  s.addShape("roundRect",{x:8.3,y:0.25,w:4.6,h:0.85,fill:{color:"FFFBE0"},line:{color:INF.CORP_Y,width:1},rectRadius:0.05});
+  s.addText([{text:"LECTURA  ",options:{bold:true,color:INF.CORP_K,fontSize:9}},{text:DATA.lectura,options:{color:INF.INK,fontSize:9.5}}],{x:8.45,y:0.32,w:4.3,h:0.7,fontFace:INF.FONT,valign:"middle"});
+  const hc=(x,title,tc,r,proy,pp,cum,gap,vr,bgc)=>{
+    const w=6.15,y=1.25,h=1.05;
+    s.addShape("roundRect",{x,y,w,h,fill:{color:bgc},line:{color:INF.LINE,width:0.5},rectRadius:0.08});
+    s.addText(title,{x:x+0.2,y:y+0.08,w:2.6,h:0.3,fontFace:INF.FONT,fontSize:13,bold:true,color:tc});
+    s.addText("Var "+_ip(vr),{x:x+2.7,y:y+0.11,w:1.4,h:0.26,fontFace:INF.FONT,fontSize:11,bold:true,color:vr>=0?INF.POS:INF.NEG});
+    const cc=cum>=90?INF.POS:cum>=75?INF.SO_C:INF.NEG;
+    s.addText(cum.toFixed(1)+"% cumpl.",{x:x+w-2,y:y+0.08,w:1.8,h:0.3,fontFace:INF.FONT,fontSize:12,bold:true,color:cc,align:"right"});
+    [["Real",_im(r),INF.INK],["Proyectado",_im(proy),INF.SO_C],["Presupuesto",_im(pp),INF.INK]].forEach((c,i)=>{
+      const cx=x+0.2+i*1.55;
+      s.addText(c[0],{x:cx,y:y+0.44,w:1.5,h:0.2,fontFace:INF.FONT,fontSize:9,color:INF.MUT});
+      s.addText(c[1],{x:cx,y:y+0.62,w:1.5,h:0.32,fontFace:INF.FONT,fontSize:16,bold:true,color:c[2]});
+    });
+    s.addText("Gap",{x:x+w-1.7,y:y+0.44,w:1.5,h:0.2,fontFace:INF.FONT,fontSize:9,color:INF.MUT,align:"right"});
+    s.addText(_im(gap),{x:x+w-1.7,y:y+0.6,w:1.5,h:0.32,fontFace:INF.FONT,fontSize:15,bold:true,color:INF.NEG,align:"right"});
+  };
+  hc(0.4,"SELL-OUT · Total",INF.SO_C,DATA.header.so_r,DATA.header.so_proy,DATA.header.so_p,DATA.header.so_cum,DATA.header.so_gap,DATA.header.so_var,INF.SO_BG);
+  hc(6.78,"SELL-IN · Total",INF.SI_C,DATA.header.si_r,DATA.header.si_proy,DATA.header.si_p,DATA.header.si_cum,DATA.header.si_gap,DATA.header.si_var,INF.SI_BG);
+  s.addText("DESEMPEÑO POR CADENA",{x:0.4,y:2.5,w:6,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.MUT,charSpacing:2});
+  const cardW=3.05,cardH=1.9,gapX=0.18,gapY=0.16,sX=0.4,sY=2.9;
+  DATA.rows.slice(0,8).forEach((row,i)=>{
+    const col=i%4,rr=Math.floor(i/4),x=sX+col*(cardW+gapX),y=sY+rr*(cardH+gapY);
+    s.addShape("roundRect",{x,y,w:cardW,h:cardH,fill:{color:"FFFFFF"},line:{color:INF.LINE,width:0.75},rectRadius:0.06});
+    const nombre=row.cadena.replace(/ S A.*| S\.A.*| SA$| COLOMBIA.*/i,"").trim();
+    s.addText([{text:nombre+"  ",options:{bold:true,color:INF.INK,fontSize:11}},{text:row.part.toFixed(1)+"%",options:{color:INF.MUT,fontSize:9}}],{x:x+0.15,y:y+0.1,w:cardW-0.3,h:0.28,fontFace:INF.FONT,valign:"middle"});
+    s.addShape("line",{x:x+0.15,y:y+0.46,w:cardW-0.3,h:0,line:{color:INF.LINE,width:0.5}});
+    const bh=0.55, soY=y+0.55;
+    s.addShape("roundRect",{x:x+0.12,y:soY,w:cardW-0.24,h:bh,fill:{color:INF.SO_BG},line:{type:"none"},rectRadius:0.04});
+    const soCumC=row.so_cum>=90?INF.POS:row.so_cum>=75?INF.SO_C:INF.NEG;
+    s.addText([{text:"SELL-OUT  ",options:{bold:true,color:INF.SO_C,fontSize:8,charSpacing:1}},{text:row.so_cum.toFixed(0)+"%",options:{bold:true,color:soCumC,fontSize:8}}],{x:x+0.22,y:soY+0.04,w:1.8,h:0.2,fontFace:INF.FONT});
+    s.addText("Var "+_ip(row.so_var),{x:x+cardW-1.35,y:soY+0.04,w:1.2,h:0.2,fontFace:INF.FONT,fontSize:8.5,bold:true,color:row.so_var>=0?INF.POS:INF.NEG,align:"right"});
+    s.addText([{text:"Real ",options:{color:INF.MUT}},{text:_im(row.so_r),options:{bold:true,color:INF.INK}},{text:"  Proy ",options:{color:INF.MUT}},{text:_im(row.so_proy),options:{bold:true,color:INF.SO_C}},{text:"  Ppto ",options:{color:INF.MUT}},{text:_im(row.so_p),options:{bold:true,color:INF.INK}}],{x:x+0.22,y:soY+0.26,w:cardW-0.34,h:0.24,fontFace:INF.FONT,fontSize:7.8});
+    const siY=y+1.15;
+    s.addShape("roundRect",{x:x+0.12,y:siY,w:cardW-0.24,h:bh,fill:{color:INF.SI_BG},line:{type:"none"},rectRadius:0.04});
+    const siCumC=row.si_cum>=90?INF.POS:row.si_cum>=75?INF.SO_C:INF.NEG;
+    s.addText([{text:"SELL-IN  ",options:{bold:true,color:INF.SI_C,fontSize:8,charSpacing:1}},{text:row.si_cum.toFixed(0)+"%",options:{bold:true,color:siCumC,fontSize:8}}],{x:x+0.22,y:siY+0.04,w:1.8,h:0.2,fontFace:INF.FONT});
+    s.addText("Var "+_ip(row.si_var),{x:x+cardW-1.35,y:siY+0.04,w:1.2,h:0.2,fontFace:INF.FONT,fontSize:8.5,bold:true,color:row.si_var>=0?INF.POS:INF.NEG,align:"right"});
+    s.addText([{text:"Real ",options:{color:INF.MUT}},{text:_im(row.si_r),options:{bold:true,color:INF.INK}},{text:"  Proy ",options:{color:INF.MUT}},{text:_im(row.si_proy),options:{bold:true,color:INF.SI_C}},{text:"  Ppto ",options:{color:INF.MUT}},{text:_im(row.si_p),options:{bold:true,color:INF.INK}}],{x:x+0.22,y:siY+0.26,w:cardW-0.34,h:0.24,fontFace:INF.FONT,fontSize:7.8});
+  });
+}
+
+function _infHall(pptx,H,mesLbl){
+  const s=pptx.addSlide(); s.background={color:"FFFFFF"};
+  s.addText("Hallazgos y recomendaciones · "+H.cat,{x:0.4,y:0.25,w:9,h:0.5,fontFace:INF.FONT,fontSize:22,bold:true,color:INF.NAVY});
+  s.addText("Principales caídas · tiendas críticas para reactivar · Cierre "+mesLbl+" 2026",{x:0.4,y:0.72,w:9,h:0.3,fontFace:INF.FONT,fontSize:11,color:INF.MUT});
+  if(!H.disponible){
+    s.addShape("roundRect",{x:0.4,y:2.5,w:12.5,h:2,fill:{color:"F7F7F4"},line:{color:INF.LINE,width:1},rectRadius:0.08});
+    s.addText("Detalle de "+H.cat+" pendiente de cargar",{x:0.4,y:3,w:12.5,h:0.5,fontFace:INF.FONT,fontSize:16,bold:true,color:INF.MUT,align:"center"});
+    s.addText("Los hallazgos por subcategoría y tiendas críticas se generarán cuando el archivo de detalle de "+H.cat+" esté disponible.",{x:2,y:3.5,w:9.33,h:0.6,fontFace:INF.FONT,fontSize:11,color:INF.MUT,align:"center"});
+    return;
+  }
+  s.addText("PRINCIPALES CAÍDAS (subcategoría)",{x:0.4,y:1.3,w:5,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.NEG,charSpacing:1});
+  H.caidas.forEach((c,i)=>{const y=1.7+i*0.6;
+    s.addShape("roundRect",{x:0.4,y,w:5.9,h:0.5,fill:{color:"FCEBEB"},line:{color:"F0C0C0",width:0.5},rectRadius:0.04});
+    s.addText(c.seg,{x:0.55,y:y+0.05,w:3.5,h:0.4,fontFace:INF.FONT,fontSize:12,bold:true,color:INF.INK,valign:"middle"});
+    s.addText(_im(c.d),{x:4.3,y:y+0.05,w:1.9,h:0.4,fontFace:INF.FONT,fontSize:13,bold:true,color:INF.NEG,align:"right",valign:"middle"});
+  });
+  s.addText("TIENDAS CRÍTICAS PARA REACTIVAR",{x:6.6,y:1.3,w:6,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.NEG,charSpacing:1});
+  H.tiendas.forEach((t,i)=>{const y=1.7+i*0.55;
+    s.addText([{text:(i+1)+". ",options:{color:INF.MUT,fontSize:10}},{text:t.pdv+"  ",options:{bold:true,color:INF.INK,fontSize:10.5}},{text:t.cad,options:{color:INF.MUT,fontSize:8.5}}],{x:6.6,y,w:4.6,h:0.5,fontFace:INF.FONT,valign:"middle"});
+    s.addText(_im(t.d),{x:11.3,y,w:1.6,h:0.5,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.NEG,align:"right",valign:"middle"});
+  });
+  s.addShape("roundRect",{x:0.4,y:5.5,w:12.5,h:1.7,fill:{color:"FFFBE0"},line:{color:INF.CORP_Y,width:1},rectRadius:0.05});
+  s.addText("RECOMENDACIONES",{x:0.6,y:5.62,w:6,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.CORP_K,charSpacing:1});
+  const rec=[
+    (H.caidas[0]?H.caidas[0].seg+" concentra la mayor caída del mes (Δ"+_im(H.caidas[0].d)+"); priorizar reactivación y revisar abastecimiento en las cadenas afectadas.":"Revisar las subcategorías con mayor caída."),
+    "Foco comercial en las tiendas críticas listadas: plan de visita, exhibición y reposición inmediata en los puntos con mayor caída.",
+    "Reforzar rotación en punto de venta para recuperar el gap acumulado del año en "+H.cat+"."
+  ];
+  s.addText(rec.map(r=>({text:r,options:{bullet:{code:"2022"},color:INF.INK,fontSize:10,paraSpaceAfter:4}})),{x:0.6,y:5.95,w:12.1,h:1.15,fontFace:INF.FONT,valign:"top"});
 }
 
 
