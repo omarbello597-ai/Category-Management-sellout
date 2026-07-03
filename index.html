@@ -592,6 +592,19 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
 }
 
+/* Garantizar que ningún contenedor deje espacio vacío a la derecha en móvil */
+@media(max-width:768px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  nav,#mes-bar,.d-filters,.e-filters,.cv-body,.d-body,.page,.split-body,
+  .kstrip,.cv-brand-hero,.arbol-wrap,#arbol-container{
+    width:100%!important;max-width:100%!important;box-sizing:border-box;
+  }
+  /* Filas por cadena y grids anchos: ocupar todo el ancho */
+  .page > div,.cv-body > div,.d-body > div{max-width:100%;}
+  /* El árbol y tablas muy anchas: permitir scroll horizontal dentro de su caja */
+  #arbol-container,.seg-cards-wrap,.tbl-panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+}
+
 </style>
 </head>
 <body>
