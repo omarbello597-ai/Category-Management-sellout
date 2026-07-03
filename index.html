@@ -6,7 +6,7 @@
 <title>Category Management · Sell Out</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
 :root{
   --bg:#08080f;--surf:#111119;--card:#16161f;--border:#1e1e2c;
@@ -3136,13 +3136,21 @@ function _iHallazgos(cat,mesCierre){
 
 async function generarInforme(){
   if(_curUser!==MASTER)return;
-  if(typeof PptxGenJS==='undefined'){alert('La librería de PowerPoint aún se está cargando. Intenta en unos segundos.');return;}
+  const btn=event&&event.target;
+  // Esperar a que la librería cargue (hasta ~8s) en vez de fallar de una
+  if(typeof PptxGenJS==='undefined'){
+    if(btn){btn.textContent='⏳ CARGANDO LIBRERÍA...';btn.disabled=true;}
+    let intentos=0;
+    while(typeof PptxGenJS==='undefined' && intentos<16){ await new Promise(r=>setTimeout(r,500)); intentos++; }
+    if(btn){btn.textContent='📊 GENERAR INFORME';btn.disabled=false;}
+    if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librería de PowerPoint. Revisa tu conexión e intenta de nuevo.');return;}
+  }
   const meses=MES_ORD.filter(m=>selMeses.has(m));
   if(!meses.length){alert('Selecciona al menos un mes para generar el informe.');return;}
   const mesCierre=meses[meses.length-1];
   const MLBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun','jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
 
-  const btn=event&&event.target; if(btn){btn.textContent='⏳ GENERANDO...';btn.disabled=true;}
+  if(btn){btn.textContent='⏳ GENERANDO...';btn.disabled=true;}
   try{
     // Asegurar que DET de autos y hogar estén cargados para hallazgos
     for(const cat of ['AUTOS','HOGAR']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){await loadDet(cat,y);} } }
