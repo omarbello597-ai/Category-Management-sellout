@@ -596,13 +596,24 @@ body{
 @media(max-width:768px){
   html,body{width:100%;max-width:100%;overflow-x:hidden;}
   nav,#mes-bar,.d-filters,.e-filters,.cv-body,.d-body,.page,.split-body,
-  .kstrip,.cv-brand-hero,.arbol-wrap,#arbol-container{
+  .kstrip,.cv-brand-hero,.arbol-wrap,#arbol-body{
     width:100%!important;max-width:100%!important;box-sizing:border-box;
   }
   /* Filas por cadena y grids anchos: ocupar todo el ancho */
   .page > div,.cv-body > div,.d-body > div{max-width:100%;}
   /* El árbol y tablas muy anchas: permitir scroll horizontal dentro de su caja */
-  #arbol-container,.seg-cards-wrap,.tbl-panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #arbol-body,.seg-cards-wrap,.tbl-panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+}
+
+/* Pantallas intermedias (celular horizontal / tablet): evitar espacio vacío */
+@media(min-width:769px) and (max-width:1200px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;}
+  .page,.cv-body,.d-body,.split-body{width:100%!important;max-width:100%!important;box-sizing:border-box;}
+  /* El árbol se centra y permite deslizar horizontal si no cabe */
+  #arbol-body{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .arb-tree{min-width:min-content;margin:0 auto;}
+  /* Tablas y tarjetas usan el ancho disponible */
+  .seg-cards-wrap,.tbl-panel{overflow-x:auto;}
 }
 
 </style>
