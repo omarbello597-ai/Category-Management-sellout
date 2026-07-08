@@ -1,5 +1,5 @@
 // Service Worker · Category Management PWA
-const CACHE = 'catmgmt-v2';
+const CACHE = 'catmgmt-v3';
 const CORE = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 // Instala y cachea los archivos base

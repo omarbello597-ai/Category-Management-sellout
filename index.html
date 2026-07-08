@@ -712,7 +712,7 @@ body{
     <div class="cat-pills">
       <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
       <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
-      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)">🔧 FERRETERÍA</div>
+      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)" style="display:none">🔧 FERRETERÍA</div>
       <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
     </div>
     <div style="flex:1"></div>
@@ -853,15 +853,22 @@ const MES_ORD=['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','o
 const MES_LBL={'ene.':'Ene','feb.':'Feb','mar.':'Mar','abr.':'Abr','may.':'May','jun.':'Jun',
                'jul.':'Jul','ago.':'Ago','sep.':'Sep','oct.':'Oct','nov.':'Nov','dic.':'Dic'};
 const CATS=['AUTOS','HOGAR','FERRETERIA'];
+// Ferretería se consolida dentro de AUTOS. TOTAL abarca todo.
+// catsFor(cur) devuelve el conjunto de categorías-fuente reales para la vista actual.
+function catsFor(cur){
+  if(cur==='TOTAL') return CATS;
+  if(cur==='AUTOS') return ['AUTOS','FERRETERIA'];
+  return [cur];
+}
 
 const r1=n=>Math.round(n*10)/10;
 const r0=n=>Math.round(n);
 const sg=v=>v>=0?'+':'';
 const sp=(a,b)=>b>0&&isFinite(a/b)?Math.round((a/b-1)*1000)/10:0;
 const fmtM=v=>{const a=Math.abs(v),s=v<0?'-':'';
-  return s+'$'+(a/1e9).toFixed(3)+'M';};
+  return s+'$'+(a/1e6).toLocaleString('es-CO',{minimumFractionDigits:1,maximumFractionDigits:1})+'M';};
 const fmtD=v=>{const a=Math.abs(v),s=v<0?'-':'';
-  return a>=1e9?s+'$'+(a/1e9).toFixed(1)+'B':a>=1e6?s+'$'+(a/1e6).toFixed(0)+'M':s+'$'+Math.round(a/1e3)+'K';};
+  return s+'$'+(a/1e6).toLocaleString('es-CO',{minimumFractionDigits:1,maximumFractionDigits:1})+'M';};
 const fmtK=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':r0(v)+'';
 const ddiClr=d=>d===null||d===undefined?'na':d<30?'crit':d<60?'warn':'ok';
 const ddiLbl=d=>d===null||d===undefined?'—':r0(d)+'d';
@@ -1040,8 +1047,9 @@ const ac=()=>{const l=document.documentElement.classList.contains('light');retur
 
 // ── RESUMEN HELPERS ─────────────────────────────────────────────────────────
 function resFilter(arr){
+  const cats=catsFor(CUR_CAT);
   return arr.filter(r=>{
-    if(CUR_CAT!=='TOTAL'&&r.CATEGORIA!==CUR_CAT) return false;
+    if(!cats.includes(r.CATEGORIA)) return false;
     if(selMeses.size>0&&!selMeses.has(r.MES)) return false;
     return true;
   });
@@ -1073,7 +1081,7 @@ function getSegs(){
   })).sort((a,b)=>b.v26-a.v26);
 }
 function getTrend(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   return MES_ORD.map(m=>{
     const ppMes=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&(!dSelCad||r.CADENA===dSelCad));
     if(!ppMes.length) return null;
@@ -1127,7 +1135,7 @@ CV_BRAND_LIGHT={AUTOS:{name:'Simoniz',cat:'Categoría Autos',color:'#1A3FA3',log
   FERRETERIA:{name:'Otras Marcas',cat:'Categoría Ferretería',color:'#7c3aed',logoFile:null},TOTAL:{name:'Simonizco',cat:'Todas las categorías',color:'#F5821F',logoFile:'Logo_Total.png'}};
 
 function cvPptoFilter(cat){
-  const cats=cat==='TOTAL'?CATS:[cat];
+  const cats=catsFor(cat);
   return PPTO.filter(r=>cats.includes(r.CATEGORIA));
 }
 
@@ -1322,7 +1330,7 @@ function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
 
 function getTop5Segs(cad,mesFil){
   // Obtener top 5 segmentos de esta cadena desde los archivos de detalle
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const segMap={};
   cats.forEach(cat=>{
     const det=DET[cat+'_2026']||[];
@@ -1340,7 +1348,7 @@ function cvRecoText(cad,soGap,siGap,cumplSO,ddi,mesFil){
   const top5=getTop5Segs(cad,mesFil);
   // Generar texto de los 5 segmentos top
   const segsHtml=top5.length?top5.map(([seg,d],i)=>{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const cats=catsFor(CUR_CAT);
     // comparar vs 2025
     const segMap25={};
     cats.forEach(cat=>{
@@ -1408,7 +1416,7 @@ function renderComoVamos(){
   const isLightCV=document.documentElement.classList.contains('light');
   const CV_BRAND=isLightCV?CV_BRAND_LIGHT:CV_BRAND_DARK;
   const brand=CV_BRAND[CUR_CAT]||CV_BRAND.AUTOS;
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const mesInfo=cvGetMesActual();
   const ppAllCat=cvPptoFilter(CUR_CAT);
 
@@ -1806,7 +1814,7 @@ function renderComoVamos(){
 function dotCls(v){return v>=-5?'ok':v>=-15?'warn':'crit';}
 
 function getCadenas(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const m26={},m25={};
   cats.forEach(cat=>{
     (CAD26[cat]||[]).filter(r=>selMeses.size===0||selMeses.has(r.MES)).forEach(r=>{
@@ -1819,7 +1827,7 @@ function getCadenas(){
     });
   });
   const tot=Object.values(m26).reduce((s,x)=>s+x.v26,0);
-  const cats2=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats2=catsFor(CUR_CAT);
   return Object.values(m26).map(c=>({...c,
     v25:m25[c.cad]?.v25||0,u25:m25[c.cad]?.u25||0,
     varV:sp(c.v26,m25[c.cad]?.v25||1),varU:sp(c.u26,m25[c.cad]?.u25||1),
@@ -1832,9 +1840,8 @@ function getCadenas(){
 // ── ÁRBOL DE CATEGORÍA ──────────────────────────────────────────────────────
 let _arbolTop=5;
 
-function _arbFmtV(v){const a=Math.abs(v);let s;
-  if(a>=1e9)s=(v/1e9).toFixed(2)+'B';else if(a>=1e6)s=(v/1e6).toFixed(0)+'M';
-  else if(a>=1e3)s=(v/1e3).toFixed(0)+'K';else s=Math.round(v)+'';return s;}
+function _arbFmtV(v){const a=Math.abs(v),sg=v<0?'-':'';
+  return sg+(a/1e6).toLocaleString('es-CO',{minimumFractionDigits:1,maximumFractionDigits:1})+'M';}
 function _arbFmtVs(v){return (v>=0?'+':'-')+'$'+_arbFmtV(Math.abs(v));}
 function _arbFmtU(u){const a=Math.abs(u);return a>=1e3?(u/1e3).toFixed(1)+'K':Math.round(u)+'';}
 function _arbFmtUs(u){return (u>=0?'+':'-')+_arbFmtU(Math.abs(u))+'u';}
@@ -1850,7 +1857,7 @@ function _arbNode(name,v26,v25,u26,u25,pv,pu){
 
 // Construye el árbol a partir de DET, respetando filtros globales
 function buildArbolData(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   // Agregado por subcategoría y por subcategoría|segmento
   const sub26={},sub25={},seg26={},seg25={};
   let tv26=0,tv25=0,tu26=0,tu25=0;
@@ -1929,7 +1936,7 @@ function _arbCleanPdv(p){
 }
 
 function arbolTopCaidas(segName){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const p26={},p25={};
   cats.forEach(cat=>{
     (DET[cat+'_2026']||[]).forEach(r=>{
@@ -2089,7 +2096,7 @@ function renderArbol(){
 
   // Poblar datalist de tiendas (PDV) buscable, respetando cadena y meses
   try{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const cats=catsFor(CUR_CAT);
     const pdvMap={};
     cats.forEach(cat=>{
       (DET[cat+'_2026']||[]).forEach(r=>{
@@ -2142,7 +2149,7 @@ function renderArbol(){
 }
 
 function getDetSeg(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const m26={},m25={};
   cats.forEach(cat=>{
     const d26=(DET[cat+'_2026']||[]).filter(r=>(selMeses.size===0||selMeses.has(r.M))&&(!dSelCad||r.C===dSelCad)&&(dSelSubcat==='TODAS'||r.S===dSelSubcat));
@@ -2157,7 +2164,7 @@ function getDetSeg(){
 
 function getSegsForSubcat(){
   if(dSelSubcat==='TODAS') return null;
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const vs=new Set();
   cats.forEach(cat=>{
     (DET[cat+'_2026']||[]).forEach(r=>{if(r.S===dSelSubcat&&r.G)vs.add(r.G);});
@@ -2173,7 +2180,7 @@ function buildSegCards(segs,cadenas,a){
   const totalV26=filteredSegs.reduce((s,x)=>s+x.v26,0);
 
   // Subcategoría selector
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const subcats=new Set(['TODAS']);
   cats.forEach(cat=>(DET[cat+'_2026']||[]).forEach(r=>{if(r.S)subcats.add(r.S);}));
   const subcatSel=`<select onchange="dSelSubcat=this.value;renderDashboard()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;cursor:pointer;">
@@ -2198,7 +2205,7 @@ function buildSegCards(segs,cadenas,a){
   filteredSegs.forEach(seg=>{
     const partSeg=totalV26>0?seg.v26/totalV26*100:0;
     // Inventario total del segmento (todas cadenas)
-    const invSegTotal=INV.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+    const invSegTotal=INV.filter(r=>(catsFor(CUR_CAT)).includes(r.CATEGORIA)&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
     html+=`<tr><td class="seg-label-cell">
       <div class="seg-label-name">${seg.seg}</div>
       <div class="seg-label-part">${partSeg.toFixed(1)}%</div>
@@ -2220,7 +2227,7 @@ function buildSegCards(segs,cadenas,a){
       const totCad=Object.values(m26).filter(x=>x.cad===cad.cad).reduce((s,x)=>s+x.v,0);
       const partCad=totCad>0?d26.v/totCad*100:0;
       // DDI por cadena x segmento
-      const invCS=INV.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&r.CADENA===cad.cad&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
+      const invCS=INV.filter(r=>(catsFor(CUR_CAT)).includes(r.CATEGORIA)&&r.CADENA===cad.cad&&r.SEGMENTO===seg.seg).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const ddiCS=calcDDI(invCS,d26.u);
       html+=`<td class="seg-card-cell"><div class="seg-card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:4px;font-family:var(--fm);font-size:7.5px;color:var(--muted)">
@@ -2257,7 +2264,7 @@ function renderDashboard(){
   const r26all=resFilter(RES26);
   const r25all=resFilter(RES25);
   const r26=dSelCad?r26all.filter(r=>{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const cats=catsFor(CUR_CAT);
     const det=cats.flatMap(cat=>DET[cat+'_2026']||[]);
     return det.some(d=>d.C===dSelCad&&d.G===r.SEGMENTO&&(selMeses.size===0||selMeses.has(d.M)));
   }):r26all;
@@ -2297,7 +2304,7 @@ function renderDashboard(){
   </div>`).join('')+'</div>';
 
   // ── Fila superior: tarjeta total + gráfica SO ─────────────────────────────
-  const ppTotal=PPTO.filter(r=>(CUR_CAT==='TOTAL'?CATS:[CUR_CAT]).includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
+  const ppTotal=PPTO.filter(r=>(catsFor(CUR_CAT)).includes(r.CATEGORIA)&&(selMeses.size===0||selMeses.has(r.MES)));
   const soRealTotal=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2026||0),0);
   const soPptoTotal=ppTotal.reduce((s,r)=>s+(r.SO_PPTO_2026||0),0);
   const soReal25Total=ppTotal.reduce((s,r)=>s+(r.SO_REAL_2025||0),0);
@@ -2305,7 +2312,7 @@ function renderDashboard(){
   const varTotal=sp(soRealTotal,soReal25Total||1);
   const barRealTotal=soPptoTotal>0?Math.min(soRealTotal/soPptoTotal*100,100):0;
 
-  const _catsF=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const _catsF=catsFor(CUR_CAT);
   const _diasPM={ene:31,feb:28,mar:31,abr:30,may:31,jun:30,jul:31,ago:31,sep:30,oct:31,nov:30,dic:31};
   const _mesesSelArr=MES_ORD.filter(m=>selMeses.has(m));
   const _esMultiSG=_mesesSelArr.length>1;
@@ -2395,7 +2402,7 @@ function renderDashboard(){
     +'</div>'
   +'</div>';
 
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const cadFiltered=dSelCad?cadenas.filter(c=>c.cad===dSelCad):cadenas;
   const cadRowsH=(()=>{
     let html='<div><div class="cv-section-lbl">Sell Out por cadena · '+mLbl+'</div><div style="display:flex;flex-direction:column;gap:8px;">';
@@ -2480,7 +2487,7 @@ function renderDashboard(){
     const isLight=document.documentElement.classList.contains('light');
     const gridC=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';
     const tickC=isLight?'#7a8499':'#5a5a7a';
-    const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+(av>=1000?(av/1000).toFixed(1)+'B':av.toFixed(0)+'M');};
+    const fmtY=v=>{if(!v&&v!==0)return'';const av=Math.abs(v);return(v<0?'-':'')+'$'+av.toLocaleString('es-CO',{maximumFractionDigits:0})+'M';};
     const base={responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
         callbacks:{label:ctx=>ctx.parsed.y===null?' —':' '+ctx.dataset.label+': '+fmtY(ctx.parsed.y)}}},
@@ -2508,7 +2515,7 @@ async function initExplorer(){
   document.getElementById('e-kstrip').innerHTML='';
 
   // Lazy-load detalle for current cat
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   for(const c of cats){ await loadDet(c,2025); await loadDet(c,2026); }
 
   // Combine rows, inject _YR so we can split 2025/2026
@@ -2660,7 +2667,7 @@ function eClear(){
 // ── SEGMENTOS: helpers basados en DET (soportan filtro de cadena) ──────────────
 // Agrega valor/unidades del segmento por mes desde DET, respetando cat/mes/cadena
 function segDetAgg(){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const m={};
   cats.forEach(cat=>{
     (DET[cat+'_2026']||[]).forEach(r=>{
@@ -2683,7 +2690,7 @@ function segDetAgg(){
 
 // Inventario actual del segmento (o total) desde INV, filtrado por cat y cadena
 function segInv(segName){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   return INV.filter(r=>cats.includes(r.CATEGORIA)
     && (!segName || r.SEGMENTO===segName)
     && (!sSelCad || r.CADENA===sSelCad))
@@ -2692,7 +2699,7 @@ function segInv(segName){
 
 // Nº de meses con venta del año actual (2026) para el segmento/categoría con filtros
 function segMesesConVenta(segName){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   const meses=new Set();
   cats.forEach(cat=>{
     (DET[cat+'_2026']||[]).forEach(r=>{
@@ -2735,7 +2742,7 @@ function getTotalsDET(){
 function renderSegmentos(){
   // Poblar filtro de cadena (desde INV que tiene todas las cadenas por categoría)
   try{
-    const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+    const cats=catsFor(CUR_CAT);
     const cadSet=new Set();
     cats.forEach(cat=>{
       (DET[cat+'_2026']||[]).forEach(r=>{if(r.C)cadSet.add(r.C);});
@@ -2791,7 +2798,7 @@ function selectSeg(seg){
 
 function renderSegDetail(seg){
   const a=ac();
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   // Serie mensual desde DET (valor y unidades), respetando cadena y meses
   const rows=MES_ORD.map(m=>{
     if(selMeses.size>0 && !selMeses.has(m)) return null;
@@ -2887,7 +2894,7 @@ function destroyCharts(registry){
 }
 
 function getCadTrend(cad){
-  const cats=CUR_CAT==='TOTAL'?CATS:[CUR_CAT];
+  const cats=catsFor(CUR_CAT);
   return MES_ORD.map(m=>{
     const rows=PPTO.filter(r=>r.MES===m&&cats.includes(r.CATEGORIA)&&r.CADENA===cad);
     const z={mes:MES_LBL[m]||m,soReal26:null,soReal25:null,soPpto:null,siReal26:null,siReal25:null,siPpto:null};
@@ -3189,7 +3196,7 @@ async function generarInforme(){
   if(btn){btn.textContent='⏳ GENERANDO...';btn.disabled=true;}
   try{
     // Asegurar que DET de autos y hogar estén cargados para hallazgos
-    for(const cat of ['AUTOS','HOGAR']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){await loadDet(cat,y);} } }
+    for(const cat of ['AUTOS','HOGAR','FERRETERIA']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){await loadDet(cat,y);} } }
 
     const D={
       total:_iBloque(null,'Autos + Hogar',meses,mesCierre,MLBL),
