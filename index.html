@@ -905,6 +905,8 @@ async function loadDet(cat,year){
 
 // ── LOAD ────────────────────────────────────────────────────────────────────
 async function load(){
+  // Reset para que load() sea idempotente (evita duplicar filas si se llama 2 veces)
+  RES25=[];RES26=[];CAD25={};CAD26={};PPTO=[];INV=[];
   const fill=document.getElementById('ld-fill');
   const msg=document.getElementById('ld-msg');
   const pct=document.getElementById('ld-pct');
@@ -3307,8 +3309,7 @@ function _infHall(pptx,H,mesLbl){
   s.addText(rec.map(r=>({text:r,options:{bullet:{code:"2022"},color:INF.INK,fontSize:10,paraSpaceAfter:4}})),{x:0.6,y:5.95,w:12.1,h:1.15,fontFace:INF.FONT,valign:"top"});
 }
 
-
-load();
+// Nota: load() se invoca tras un login exitoso (ver doLogin), no al cargar la página.
 </script>
 </body>
 </html>
