@@ -1150,6 +1150,17 @@ function fmtFechaCorte(fechaStr){
     return String(d.getDate()).padStart(2,'0')+' '+meses[d.getMonth()]+' '+d.getFullYear();
   }catch(e){return fechaStr;}
 }
+// Extrae la fecha de corte SO/SI reales de un conjunto de filas de presupuesto.
+// SO y SI pueden tener cortes distintos, así que se toma cada uno por separado.
+// Se usa la fecha más reciente presente en las filas (por si hay varios meses).
+function cvFechasCorte(rows){
+  let so=null, si=null;
+  (rows||[]).forEach(r=>{
+    if(r.FECHA_SO_ACTUAL && (!so || r.FECHA_SO_ACTUAL>so)) so=r.FECHA_SO_ACTUAL;
+    if(r.FECHA_SI_ACTUAL && (!si || r.FECHA_SI_ACTUAL>si)) si=r.FECHA_SI_ACTUAL;
+  });
+  return {so, si};
+}
 function cvGetMesActual(){
   // SO: buscar fila con FECHA_SO_ACTUAL definida
   // Solo requerir FECHA_SO_ACTUAL — los días se derivan directo del string ISO
@@ -1635,6 +1646,10 @@ function renderComoVamos(){
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
       const soP=cvCalcProy(csOR,soDias,soDiasT);
       const siP=cvCalcProy(csiR,siDias,siDiasT);
+      // Fechas de corte propias de esta cadena (SO y SI pueden diferir)
+      const _fC=cvFechasCorte(ppCMes);
+      const fechaSOcad=fmtFechaCorte(_fC.so)||fechaSOMostrar;
+      const fechaSIcad=fmtFechaCorte(_fC.si)||fechaSIMostrar;
       // DDI para esta cadena
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
@@ -1655,8 +1670,8 @@ function renderComoVamos(){
           <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
         </div>
         <div class="cv-cad-body">
-          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
-          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+          ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOcad)}
+          ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIcad)}
         </div>
       </div>`;
     }).join('')}
@@ -1741,6 +1756,10 @@ function renderComoVamos(){
       const csiP=ppCMes.reduce((s,r)=>s+(r.SI_PPTO_2026||0),0);
       const soP=cvCalcProy(csOR,soDias,soDiasT);
       const siP=cvCalcProy(csiR,siDias,siDiasT);
+      // Fechas de corte propias de esta cadena (SO y SI pueden diferir)
+      const _fC=cvFechasCorte(ppCMes);
+      const fechaSOcad=fmtFechaCorte(_fC.so)||fechaSOMostrar;
+      const fechaSIcad=fmtFechaCorte(_fC.si)||fechaSIMostrar;
       const invCad=INV.filter(r=>cats.includes(r.CATEGORIA)&&r.CADENA===cad).reduce((s,r)=>s+(r.INVENTARIO_UNDS||0),0);
       const uCad=Object.values(CAD26).flat().filter(r=>r.CADENA===cad&&(selMeses.size===0||selMeses.has(r.MES))).reduce((s,r)=>s+(r.UNIDADES||0),0);
       const ddiCad=calcDDI(invCad,uCad);
@@ -1762,8 +1781,8 @@ function renderComoVamos(){
             <span class="pill ${varPct>=0?'pos':'neg'}" style="font-size:8px;flex-shrink:0;">${sg(varPct)}${varPct.toFixed(1)}%</span>
           </div>
           <div class="cv-cad-body">
-            ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOMostrar)}
-            ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIMostrar)}
+            ${cvMiniProy('SO',csOR,soP,csOP,ddiCad,ddiCls2,fechaSOcad)}
+            ${cvMiniProy('SI',csiR,siP,csiP,ddiCad,ddiCls2,fechaSIcad)}
           </div>
           <div style="padding:7px 12px;background:${(soP-csOP)>=0?'var(--posL)':'var(--negL)'};border-top:1px solid ${(soP-csOP)>=0?'rgba(10,150,73,.15)':'rgba(229,25,44,.15)'};">
             <div style="display:flex;justify-content:space-between;align-items:center;">
