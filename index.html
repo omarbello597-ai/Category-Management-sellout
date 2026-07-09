@@ -2433,6 +2433,11 @@ function renderDashboard(){
       const cumplPct=soPpto>0?c.v26/soPpto*100:0;
       const ddiCls2=ddiClr(c.ddi);
       const cadId=c.cad.replace(/[^a-zA-Z0-9]/g,'_');
+      // Fecha de corte SO propia de esta cadena (puede diferir de otras cadenas)
+      const _fCcad=cvFechasCorte(ppCad);
+      const corteHtmlCad=_fCcad.so
+        ?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(_fCcad.so)+'</div>'
+        :corteHtml;
       const headerBg=cumplPct>=90?'rgba(13,183,91,.05)':cumplPct>=75?'rgba(245,200,0,.05)':'rgba(229,25,44,.05)';
       const headerBorder=cumplPct>=90?'#0DB75B':cumplPct>=75?'#F5C800':'#E5192C';
       const ppCadMes=cats.flatMap(cat=>PPTO.filter(r=>r.CATEGORIA===cat&&r.CADENA===c.cad&&_mesesParaSum.includes(r.MES)));
@@ -2467,7 +2472,7 @@ function renderDashboard(){
           +'</div>'
           +'<div class="cv-cad-body"><div style="border-radius:10px;overflow:hidden;border:1.5px solid rgba(245,200,0,.35);">'
             +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
-              +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'+corteHtml+'</div>'
+              +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'+corteHtmlCad+'</div>'
               +'<div style="display:flex;gap:4px;align-items:center;">'+cumplPill+proyPill+'</div>'
             +'</div>'
             +'<div style="padding:8px 12px;">'
