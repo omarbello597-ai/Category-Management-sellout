@@ -3336,98 +3336,116 @@ function _iRankPDV(cats, meses){
 }
 
 // ── SLIDE: Ranking de segmentos ────────────────────────────────────────────
+// ── SLIDE: Ranking de segmentos (Top 30 en 2 columnas + fila total, sin recos) ──
 function _infRankSeg(pptx, titulo, sub, rows){
   const s=pptx.addSlide(); s.background={color:"FFFFFF"};
-  s.addText(titulo,{x:0.4,y:0.22,w:9.2,h:0.5,fontFace:INF.FONT,fontSize:21,bold:true,color:INF.NAVY});
-  s.addText(sub,{x:0.4,y:0.68,w:9.2,h:0.3,fontFace:INF.FONT,fontSize:10.5,color:INF.MUT});
-  // Lectura
-  const crece=rows.filter(r=>r.varV!==null&&r.varV>=0).length, total=rows.filter(r=>r.varV!==null).length;
-  const top=rows[0];
-  const peor=rows.filter(r=>r.varV!==null).slice().sort((a,b)=>a.difV-b.difV)[0];
-  const lectura="Ranking por valor. "+crece+" de "+total+" segmentos crecen vs 2025"+(peor?"; mayor caída: "+peor.seg+" ("+_imd(peor.difV)+").":".");
-  s.addText([{text:"LECTURA  ",options:{bold:true,color:INF.CORP_K,fontSize:9}},{text:lectura,options:{color:INF.INK,fontSize:9.5}}],{x:9.8,y:0.26,w:3.1,h:0.8,fontFace:INF.FONT,valign:"top"});
-  // Encabezado de tabla
-  const COLS=[["#",0.4,0.45,"left"],["SEGMENTO",0.85,2.75,"left"],
-    ["VAL 26",3.6,1.0,"right"],["VAL 25",4.6,1.0,"right"],["VAR%",5.6,0.75,"right"],["Δ VALOR",6.35,1.15,"right"],
-    ["UND 26",7.6,0.9,"right"],["UND 25",8.5,0.9,"right"],["VAR%U",9.4,0.75,"right"],["Δ UND",10.15,1.0,"right"]];
-  const hY=1.15;
-  s.addShape("rect",{x:0.35,y:hY,w:12.6,h:0.32,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
-  COLS.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.02,w:c[2],h:0.28,fontFace:INF.FONT,fontSize:8.5,bold:true,color:INF.MUT,align:c[3],valign:"middle",charSpacing:0.5}));
-  // Filas que caben
-  const rowH=0.285, startY=hY+0.36, maxBottom=5.35;
-  const nFit=Math.max(1,Math.floor((maxBottom-startY)/rowH));
-  const show=rows.slice(0,nFit);
-  show.forEach((r,i)=>{
-    const y=startY+i*rowH;
-    if(i%2===1) s.addShape("rect",{x:0.35,y,w:12.6,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
-    const vc=r.varV===null?INF.MUT:(r.varV>=0?INF.POS:INF.NEG);
-    const uc=r.varU===null?INF.MUT:(r.varU>=0?INF.POS:INF.NEG);
-    const dvc=r.difV>=0?INF.POS:INF.NEG, duc=r.difU>=0?INF.POS:INF.NEG;
-    const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.01,w,h:rowH-0.02,fontFace:INF.FONT,fontSize:8.3,color:col||INF.INK,align:al,valign:"middle",bold:!!bold});
-    cell((i+1).toString(),0.4,0.45,"left",INF.MUT);
-    cell(r.seg,0.85,2.75,"left",INF.INK,true);
-    cell(_im(r.v26),3.6,1.0,"right",INF.INK);
-    cell(_im(r.v25),4.6,1.0,"right",INF.MUT);
-    cell(r.varV===null?"—":_ip(r.varV),5.6,0.75,"right",vc,true);
-    cell(_imd(r.difV),6.35,1.15,"right",dvc);
-    cell(_iuf(r.u26),7.6,0.9,"right",INF.INK);
-    cell(_iuf(r.u25),8.5,0.9,"right",INF.MUT);
-    cell(r.varU===null?"—":_ip(r.varU),9.4,0.75,"right",uc,true);
-    cell(_iud(r.difU),10.15,1.0,"right",duc);
+  s.addText(titulo,{x:0.4,y:0.22,w:12.5,h:0.45,fontFace:INF.FONT,fontSize:20,bold:true,color:INF.NAVY});
+  s.addText(sub,{x:0.4,y:0.64,w:12.5,h:0.28,fontFace:INF.FONT,fontSize:10,color:INF.MUT});
+  // Total general (todas las filas) para calcular peso %
+  const gV26=rows.reduce((a,r)=>a+r.v26,0);
+  const TOPN=30;
+  const top=rows.slice(0,TOPN).map(r=>({...r, peso: gV26?r.v26/gV26*100:0}));
+  // Totales del Top N
+  const T={v26:0,v25:0,u26:0,u25:0,peso:0};
+  top.forEach(r=>{T.v26+=r.v26;T.v25+=r.v25;T.u26+=r.u26;T.u25+=r.u25;T.peso+=r.peso;});
+  T.difV=T.v26-T.v25; T.difU=T.u26-T.u25;
+  T.varV=T.v25?(T.v26/T.v25-1)*100:null; T.varU=T.u25?(T.u26/T.u25-1)*100:null;
+
+  // Layout 2 columnas de 15
+  const perCol=15;
+  const colX=[0.3, 6.75];              // x base de cada columna
+  // columnas dentro de cada bloque: #, SEG, V26, VAR%, ΔV, U26, VAR%U, peso
+  const sub_=(bx)=>[["#",bx+0.0,0.3,"left"],["SEGMENTO",bx+0.32,1.72,"left"],
+    ["V26",bx+2.04,0.72,"right"],["V%",bx+2.78,0.56,"right"],["ΔVAL",bx+3.34,0.78,"right"],
+    ["U26",bx+4.14,0.62,"right"],["U%",bx+4.78,0.52,"right"],["PESO",bx+5.32,0.78,"right"]];
+  const hY=1.0, rowH=0.247, startY=hY+0.3;
+  const COLOR=(v)=> v===null?INF.MUT : (v>=0?INF.POS:INF.NEG);
+  [0,1].forEach(ci=>{
+    const bx=colX[ci], cols=sub_(bx);
+    s.addShape("rect",{x:bx-0.05,y:hY,w:6.3,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
+    cols.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:7.3,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
+    for(let k=0;k<perCol;k++){
+      const idx=ci*perCol+k; if(idx>=top.length)break;
+      const r=top[idx], y=startY+k*rowH;
+      if(k%2===1) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
+      const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.005,w,h:rowH-0.01,fontFace:INF.FONT,fontSize:7.4,color:col||INF.INK,align:al,valign:"middle",bold:!!bold});
+      cell((idx+1).toString(),bx+0.0,0.3,"left",INF.MUT);
+      cell(r.seg,bx+0.32,1.72,"left",INF.INK,true);
+      cell(_im(r.v26),bx+2.04,0.72,"right",INF.INK);
+      cell(r.varV===null?"—":_ip(r.varV),bx+2.78,0.56,"right",COLOR(r.varV),true);
+      cell(_imd(r.difV),bx+3.34,0.78,"right",COLOR(r.difV>=0?0:-1));
+      cell(_iuf(r.u26),bx+4.14,0.62,"right",INF.INK);
+      cell(r.varU===null?"—":_ip(r.varU),bx+4.78,0.52,"right",COLOR(r.varU),true);
+      cell(r.peso.toFixed(1)+"%",bx+5.32,0.78,"right",INF.INK);
+    }
   });
-  // Recomendaciones (abajo) por mayores impactos en valor
-  const caidas=rows.filter(r=>r.difV<0).sort((a,b)=>a.difV-b.difV).slice(0,3);
-  s.addShape("roundRect",{x:0.4,y:5.5,w:12.5,h:1.75,fill:{color:"FFFBE0"},line:{color:INF.CORP_Y,width:1},rectRadius:0.05});
-  s.addText("RECOMENDACIONES · RECUPERAR IMPACTO EN VALOR",{x:0.6,y:5.6,w:9,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.CORP_K,charSpacing:1});
-  const rec = caidas.length ? caidas.map(c=>"Recuperar "+c.seg+": impacto "+_imd(c.difV)+" en valor"+(c.varV!==null?" ("+_ip(c.varV)+" vs 2025)":"")+" — revisar abastecimiento, exhibición y rotación.") : ["Todos los segmentos crecen o se mantienen vs 2025; sostener la ejecución en los de mayor peso."];
-  s.addText(rec.map(r=>({text:r,options:{bullet:{code:"2022"},color:INF.INK,fontSize:10,paraSpaceAfter:4}})),{x:0.6,y:5.95,w:12.1,h:1.2,fontFace:INF.FONT,valign:"top"});
+  // Fila TOTAL Top 30 (ancho completo abajo)
+  const ty=startY+perCol*rowH+0.12;
+  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.42,fill:{color:INF.NAVY},line:{type:"none"}});
+  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.38,fontFace:INF.FONT,fontSize:10,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
+  tc("TOTAL TOP "+top.length+" SEGMENTOS",0.45,3.2,"left","FFFFFF");
+  tc("Val 26 "+_im(T.v26),3.7,2.0,"left","FFFFFF");
+  tc(T.varV===null?"—":_ip(T.varV),5.7,0.9,"center",T.varV>=0?"8BE39B":"F4A6A0");
+  tc(_imd(T.difV),6.6,1.6,"right","FFFFFF");
+  tc("Und "+_iuf(T.u26),8.3,1.6,"left","FFFFFF");
+  tc(T.varU===null?"—":_ip(T.varU),9.9,0.9,"center",T.varU>=0?"8BE39B":"F4A6A0");
+  tc(_iud(T.difU),10.8,1.3,"right","FFFFFF");
+  tc("Peso "+T.peso.toFixed(1)+"%",12.1,0.95,"right",INF.CORP_Y);
 }
 
-// ── SLIDE: Ranking de puntos de venta ──────────────────────────────────────
+// ── SLIDE: Ranking de PDV (Top 30 en 2 columnas + fila total, sin recos) ──
 function _infRankPDV(pptx, titulo, sub, rows){
   const s=pptx.addSlide(); s.background={color:"FFFFFF"};
-  s.addText(titulo,{x:0.4,y:0.22,w:9.2,h:0.5,fontFace:INF.FONT,fontSize:21,bold:true,color:INF.NAVY});
-  s.addText(sub,{x:0.4,y:0.68,w:9.2,h:0.3,fontFace:INF.FONT,fontSize:10.5,color:INF.MUT});
-  const topN=rows[0];
-  const peor=rows.filter(r=>r.varV!==null).slice().sort((a,b)=>a.difV-b.difV)[0];
-  const lectura="Ranking por venta (mayor a menor). Líder: "+(topN?topN.pdv:"—")+(peor?"; mayor caída: "+peor.pdv+" ("+_imd(peor.difV)+").":".");
-  s.addText([{text:"LECTURA  ",options:{bold:true,color:INF.CORP_K,fontSize:9}},{text:lectura,options:{color:INF.INK,fontSize:9.5}}],{x:9.8,y:0.26,w:3.1,h:0.8,fontFace:INF.FONT,valign:"top"});
-  const COLS=[["#",0.4,0.45,"left"],["PUNTO DE VENTA",0.85,3.3,"left"],["CADENA",4.15,1.9,"left"],
-    ["VAL 26",6.1,1.1,"right"],["VAR%",7.2,0.8,"right"],["Δ VALOR",8.0,1.25,"right"],
-    ["UND 26",9.4,1.0,"right"],["VAR%U",10.4,0.8,"right"],["Δ UND",11.2,1.1,"right"]];
-  const hY=1.15;
-  s.addShape("rect",{x:0.35,y:hY,w:12.6,h:0.32,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
-  COLS.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.02,w:c[2],h:0.28,fontFace:INF.FONT,fontSize:8.5,bold:true,color:INF.MUT,align:c[3],valign:"middle",charSpacing:0.5}));
-  const rowH=0.265, startY=hY+0.36, maxBottom=5.35;
-  const nFit=Math.max(1,Math.floor((maxBottom-startY)/rowH));
-  const show=rows.slice(0,nFit);
-  // Umbral de "bajo desempeño": venta pequeña (último tercio) O caída en valor → sombra gris
-  const vMax=rows.length?rows[0].v26:0;
-  show.forEach((r,i)=>{
-    const y=startY+i*rowH;
-    const bajo = (r.difV<0) || (vMax>0 && r.v26 < vMax*0.15);
-    if(bajo) s.addShape("rect",{x:0.35,y,w:12.6,h:rowH,fill:{color:"ECECEC"},line:{type:"none"}});
-    else if(i%2===1) s.addShape("rect",{x:0.35,y,w:12.6,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
-    const baseC = bajo?INF.MUT:INF.INK;
-    const vc=r.varV===null?INF.MUT:(r.varV>=0?INF.POS:INF.NEG);
-    const uc=r.varU===null?INF.MUT:(r.varU>=0?INF.POS:INF.NEG);
-    const dvc=bajo?INF.MUT:(r.difV>=0?INF.POS:INF.NEG), duc=bajo?INF.MUT:(r.difU>=0?INF.POS:INF.NEG);
-    const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.01,w,h:rowH-0.02,fontFace:INF.FONT,fontSize:8.1,color:col,align:al,valign:"middle",bold:!!bold});
-    cell((i+1).toString(),0.4,0.45,"left",INF.MUT);
-    cell(r.pdv,0.85,3.3,"left",baseC,!bajo);
-    cell(r.cad,4.15,1.9,"left",INF.MUT);
-    cell(_im(r.v26),6.1,1.1,"right",baseC);
-    cell(r.varV===null?"—":_ip(r.varV),7.2,0.8,"right",bajo?INF.MUT:vc,!bajo);
-    cell(_imd(r.difV),8.0,1.25,"right",dvc);
-    cell(_iuf(r.u26),9.4,1.0,"right",baseC);
-    cell(r.varU===null?"—":_ip(r.varU),10.4,0.8,"right",bajo?INF.MUT:uc,!bajo);
-    cell(_iud(r.difU),11.2,1.1,"right",duc);
+  s.addText(titulo,{x:0.4,y:0.22,w:12.5,h:0.45,fontFace:INF.FONT,fontSize:20,bold:true,color:INF.NAVY});
+  s.addText(sub,{x:0.4,y:0.64,w:12.5,h:0.28,fontFace:INF.FONT,fontSize:10,color:INF.MUT});
+  const gV26=rows.reduce((a,r)=>a+r.v26,0);
+  const TOPN=30;
+  const top=rows.slice(0,TOPN).map(r=>({...r, peso: gV26?r.v26/gV26*100:0}));
+  const T={v26:0,v25:0,u26:0,u25:0,peso:0};
+  top.forEach(r=>{T.v26+=r.v26;T.v25+=r.v25;T.u26+=r.u26;T.u25+=r.u25;T.peso+=r.peso;});
+  T.difV=T.v26-T.v25; T.difU=T.u26-T.u25;
+  T.varV=T.v25?(T.v26/T.v25-1)*100:null; T.varU=T.u25?(T.u26/T.u25-1)*100:null;
+
+  const perCol=15;
+  const colX=[0.3, 6.75];
+  // #, PDV, V26, VAR%, ΔV, U%, peso
+  const sub_=(bx)=>[["#",bx+0.0,0.3,"left"],["PUNTO DE VENTA",bx+0.32,2.2,"left"],
+    ["V26",bx+2.52,0.74,"right"],["V%",bx+3.26,0.56,"right"],["ΔVAL",bx+3.82,0.8,"right"],
+    ["U%",bx+4.62,0.52,"right"],["PESO",bx+5.14,0.95,"right"]];
+  const hY=1.0, rowH=0.247, startY=hY+0.3;
+  const COLOR=(v)=> v===null?INF.MUT : (v>=0?INF.POS:INF.NEG);
+  [0,1].forEach(ci=>{
+    const bx=colX[ci], cols=sub_(bx);
+    s.addShape("rect",{x:bx-0.05,y:hY,w:6.3,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
+    cols.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:7.3,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
+    for(let k=0;k<perCol;k++){
+      const idx=ci*perCol+k; if(idx>=top.length)break;
+      const r=top[idx], y=startY+k*rowH;
+      const bajo=(r.difV<0);
+      if(bajo) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"ECECEC"},line:{type:"none"}});
+      else if(k%2===1) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
+      const baseC=bajo?INF.MUT:INF.INK;
+      const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.005,w,h:rowH-0.01,fontFace:INF.FONT,fontSize:7.2,color:col,align:al,valign:"middle",bold:!!bold});
+      cell((idx+1).toString(),bx+0.0,0.3,"left",INF.MUT);
+      cell(r.pdv,bx+0.32,2.2,"left",baseC,!bajo);
+      cell(_im(r.v26),bx+2.52,0.74,"right",baseC);
+      cell(r.varV===null?"—":_ip(r.varV),bx+3.26,0.56,"right",COLOR(r.varV),true);
+      cell(_imd(r.difV),bx+3.82,0.8,"right",COLOR(r.difV>=0?0:-1));
+      cell(r.varU===null?"—":_ip(r.varU),bx+4.62,0.52,"right",COLOR(r.varU),true);
+      cell(r.peso.toFixed(1)+"%",bx+5.14,0.95,"right",baseC);
+    }
   });
-  const caidas=rows.filter(r=>r.difV<0).sort((a,b)=>a.difV-b.difV).slice(0,3);
-  s.addShape("roundRect",{x:0.4,y:5.5,w:12.5,h:1.75,fill:{color:"FFFBE0"},line:{color:INF.CORP_Y,width:1},rectRadius:0.05});
-  s.addText("RECOMENDACIONES · RECUPERAR IMPACTO EN VALOR",{x:0.6,y:5.6,w:9,h:0.3,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.CORP_K,charSpacing:1});
-  const rec = caidas.length ? caidas.map(c=>"Reactivar "+c.pdv+" ("+c.cad+"): impacto "+_imd(c.difV)+" en valor — plan de visita, exhibición y reposición inmediata.") : ["Los puntos de venta del ranking crecen o se mantienen vs 2025; sostener ejecución en los de mayor venta."];
-  s.addText(rec.map(r=>({text:r,options:{bullet:{code:"2022"},color:INF.INK,fontSize:10,paraSpaceAfter:4}})),{x:0.6,y:5.95,w:12.1,h:1.2,fontFace:INF.FONT,valign:"top"});
+  const ty=startY+perCol*rowH+0.12;
+  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.42,fill:{color:INF.NAVY},line:{type:"none"}});
+  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.38,fontFace:INF.FONT,fontSize:10,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
+  tc("TOTAL TOP "+top.length+" PUNTOS DE VENTA",0.45,3.4,"left","FFFFFF");
+  tc("Val 26 "+_im(T.v26),3.9,2.0,"left","FFFFFF");
+  tc(T.varV===null?"—":_ip(T.varV),5.9,0.9,"center",T.varV>=0?"8BE39B":"F4A6A0");
+  tc(_imd(T.difV),6.8,1.6,"right","FFFFFF");
+  tc("Und "+_iuf(T.u26),8.5,1.5,"left","FFFFFF");
+  tc(T.varU===null?"—":_ip(T.varU),10.0,0.9,"center",T.varU>=0?"8BE39B":"F4A6A0");
+  tc(_iud(T.difU),10.9,1.2,"right","FFFFFF");
+  tc("Peso "+T.peso.toFixed(1)+"%",12.1,0.95,"right",INF.CORP_Y);
 }
 
 function _infPortada(pptx,mesLbl){
