@@ -3337,115 +3337,107 @@ function _iRankPDV(cats, meses){
 
 // ── SLIDE: Ranking de segmentos ────────────────────────────────────────────
 // ── SLIDE: Ranking de segmentos (Top 30 en 2 columnas + fila total, sin recos) ──
+// ── SLIDE: Ranking de segmentos (Top 20, 1 columna, V+U 25/26, + total) ──
 function _infRankSeg(pptx, titulo, sub, rows){
   const s=pptx.addSlide(); s.background={color:"FFFFFF"};
   s.addText(titulo,{x:0.4,y:0.22,w:12.5,h:0.45,fontFace:INF.FONT,fontSize:20,bold:true,color:INF.NAVY});
   s.addText(sub,{x:0.4,y:0.64,w:12.5,h:0.28,fontFace:INF.FONT,fontSize:10,color:INF.MUT});
-  // Total general (todas las filas) para calcular peso %
   const gV26=rows.reduce((a,r)=>a+r.v26,0);
-  const TOPN=30;
+  const TOPN=20;
   const top=rows.slice(0,TOPN).map(r=>({...r, peso: gV26?r.v26/gV26*100:0}));
-  // Totales del Top N
   const T={v26:0,v25:0,u26:0,u25:0,peso:0};
   top.forEach(r=>{T.v26+=r.v26;T.v25+=r.v25;T.u26+=r.u26;T.u25+=r.u25;T.peso+=r.peso;});
   T.difV=T.v26-T.v25; T.difU=T.u26-T.u25;
   T.varV=T.v25?(T.v26/T.v25-1)*100:null; T.varU=T.u25?(T.u26/T.u25-1)*100:null;
-
-  // Layout 2 columnas de 15
-  const perCol=15;
-  const colX=[0.3, 6.75];              // x base de cada columna
-  // columnas dentro de cada bloque: #, SEG, V26, VAR%, ΔV, U26, VAR%U, peso
-  const sub_=(bx)=>[["#",bx+0.0,0.3,"left"],["SEGMENTO",bx+0.32,1.72,"left"],
-    ["V26",bx+2.04,0.72,"right"],["V%",bx+2.78,0.56,"right"],["ΔVAL",bx+3.34,0.78,"right"],
-    ["U26",bx+4.14,0.62,"right"],["U%",bx+4.78,0.52,"right"],["PESO",bx+5.32,0.78,"right"]];
-  const hY=1.0, rowH=0.247, startY=hY+0.3;
   const COLOR=(v)=> v===null?INF.MUT : (v>=0?INF.POS:INF.NEG);
-  [0,1].forEach(ci=>{
-    const bx=colX[ci], cols=sub_(bx);
-    s.addShape("rect",{x:bx-0.05,y:hY,w:6.3,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
-    cols.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:7.3,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
-    for(let k=0;k<perCol;k++){
-      const idx=ci*perCol+k; if(idx>=top.length)break;
-      const r=top[idx], y=startY+k*rowH;
-      if(k%2===1) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
-      const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.005,w,h:rowH-0.01,fontFace:INF.FONT,fontSize:7.4,color:col||INF.INK,align:al,valign:"middle",bold:!!bold});
-      cell((idx+1).toString(),bx+0.0,0.3,"left",INF.MUT);
-      cell(r.seg,bx+0.32,1.72,"left",INF.INK,true);
-      cell(_im(r.v26),bx+2.04,0.72,"right",INF.INK);
-      cell(r.varV===null?"—":_ip(r.varV),bx+2.78,0.56,"right",COLOR(r.varV),true);
-      cell(_imd(r.difV),bx+3.34,0.78,"right",COLOR(r.difV>=0?0:-1));
-      cell(_iuf(r.u26),bx+4.14,0.62,"right",INF.INK);
-      cell(r.varU===null?"—":_ip(r.varU),bx+4.78,0.52,"right",COLOR(r.varU),true);
-      cell(r.peso.toFixed(1)+"%",bx+5.32,0.78,"right",INF.INK);
-    }
+  // Columnas: #, SEG, V26, V25, VAR%, ΔVAL, U26, U25, VAR%U, ΔUND, PESO
+  const C=[["#",0.35,0.35,"left"],["SEGMENTO",0.7,2.35,"left"],
+    ["VAL 26",3.05,1.05,"right"],["VAL 25",4.1,1.05,"right"],["VAR%",5.15,0.72,"right"],["Δ VALOR",5.87,1.1,"right"],
+    ["UND 26",7.05,0.95,"right"],["UND 25",8.0,0.95,"right"],["VAR%U",8.95,0.72,"right"],["Δ UND",9.67,0.98,"right"],["PESO",10.75,0.9,"right"]];
+  const hY=1.05, rowH=0.205, startY=hY+0.3;
+  s.addShape("rect",{x:0.3,y:hY,w:12.75,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
+  C.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:8,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
+  top.forEach((r,i)=>{
+    const y=startY+i*rowH;
+    if(i%2===1) s.addShape("rect",{x:0.3,y,w:12.75,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
+    const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.003,w,h:rowH-0.006,fontFace:INF.FONT,fontSize:8.2,color:col||INF.INK,align:al,valign:"middle",bold:!!bold});
+    cell((i+1).toString(),0.35,0.35,"left",INF.MUT);
+    cell(r.seg,0.7,2.35,"left",INF.INK,true);
+    cell(_im(r.v26),3.05,1.05,"right",INF.INK);
+    cell(_im(r.v25),4.1,1.05,"right",INF.MUT);
+    cell(r.varV===null?"—":_ip(r.varV),5.15,0.72,"right",COLOR(r.varV),true);
+    cell(_imd(r.difV),5.87,1.1,"right",COLOR(r.difV>=0?0:-1));
+    cell(_iuf(r.u26),7.05,0.95,"right",INF.INK);
+    cell(_iuf(r.u25),8.0,0.95,"right",INF.MUT);
+    cell(r.varU===null?"—":_ip(r.varU),8.95,0.72,"right",COLOR(r.varU),true);
+    cell(_iud(r.difU),9.67,0.98,"right",COLOR(r.difU>=0?0:-1));
+    cell(r.peso.toFixed(1)+"%",10.75,0.9,"right",INF.INK);
   });
-  // Fila TOTAL Top 30 (ancho completo abajo)
-  const ty=startY+perCol*rowH+0.12;
-  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.42,fill:{color:INF.NAVY},line:{type:"none"}});
-  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.38,fontFace:INF.FONT,fontSize:10,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
-  tc("TOTAL TOP "+top.length+" SEGMENTOS",0.45,3.2,"left","FFFFFF");
-  tc("Val 26 "+_im(T.v26),3.7,2.0,"left","FFFFFF");
-  tc(T.varV===null?"—":_ip(T.varV),5.7,0.9,"center",T.varV>=0?"8BE39B":"F4A6A0");
-  tc(_imd(T.difV),6.6,1.6,"right","FFFFFF");
-  tc("Und "+_iuf(T.u26),8.3,1.6,"left","FFFFFF");
-  tc(T.varU===null?"—":_ip(T.varU),9.9,0.9,"center",T.varU>=0?"8BE39B":"F4A6A0");
-  tc(_iud(T.difU),10.8,1.3,"right","FFFFFF");
-  tc("Peso "+T.peso.toFixed(1)+"%",12.1,0.95,"right",INF.CORP_Y);
+  // Fila TOTAL
+  const ty=startY+top.length*rowH+0.1;
+  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.44,fill:{color:INF.NAVY},line:{type:"none"}});
+  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.4,fontFace:INF.FONT,fontSize:9.5,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
+  tc("TOTAL TOP "+top.length,0.45,2.4,"left","FFFFFF");
+  tc(_im(T.v26),3.05,1.05,"right","FFFFFF");
+  tc(_im(T.v25),4.1,1.05,"right","D8D8E8");
+  tc(T.varV===null?"—":_ip(T.varV),5.15,0.72,"right",T.varV>=0?"8BE39B":"F4A6A0");
+  tc(_imd(T.difV),5.87,1.1,"right",T.difV>=0?"8BE39B":"F4A6A0");
+  tc(_iuf(T.u26),7.05,0.95,"right","FFFFFF");
+  tc(_iuf(T.u25),8.0,0.95,"right","D8D8E8");
+  tc(T.varU===null?"—":_ip(T.varU),8.95,0.72,"right",T.varU>=0?"8BE39B":"F4A6A0");
+  tc(_iud(T.difU),9.67,0.98,"right",T.difU>=0?"8BE39B":"F4A6A0");
+  tc(T.peso.toFixed(1)+"%",10.75,0.9,"right",INF.CORP_Y);
 }
 
-// ── SLIDE: Ranking de PDV (Top 30 en 2 columnas + fila total, sin recos) ──
+// ── SLIDE: Ranking de PDV (Top 20, 1 columna, V+U 25/26, + total) ──
 function _infRankPDV(pptx, titulo, sub, rows){
   const s=pptx.addSlide(); s.background={color:"FFFFFF"};
   s.addText(titulo,{x:0.4,y:0.22,w:12.5,h:0.45,fontFace:INF.FONT,fontSize:20,bold:true,color:INF.NAVY});
   s.addText(sub,{x:0.4,y:0.64,w:12.5,h:0.28,fontFace:INF.FONT,fontSize:10,color:INF.MUT});
   const gV26=rows.reduce((a,r)=>a+r.v26,0);
-  const TOPN=30;
+  const TOPN=20;
   const top=rows.slice(0,TOPN).map(r=>({...r, peso: gV26?r.v26/gV26*100:0}));
   const T={v26:0,v25:0,u26:0,u25:0,peso:0};
   top.forEach(r=>{T.v26+=r.v26;T.v25+=r.v25;T.u26+=r.u26;T.u25+=r.u25;T.peso+=r.peso;});
   T.difV=T.v26-T.v25; T.difU=T.u26-T.u25;
   T.varV=T.v25?(T.v26/T.v25-1)*100:null; T.varU=T.u25?(T.u26/T.u25-1)*100:null;
-
-  const perCol=15;
-  const colX=[0.3, 6.75];
-  // #, PDV, V26, VAR%, ΔV, U%, peso
-  const sub_=(bx)=>[["#",bx+0.0,0.3,"left"],["PUNTO DE VENTA",bx+0.32,2.2,"left"],
-    ["V26",bx+2.52,0.74,"right"],["V%",bx+3.26,0.56,"right"],["ΔVAL",bx+3.82,0.8,"right"],
-    ["U%",bx+4.62,0.52,"right"],["PESO",bx+5.14,0.95,"right"]];
-  const hY=1.0, rowH=0.247, startY=hY+0.3;
   const COLOR=(v)=> v===null?INF.MUT : (v>=0?INF.POS:INF.NEG);
-  [0,1].forEach(ci=>{
-    const bx=colX[ci], cols=sub_(bx);
-    s.addShape("rect",{x:bx-0.05,y:hY,w:6.3,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
-    cols.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:7.3,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
-    for(let k=0;k<perCol;k++){
-      const idx=ci*perCol+k; if(idx>=top.length)break;
-      const r=top[idx], y=startY+k*rowH;
-      const bajo=(r.difV<0);
-      if(bajo) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"ECECEC"},line:{type:"none"}});
-      else if(k%2===1) s.addShape("rect",{x:bx-0.05,y,w:6.3,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
-      const baseC=bajo?INF.MUT:INF.INK;
-      const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.005,w,h:rowH-0.01,fontFace:INF.FONT,fontSize:7.2,color:col,align:al,valign:"middle",bold:!!bold});
-      cell((idx+1).toString(),bx+0.0,0.3,"left",INF.MUT);
-      cell(r.pdv,bx+0.32,2.2,"left",baseC,!bajo);
-      cell(_im(r.v26),bx+2.52,0.74,"right",baseC);
-      cell(r.varV===null?"—":_ip(r.varV),bx+3.26,0.56,"right",COLOR(r.varV),true);
-      cell(_imd(r.difV),bx+3.82,0.8,"right",COLOR(r.difV>=0?0:-1));
-      cell(r.varU===null?"—":_ip(r.varU),bx+4.62,0.52,"right",COLOR(r.varU),true);
-      cell(r.peso.toFixed(1)+"%",bx+5.14,0.95,"right",baseC);
-    }
+  // #, PDV, CADENA, V26, V25, VAR%, ΔVAL, U26, VAR%U, PESO
+  const C=[["#",0.35,0.35,"left"],["PUNTO DE VENTA",0.7,2.55,"left"],["CADENA",3.25,1.5,"left"],
+    ["VAL 26",4.75,1.05,"right"],["VAL 25",5.8,1.05,"right"],["VAR%",6.85,0.72,"right"],["Δ VALOR",7.57,1.1,"right"],
+    ["UND 26",8.75,1.0,"right"],["VAR%U",9.75,0.72,"right"],["PESO",10.9,0.85,"right"]];
+  const hY=1.05, rowH=0.205, startY=hY+0.3;
+  s.addShape("rect",{x:0.3,y:hY,w:12.75,h:0.28,fill:{color:"F2F2EE"},line:{color:INF.LINE,width:0.5}});
+  C.forEach(c=>s.addText(c[0],{x:c[1],y:hY+0.01,w:c[2],h:0.26,fontFace:INF.FONT,fontSize:8,bold:true,color:INF.MUT,align:c[3],valign:"middle"}));
+  top.forEach((r,i)=>{
+    const y=startY+i*rowH;
+    const bajo=(r.difV<0);
+    if(bajo) s.addShape("rect",{x:0.3,y,w:12.75,h:rowH,fill:{color:"ECECEC"},line:{type:"none"}});
+    else if(i%2===1) s.addShape("rect",{x:0.3,y,w:12.75,h:rowH,fill:{color:"FBFBF9"},line:{type:"none"}});
+    const baseC=bajo?INF.MUT:INF.INK;
+    const cell=(t,x,w,al,col,bold)=>s.addText(t,{x,y:y+0.003,w,h:rowH-0.006,fontFace:INF.FONT,fontSize:8.1,color:col,align:al,valign:"middle",bold:!!bold});
+    cell((i+1).toString(),0.35,0.35,"left",INF.MUT);
+    cell(r.pdv,0.7,2.55,"left",baseC,!bajo);
+    cell(r.cad,3.25,1.5,"left",INF.MUT);
+    cell(_im(r.v26),4.75,1.05,"right",baseC);
+    cell(_im(r.v25),5.8,1.05,"right",INF.MUT);
+    cell(r.varV===null?"—":_ip(r.varV),6.85,0.72,"right",bajo?INF.MUT:COLOR(r.varV),!bajo);
+    cell(_imd(r.difV),7.57,1.1,"right",bajo?INF.MUT:COLOR(r.difV>=0?0:-1));
+    cell(_iuf(r.u26),8.75,1.0,"right",baseC);
+    cell(r.varU===null?"—":_ip(r.varU),9.75,0.72,"right",bajo?INF.MUT:COLOR(r.varU),!bajo);
+    cell(r.peso.toFixed(1)+"%",10.9,0.85,"right",baseC);
   });
-  const ty=startY+perCol*rowH+0.12;
-  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.42,fill:{color:INF.NAVY},line:{type:"none"}});
-  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.38,fontFace:INF.FONT,fontSize:10,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
-  tc("TOTAL TOP "+top.length+" PUNTOS DE VENTA",0.45,3.4,"left","FFFFFF");
-  tc("Val 26 "+_im(T.v26),3.9,2.0,"left","FFFFFF");
-  tc(T.varV===null?"—":_ip(T.varV),5.9,0.9,"center",T.varV>=0?"8BE39B":"F4A6A0");
-  tc(_imd(T.difV),6.8,1.6,"right","FFFFFF");
-  tc("Und "+_iuf(T.u26),8.5,1.5,"left","FFFFFF");
-  tc(T.varU===null?"—":_ip(T.varU),10.0,0.9,"center",T.varU>=0?"8BE39B":"F4A6A0");
-  tc(_iud(T.difU),10.9,1.2,"right","FFFFFF");
-  tc("Peso "+T.peso.toFixed(1)+"%",12.1,0.95,"right",INF.CORP_Y);
+  const ty=startY+top.length*rowH+0.1;
+  s.addShape("rect",{x:0.3,y:ty,w:12.75,h:0.44,fill:{color:INF.NAVY},line:{type:"none"}});
+  const tc=(t,x,w,al,col,bold)=>s.addText(t,{x,y:ty+0.02,w,h:0.4,fontFace:INF.FONT,fontSize:9.5,color:col||"FFFFFF",align:al,valign:"middle",bold:bold!==false});
+  tc("TOTAL TOP "+top.length,0.45,2.9,"left","FFFFFF");
+  tc(_im(T.v26),4.75,1.05,"right","FFFFFF");
+  tc(_im(T.v25),5.8,1.05,"right","D8D8E8");
+  tc(T.varV===null?"—":_ip(T.varV),6.85,0.72,"right",T.varV>=0?"8BE39B":"F4A6A0");
+  tc(_imd(T.difV),7.57,1.1,"right",T.difV>=0?"8BE39B":"F4A6A0");
+  tc(_iuf(T.u26),8.75,1.0,"right","FFFFFF");
+  tc(T.varU===null?"—":_ip(T.varU),9.75,0.72,"right",T.varU>=0?"8BE39B":"F4A6A0");
+  tc(T.peso.toFixed(1)+"%",10.9,0.85,"right",INF.CORP_Y);
 }
 
 function _infPortada(pptx,mesLbl){
