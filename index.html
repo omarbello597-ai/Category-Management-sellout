@@ -3280,12 +3280,16 @@ async function generarInforme(){
     // AUTOS
     _infSlide(pptx,D.autos.acum); _infSlide(pptx,D.autos.cierre); _infHall(pptx,D.hall_autos,MLBL[mesCierre]);
     _infRankSeg(pptx,'Ranking de segmentos · Autos · Acumulado '+rango+' 2026','Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['AUTOS'],meses));
+    _infRankSeg(pptx,'Ranking de segmentos · Autos · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['AUTOS'],mc));
     _infRankPDV(pptx,'Ranking de puntos de venta · Autos · Acumulado '+rango+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['AUTOS'],meses));
+    _infRankPDV(pptx,'Ranking de puntos de venta · Autos · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['AUTOS'],mc));
 
     // HOGAR
     _infSlide(pptx,D.hogar.acum); _infSlide(pptx,D.hogar.cierre); _infHall(pptx,D.hall_hogar,MLBL[mesCierre]);
     _infRankSeg(pptx,'Ranking de segmentos · Hogar · Acumulado '+rango+' 2026','Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['HOGAR'],meses));
+    _infRankSeg(pptx,'Ranking de segmentos · Hogar · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['HOGAR'],mc));
     _infRankPDV(pptx,'Ranking de puntos de venta · Hogar · Acumulado '+rango+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['HOGAR'],meses));
+    _infRankPDV(pptx,'Ranking de puntos de venta · Hogar · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['HOGAR'],mc));
 
     await pptx.writeFile({fileName:`Informe_CategoryManagement_${MLBL[mesCierre]}2026.pptx`});
   }catch(e){ alert('Error generando el informe: '+e.message); console.error(e); }
