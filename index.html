@@ -3419,10 +3419,10 @@ function _infRankPDV(pptx, titulo, sub, rows){
     cell(r.cad,3.25,1.5,"left",INF.MUT);
     cell(_im(r.v26),4.75,1.05,"right",baseC);
     cell(_im(r.v25),5.8,1.05,"right",INF.MUT);
-    cell(r.varV===null?"—":_ip(r.varV),6.85,0.72,"right",bajo?INF.MUT:COLOR(r.varV),!bajo);
-    cell(_imd(r.difV),7.57,1.1,"right",bajo?INF.MUT:COLOR(r.difV>=0?0:-1));
+    cell(r.varV===null?"—":_ip(r.varV),6.85,0.72,"right",COLOR(r.varV),true);
+    cell(_imd(r.difV),7.57,1.1,"right",COLOR(r.difV>=0?0:-1));
     cell(_iuf(r.u26),8.75,1.0,"right",baseC);
-    cell(r.varU===null?"—":_ip(r.varU),9.75,0.72,"right",bajo?INF.MUT:COLOR(r.varU),!bajo);
+    cell(r.varU===null?"—":_ip(r.varU),9.75,0.72,"right",COLOR(r.varU),true);
     cell(r.peso.toFixed(1)+"%",10.9,0.85,"right",baseC);
   });
   const ty=startY+top.length*rowH+0.08;
