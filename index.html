@@ -3164,7 +3164,16 @@ function exportAccessLog(){
 // ═══════════════ GENERADOR DE INFORME POWERPOINT ═══════════════
 const INF={NAVY:"1E2761",INK:"2C2C2A",MUT:"8A8A85",LINE:"D8D8D2",SO_C:"B8860B",SI_C:"185FA5",
   POS:"2E8B3D",NEG:"C0392B",SO_BG:"EAF3DE",SI_BG:"E6F1FB",CORP_Y:"FDF001",CORP_K:"1A1A1A",CORP_O:"E8820E",FONT:"Trebuchet MS"};
-const _im=(v)=>"$"+Math.round(v).toLocaleString("es-CO")+"M";
+// _im recibe el valor EN MILLONES. Si es chico (<1M) lo muestra en miles (K)
+// para que las tiendas pequeñas no salgan en "$0M".
+const _im=(v)=>{
+  const a=Math.abs(v), s=v<0?"-":"";
+  if(a>0 && a<1){ // menos de 1 millón -> mostrar en miles
+    const miles=v*1000; // v está en millones -> *1000 = miles
+    return s+"$"+Math.round(Math.abs(miles)).toLocaleString("es-CO")+"K";
+  }
+  return s+"$"+Math.round(a).toLocaleString("es-CO")+"M";
+};
 const _ip=(v)=>(v>=0?"+":"")+v.toFixed(1)+"%";
 const _idias={'ene.':31,'feb.':28,'mar.':31,'abr.':30,'may.':31,'jun.':30,'jul.':31,'ago.':31,'sep.':30,'oct.':31,'nov.':30,'dic.':31};
 function _iproy(real,tr,tot){ if(!tr||tr<=0)return real; return (real/tr)*tot; }
@@ -3414,7 +3423,11 @@ async function generarInforme(modo, cadenaSel, pdvNombre){
 // Formato de unidades para el informe
 const _iuf=(u)=>{const a=Math.abs(u);return (u<0?"-":"")+(a>=1e6?(a/1e6).toFixed(1)+"M":a>=1e3?(a/1e3).toFixed(1)+"K":Math.round(a).toString());};
 const _iud=(u)=>(u>=0?"+":"-")+_iuf(Math.abs(u));
-const _imd=(v)=>(v>=0?"+":"-")+"$"+Math.round(Math.abs(v)).toLocaleString("es-CO")+"M";
+const _imd=(v)=>{
+  const sg=(v>=0?"+":"-"), a=Math.abs(v);
+  if(a>0 && a<1){ return sg+"$"+Math.round(a*1000).toLocaleString("es-CO")+"K"; }
+  return sg+"$"+Math.round(a).toLocaleString("es-CO")+"M";
+};
 
 // Ranking de SEGMENTOS: valor+unidades 2026 vs 2025, var% y diferencias.
 // Fuente: DETALLE (tiene V y U). Nota: el detalle no trae Easy 2025.
