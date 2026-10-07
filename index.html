@@ -3087,7 +3087,7 @@ function _injectNavButtons(){
     btnAcc.className='nav-auth-btn';btnAcc.textContent='📋 ACCESOS';btnAcc.onclick=showAccessPanel;
     row.appendChild(btnAcc);
     const btnInf=document.createElement('button');
-    btnInf.className='nav-auth-btn';btnInf.textContent='📊 GENERAR INFORME';btnInf.onclick=generarInforme;
+    btnInf.className='nav-auth-btn';btnInf.textContent='📊 GENERAR INFORME';btnInf.onclick=_infAbrirModal;
     row.appendChild(btnInf);
   }
   // Usuario
@@ -3169,6 +3169,9 @@ const _ip=(v)=>(v>=0?"+":"")+v.toFixed(1)+"%";
 const _idias={'ene.':31,'feb.':28,'mar.':31,'abr.':30,'may.':31,'jun.':30,'jul.':31,'ago.':31,'sep.':30,'oct.':31,'nov.':30,'dic.':31};
 function _iproy(real,tr,tot){ if(!tr||tr<=0)return real; return (real/tr)*tot; }
 
+// Filtro global del informe: {cadena:null|'NOMBRE', pdv:null|'CODIGO'}
+let _infFiltro={cadena:null, pdv:null};
+
 // Calcula un bloque (header + rows por cadena) para meses y categorías dados
 function _iCalc(meses, cats){
   const cad={}, t={so26:0,so25:0,so_p:0,si26:0,si25:0,si_p:0,so_proy:0,si_proy:0};
@@ -3176,6 +3179,7 @@ function _iCalc(meses, cats){
     const c=r.CADENA;
     if(!c || !meses.includes(r.MES)) return;
     if(cats && !cats.includes(r.CATEGORIA)) return;
+    if(_infFiltro.cadena && c!==_infFiltro.cadena) return;
     if(!cad[c]) cad[c]={so_r:0,so_p:0,so25:0,si_r:0,si_p:0,si25:0,so_proy:0,si_proy:0};
     const so=r.SO_REAL_2026||0, si=r.SI_REAL_2026||0;
     const soTr=r.SO_DIAS_TRANSCURRIDOS, soTot=r.SO_DIAS_DEL_MES||_idias[r.MES]||30;
@@ -3214,7 +3218,9 @@ function _iBloque(cats,nombre,meses,mesCierre,mLbl){
 }
 // Hallazgos desde DET (detalle) de una categoría
 function _iHallazgos(cat,mesCierre){
-  const d26=DET[cat+'_2026']||[], d25=DET[cat+'_2025']||[];
+  const fC=_infFiltro.cadena, fP=_infFiltro.pdv;
+  const _ff=(r)=>(!fC||r.C===fC)&&(!fP||r.P===fP);
+  const d26=(DET[cat+'_2026']||[]).filter(_ff), d25=(DET[cat+'_2025']||[]).filter(_ff);
   if(!d26.length){ return {disponible:false,cat:cat.charAt(0)+cat.slice(1).toLowerCase()}; }
   const sub=(data)=>{const m={};data.forEach(r=>{if(r.M===mesCierre){m[r.S]=(m[r.S]||0)+(r.V||0);}});return m;};
   const s26=sub(d26),s25=sub(d25);
@@ -3237,7 +3243,87 @@ function _iHallazgos(cat,mesCierre){
     caidas:caidas.map(([s,d])=>({seg:cap(s),d:d/1e6})),tiendas:tiendas.slice(0,6)};
 }
 
-async function generarInforme(){
+// ── MODAL SELECTOR DE INFORME (General / Cadena / Tienda) ──────────────────
+// Lista de cadenas desde PPTO (nombre completo) para el filtro
+function _infCadenas(){
+  return [...new Set(PPTO.filter(r=>r.CADENA).map(r=>r.CADENA))].sort();
+}
+// Lista de PDV de una cadena desde DETALLE -> [{code, nombre}]
+function _infPdvDeCadena(cadena){
+  const clean=(p)=>String(p).replace(/^\s*\d+\s*-\s*/,'').replace(/-\d{6,}.*$/,'').trim().replace(/\s+/g,' ');
+  const map={};
+  ['AUTOS','HOGAR','FERRETERIA'].forEach(cat=>{
+    (DET[cat+'_2026']||[]).forEach(r=>{ if(r.P && r.C===cadena && !map[r.P]) map[r.P]=clean(r.P); });
+    (DET[cat+'_2025']||[]).forEach(r=>{ if(r.P && r.C===cadena && !map[r.P]) map[r.P]=clean(r.P); });
+  });
+  return Object.entries(map).map(([code,nombre])=>({code,nombre})).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+}
+async function _infAbrirModal(){
+  if(_curUser!==MASTER)return;
+  // Asegurar DET cargado (para poder listar tiendas)
+  for(const cat of ['AUTOS','HOGAR','FERRETERIA']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){try{await loadDet(cat,y);}catch(e){}} } }
+  let ov=document.getElementById('inf-modal');
+  if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='inf-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;';
+  const cadOpts=_infCadenas().map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+  ov.innerHTML=`<div style="background:#fff;border-radius:12px;max-width:460px;width:92%;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:var(--fb,sans-serif);">
+    <div style="font-family:var(--ff,sans-serif);font-size:20px;letter-spacing:1px;color:#1E2761;margin-bottom:4px;">GENERAR INFORME</div>
+    <div style="font-size:12px;color:#8A8A85;margin-bottom:16px;">Elige el alcance del informe PowerPoint</div>
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3e3df;border-radius:8px;margin-bottom:6px;cursor:pointer;">
+      <input type="radio" name="inf-modo" value="general" checked> <span style="font-weight:600;color:#2C2C2A;">Informe general</span> <span style="font-size:11px;color:#8A8A85;">· Autos + Hogar completo</span></label>
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3e3df;border-radius:8px;margin-bottom:6px;cursor:pointer;">
+      <input type="radio" name="inf-modo" value="cadena"> <span style="font-weight:600;color:#2C2C2A;">Cadena específica</span></label>
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3e3df;border-radius:8px;margin-bottom:12px;cursor:pointer;">
+      <input type="radio" name="inf-modo" value="tienda"> <span style="font-weight:600;color:#2C2C2A;">Tienda específica</span></label>
+    <div id="inf-sel-cad" style="display:none;margin-bottom:10px;">
+      <div style="font-size:11px;color:#8A8A85;margin-bottom:4px;">CADENA</div>
+      <select id="inf-cad" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:7px;font-size:13px;"><option value="">— Selecciona cadena —</option>${cadOpts}</select>
+    </div>
+    <div id="inf-sel-pdv" style="display:none;margin-bottom:12px;">
+      <div style="font-size:11px;color:#8A8A85;margin-bottom:4px;">TIENDA</div>
+      <select id="inf-pdv" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:7px;font-size:13px;"><option value="">— Primero elige cadena —</option></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+      <button id="inf-cancel" style="padding:9px 16px;border:1px solid #ccc;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;color:#555;">Cancelar</button>
+      <button id="inf-go" style="padding:9px 18px;border:none;background:#1E2761;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Generar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  const selCad=ov.querySelector('#inf-sel-cad'), selPdv=ov.querySelector('#inf-sel-pdv');
+  const cadDD=ov.querySelector('#inf-cad'), pdvDD=ov.querySelector('#inf-pdv');
+  ov.querySelectorAll('input[name="inf-modo"]').forEach(rb=>rb.addEventListener('change',()=>{
+    const v=ov.querySelector('input[name="inf-modo"]:checked').value;
+    selCad.style.display=(v==='cadena'||v==='tienda')?'block':'none';
+    selPdv.style.display=(v==='tienda')?'block':'none';
+  }));
+  cadDD.addEventListener('change',()=>{
+    const c=cadDD.value;
+    if(!c){pdvDD.innerHTML='<option value="">— Primero elige cadena —</option>';return;}
+    const pdvs=_infPdvDeCadena(c);
+    pdvDD.innerHTML='<option value="">— Selecciona tienda —</option>'+pdvs.map(p=>`<option value="${p.code.replace(/"/g,'&quot;')}">${p.nombre}</option>`).join('');
+  });
+  ov.querySelector('#inf-cancel').onclick=()=>ov.remove();
+  ov.querySelector('#inf-go').onclick=()=>{
+    const modo=ov.querySelector('input[name="inf-modo"]:checked').value;
+    if(modo==='cadena'){
+      if(!cadDD.value){alert('Selecciona una cadena.');return;}
+      _infFiltro={cadena:cadDD.value, pdv:null};
+    }else if(modo==='tienda'){
+      if(!cadDD.value){alert('Selecciona una cadena.');return;}
+      if(!pdvDD.value){alert('Selecciona una tienda.');return;}
+      _infFiltro={cadena:cadDD.value, pdv:pdvDD.value};
+    }else{
+      _infFiltro={cadena:null, pdv:null};
+    }
+    const nombrePdv = _infFiltro.pdv ? (pdvDD.options[pdvDD.selectedIndex].text) : null;
+    ov.remove();
+    generarInforme(modo, _infFiltro.cadena, nombrePdv);
+  };
+}
+
+async function generarInforme(modo, cadenaSel, pdvNombre){
+  modo=modo||'general';
   if(_curUser!==MASTER)return;
   const btn=event&&event.target;
   // Esperar a que la librería cargue (hasta ~8s) en vez de fallar de una
@@ -3258,42 +3344,56 @@ async function generarInforme(){
     // Asegurar que DET de autos y hogar estén cargados para hallazgos
     for(const cat of ['AUTOS','HOGAR','FERRETERIA']){ for(const y of [2026,2025]){ if(!DET[cat+'_'+y]){await loadDet(cat,y);} } }
 
-    const D={
-      total:_iBloque(null,'Autos + Hogar',meses,mesCierre,MLBL),
-      autos:_iBloque(['AUTOS'],'Autos',meses,mesCierre,MLBL),
-      hogar:_iBloque(['HOGAR'],'Hogar',meses,mesCierre,MLBL),
-      hall_autos:_iHallazgos('AUTOS',mesCierre),
-      hall_hogar:_iHallazgos('HOGAR',mesCierre),
-    };
-
     const pptx=new PptxGenJS();
     pptx.defineLayout({name:"W",width:13.333,height:7.5}); pptx.layout="W";
     const rango=MLBL[meses[0]]+'–'+MLBL[mesCierre];
     const mc=[mesCierre];
+    // Sufijo de alcance para títulos
+    const cadCorta=(c)=>{const x=(c||'').replace(/ S A.*| SA$| COLOMBIA.*/i,'').trim();return x.charAt(0)+x.slice(1).toLowerCase();};
+    const alcance = modo==='tienda' ? (pdvNombre||'Tienda') : (modo==='cadena' ? cadCorta(cadenaSel) : null);
+
     _infPortada(pptx,MLBL[mesCierre]);
 
-    // TOTAL (Autos + Hogar)
-    _infSlide(pptx,D.total.acum); _infSlide(pptx,D.total.cierre);
-    _infRankSeg(pptx,'Ranking de segmentos · Total (Autos+Hogar) · Acumulado '+rango+' 2026','Ordenado por valor · vs mismo periodo 2025',_iRankSeg(null,meses));
-    _infRankSeg(pptx,'Ranking de segmentos · Total (Autos+Hogar) · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(null,mc));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Total (Autos+Hogar) · Acumulado '+rango+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(null,meses));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Total (Autos+Hogar) · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(null,mc));
+    if(modo==='tienda'){
+      // ── INFORME COMPACTO DE TIENDA (desde DETALLE) ──
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Acumulado '+rango+' 2026','Tienda '+(cadCorta(cadenaSel))+' · Ordenado por valor · vs mismo periodo 2025',_iRankSeg(null,meses));
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Cierre '+MLBL[mesCierre]+' 2026','Tienda '+(cadCorta(cadenaSel))+' · Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(null,mc));
+    } else {
+      const sufT = alcance ? ' · '+alcance : '';
+      const subVs = 'Ordenado por valor · vs mismo periodo 2025'+(alcance?' · '+alcance:'');
+      const subPV = 'Ordenado por venta (mayor a menor) · bajo desempeño en gris'+(alcance?' · '+alcance:'');
+      const D={
+        total:_iBloque(null,'Autos + Hogar'+sufT,meses,mesCierre,MLBL),
+        autos:_iBloque(['AUTOS'],'Autos'+sufT,meses,mesCierre,MLBL),
+        hogar:_iBloque(['HOGAR'],'Hogar'+sufT,meses,mesCierre,MLBL),
+        hall_autos:_iHallazgos('AUTOS',mesCierre),
+        hall_hogar:_iHallazgos('HOGAR',mesCierre),
+      };
+      // TOTAL (Autos + Hogar)
+      _infSlide(pptx,D.total.acum); _infSlide(pptx,D.total.cierre);
+      _infRankSeg(pptx,'Ranking de segmentos · Total (Autos+Hogar)'+sufT+' · Acumulado '+rango+' 2026',subVs,_iRankSeg(null,meses));
+      _infRankSeg(pptx,'Ranking de segmentos · Total (Autos+Hogar)'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025'+(alcance?' · '+alcance:''),_iRankSeg(null,mc));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Total (Autos+Hogar)'+sufT+' · Acumulado '+rango+' 2026',subPV,_iRankPDV(null,meses));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Total (Autos+Hogar)'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026',subPV,_iRankPDV(null,mc));
 
-    // AUTOS
-    _infSlide(pptx,D.autos.acum); _infSlide(pptx,D.autos.cierre); _infHall(pptx,D.hall_autos,MLBL[mesCierre]);
-    _infRankSeg(pptx,'Ranking de segmentos · Autos · Acumulado '+rango+' 2026','Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['AUTOS'],meses));
-    _infRankSeg(pptx,'Ranking de segmentos · Autos · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['AUTOS'],mc));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Autos · Acumulado '+rango+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['AUTOS'],meses));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Autos · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['AUTOS'],mc));
+      // AUTOS
+      _infSlide(pptx,D.autos.acum); _infSlide(pptx,D.autos.cierre); _infHall(pptx,D.hall_autos,MLBL[mesCierre]);
+      _infRankSeg(pptx,'Ranking de segmentos · Autos'+sufT+' · Acumulado '+rango+' 2026',subVs,_iRankSeg(['AUTOS'],meses));
+      _infRankSeg(pptx,'Ranking de segmentos · Autos'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025'+(alcance?' · '+alcance:''),_iRankSeg(['AUTOS'],mc));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Autos'+sufT+' · Acumulado '+rango+' 2026',subPV,_iRankPDV(['AUTOS'],meses));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Autos'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026',subPV,_iRankPDV(['AUTOS'],mc));
 
-    // HOGAR
-    _infSlide(pptx,D.hogar.acum); _infSlide(pptx,D.hogar.cierre); _infHall(pptx,D.hall_hogar,MLBL[mesCierre]);
-    _infRankSeg(pptx,'Ranking de segmentos · Hogar · Acumulado '+rango+' 2026','Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['HOGAR'],meses));
-    _infRankSeg(pptx,'Ranking de segmentos · Hogar · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['HOGAR'],mc));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Hogar · Acumulado '+rango+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['HOGAR'],meses));
-    _infRankPDV(pptx,'Ranking de puntos de venta · Hogar · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por venta (mayor a menor) · bajo desempeño en gris',_iRankPDV(['HOGAR'],mc));
+      // HOGAR
+      _infSlide(pptx,D.hogar.acum); _infSlide(pptx,D.hogar.cierre); _infHall(pptx,D.hall_hogar,MLBL[mesCierre]);
+      _infRankSeg(pptx,'Ranking de segmentos · Hogar'+sufT+' · Acumulado '+rango+' 2026',subVs,_iRankSeg(['HOGAR'],meses));
+      _infRankSeg(pptx,'Ranking de segmentos · Hogar'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026','Ordenado por valor · vs '+MLBL[mesCierre]+' 2025'+(alcance?' · '+alcance:''),_iRankSeg(['HOGAR'],mc));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Hogar'+sufT+' · Acumulado '+rango+' 2026',subPV,_iRankPDV(['HOGAR'],meses));
+      _infRankPDV(pptx,'Ranking de puntos de venta · Hogar'+sufT+' · Cierre '+MLBL[mesCierre]+' 2026',subPV,_iRankPDV(['HOGAR'],mc));
+    }
 
-    await pptx.writeFile({fileName:`Informe_CategoryManagement_${MLBL[mesCierre]}2026.pptx`});
+    const sufArch = modo==='tienda' ? '_'+(alcance||'Tienda').replace(/[^a-zA-Z0-9]/g,'') : (modo==='cadena'?'_'+cadCorta(cadenaSel).replace(/[^a-zA-Z0-9]/g,''):'');
+    await pptx.writeFile({fileName:`Informe_CategoryManagement_${MLBL[mesCierre]}2026${sufArch}.pptx`});
+    _infFiltro={cadena:null, pdv:null};
   }catch(e){ alert('Error generando el informe: '+e.message); console.error(e); }
   finally{ if(btn){btn.textContent='📊 GENERAR INFORME';btn.disabled=false;} }
 }
@@ -3308,11 +3408,12 @@ const _imd=(v)=>(v>=0?"+":"-")+"$"+Math.round(Math.abs(v)).toLocaleString("es-CO
 // Fuente: DETALLE (tiene V y U). Nota: el detalle no trae Easy 2025.
 function _iRankSeg(cats, meses){
   const catsU = cats || ['AUTOS','HOGAR'];
+  const fC=_infFiltro.cadena, fP=_infFiltro.pdv;
   const m={};
   catsU.forEach(cat=>{
-    (DET[cat+'_2026']||[]).forEach(r=>{ if(!meses.includes(r.M))return; const g=r.G||'(sin segmento)';
+    (DET[cat+'_2026']||[]).forEach(r=>{ if(!meses.includes(r.M))return; if(fC&&r.C!==fC)return; if(fP&&r.P!==fP)return; const g=r.G||'(sin segmento)';
       if(!m[g])m[g]={seg:g,v26:0,v25:0,u26:0,u25:0}; m[g].v26+=r.V||0; m[g].u26+=r.U||0; });
-    (DET[cat+'_2025']||[]).forEach(r=>{ if(!meses.includes(r.M))return; const g=r.G||'(sin segmento)';
+    (DET[cat+'_2025']||[]).forEach(r=>{ if(!meses.includes(r.M))return; if(fC&&r.C!==fC)return; if(fP&&r.P!==fP)return; const g=r.G||'(sin segmento)';
       if(!m[g])m[g]={seg:g,v26:0,v25:0,u26:0,u25:0}; m[g].v25+=r.V||0; m[g].u25+=r.U||0; });
   });
   return Object.values(m).filter(s=>s.v26>0||s.v25>0).map(s=>({
@@ -3325,13 +3426,14 @@ function _iRankSeg(cats, meses){
 // Ranking de PDV: ordenado por venta 2026 mayor a menor.
 function _iRankPDV(cats, meses){
   const catsU = cats || ['AUTOS','HOGAR'];
+  const fC=_infFiltro.cadena, fP=_infFiltro.pdv;
   const m={};
   const clean=(p)=>String(p).replace(/^\s*\d+\s*-\s*/,'').replace(/-\d{6,}.*$/,'').trim().replace(/\s+/g,' ');
   const cadClean=(c)=>{const x=(c||'').replace(/ S A.*| SA$| COLOMBIA.*/i,'').trim();return x.charAt(0)+x.slice(1).toLowerCase();};
   catsU.forEach(cat=>{
-    (DET[cat+'_2026']||[]).forEach(r=>{ if(!meses.includes(r.M)||!r.P)return;
+    (DET[cat+'_2026']||[]).forEach(r=>{ if(!meses.includes(r.M)||!r.P)return; if(fC&&r.C!==fC)return; if(fP&&r.P!==fP)return;
       if(!m[r.P])m[r.P]={pdv:clean(r.P),cad:cadClean(r.C),v26:0,v25:0,u26:0,u25:0}; m[r.P].v26+=r.V||0; m[r.P].u26+=r.U||0; });
-    (DET[cat+'_2025']||[]).forEach(r=>{ if(!meses.includes(r.M)||!r.P)return;
+    (DET[cat+'_2025']||[]).forEach(r=>{ if(!meses.includes(r.M)||!r.P)return; if(fC&&r.C!==fC)return; if(fP&&r.P!==fP)return;
       if(!m[r.P])m[r.P]={pdv:clean(r.P),cad:cadClean(r.C),v26:0,v25:0,u26:0,u25:0}; m[r.P].v25+=r.V||0; m[r.P].u25+=r.U||0; });
   });
   return Object.values(m).filter(s=>s.v26>0||s.v25>0).map(s=>({
