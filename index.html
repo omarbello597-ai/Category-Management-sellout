@@ -3355,9 +3355,21 @@ async function generarInforme(modo, cadenaSel, pdvNombre){
     _infPortada(pptx,MLBL[mesCierre]);
 
     if(modo==='tienda'){
-      // ── INFORME COMPACTO DE TIENDA (desde DETALLE) ──
-      _infRankSeg(pptx,'Segmentos · '+alcance+' · Acumulado '+rango+' 2026','Tienda '+(cadCorta(cadenaSel))+' · Ordenado por valor · vs mismo periodo 2025',_iRankSeg(null,meses));
-      _infRankSeg(pptx,'Segmentos · '+alcance+' · Cierre '+MLBL[mesCierre]+' 2026','Tienda '+(cadCorta(cadenaSel))+' · Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(null,mc));
+      // ── INFORME DE TIENDA (desde DETALLE) ──
+      const cadC=cadCorta(cadenaSel);
+      // 1) Slide de desempeño por marca (Simoniz=Autos, Binner=Hogar)
+      const desAc=_iTiendaMarca(_infFiltro.pdv, meses);
+      const desCi=_iTiendaMarca(_infFiltro.pdv, mc);
+      _infTiendaDesemp(pptx, alcance, cadC, rango, MLBL[mesCierre], desAc, desCi);
+      // 2) Ranking de segmentos · TOTAL de la tienda (acum + cierre)
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Total · Acumulado '+rango+' 2026',cadC+' · Ordenado por valor · vs mismo periodo 2025',_iRankSeg(null,meses));
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Total · Cierre '+MLBL[mesCierre]+' 2026',cadC+' · Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(null,mc));
+      // 3) Ranking de segmentos · SIMONIZ (Autos) de la tienda
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Simoniz (Autos) · Acumulado '+rango+' 2026',cadC+' · Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['AUTOS'],meses));
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Simoniz (Autos) · Cierre '+MLBL[mesCierre]+' 2026',cadC+' · Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['AUTOS'],mc));
+      // 4) Ranking de segmentos · BINNER (Hogar) de la tienda
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Binner (Hogar) · Acumulado '+rango+' 2026',cadC+' · Ordenado por valor · vs mismo periodo 2025',_iRankSeg(['HOGAR'],meses));
+      _infRankSeg(pptx,'Segmentos · '+alcance+' · Binner (Hogar) · Cierre '+MLBL[mesCierre]+' 2026',cadC+' · Ordenado por valor · vs '+MLBL[mesCierre]+' 2025',_iRankSeg(['HOGAR'],mc));
     } else {
       const sufT = alcance ? ' · '+alcance : '';
       const subVs = 'Ordenado por valor · vs mismo periodo 2025'+(alcance?' · '+alcance:'');
@@ -3445,6 +3457,51 @@ function _iRankPDV(cats, meses){
 
 // ── SLIDE: Ranking de segmentos ────────────────────────────────────────────
 // ── SLIDE: Ranking de segmentos (Top 30 en 2 columnas + fila total, sin recos) ──
+// ── Desempeño de UNA tienda por marca (Simoniz=Autos, Binner=Hogar) desde DETALLE ──
+// Devuelve {autos:{...}, hogar:{...}} para un conjunto de meses y un PDV.
+function _iTiendaMarca(pdv, meses){
+  const calc=(cat)=>{
+    let v26=0,v25=0,u26=0,u25=0;
+    (DET[cat+'_2026']||[]).forEach(r=>{ if(r.P===pdv && meses.includes(r.M)){v26+=r.V||0;u26+=r.U||0;} });
+    (DET[cat+'_2025']||[]).forEach(r=>{ if(r.P===pdv && meses.includes(r.M)){v25+=r.V||0;u25+=r.U||0;} });
+    return {v26:v26/1e6,v25:v25/1e6,difV:(v26-v25)/1e6,varV:v25?(v26/v25-1)*100:null,
+            u26,u25,difU:u26-u25,varU:u25?(u26/u25-1)*100:null};
+  };
+  return {autos:calc('AUTOS'), hogar:calc('HOGAR')};
+}
+// ── SLIDE: Desempeño general de la tienda (Simoniz vs Binner) ──
+function _infTiendaDesemp(pptx, tiendaNom, cadNom, rango, mLblCierre, dAcum, dCierre){
+  const s=pptx.addSlide(); s.background={color:"FFFFFF"};
+  s.addText('Desempeño de tienda · '+tiendaNom,{x:0.4,y:0.25,w:12.5,h:0.5,fontFace:INF.FONT,fontSize:22,bold:true,color:INF.NAVY});
+  s.addText(cadNom+' · Sell-Out 2026 vs 2025 · por marca',{x:0.4,y:0.74,w:12.5,h:0.3,fontFace:INF.FONT,fontSize:11,color:INF.MUT});
+  const COLOR=(v)=> v===null?INF.MUT:(v>=0?INF.POS:INF.NEG);
+  // Dos columnas: Simoniz (Autos) y Binner (Hogar)
+  const marcas=[
+    {nom:'SIMONIZ', sub:'Categoría Autos', col:INF.CORP_O, a:dAcum.autos, c:dCierre.autos, x:0.6},
+    {nom:'BINNER',  sub:'Categoría Hogar', col:INF.SI_C,  a:dAcum.hogar, c:dCierre.hogar, x:6.95}
+  ];
+  marcas.forEach(mk=>{
+    const bx=mk.x, bw=5.78;
+    s.addShape("roundRect",{x:bx,y:1.3,w:bw,h:4.9,fill:{color:"FBFBF9"},line:{color:INF.LINE,width:1},rectRadius:0.06});
+    s.addShape("rect",{x:bx,y:1.3,w:bw,h:0.06,fill:{color:mk.col},line:{type:"none"}});
+    s.addText(mk.nom,{x:bx+0.3,y:1.5,w:bw-0.6,h:0.45,fontFace:INF.FONT,fontSize:22,bold:true,color:mk.col});
+    s.addText(mk.sub,{x:bx+0.3,y:1.98,w:bw-0.6,h:0.3,fontFace:INF.FONT,fontSize:11,color:INF.MUT});
+    // Bloque ACUMULADO y CIERRE
+    const bloque=(lbl, d, y)=>{
+      s.addText(lbl,{x:bx+0.3,y,w:bw-0.6,h:0.28,fontFace:INF.FONT,fontSize:11,bold:true,color:INF.INK,charSpacing:1});
+      // Valor
+      s.addText("Sell-Out",{x:bx+0.3,y:y+0.32,w:2,h:0.25,fontFace:INF.FONT,fontSize:9,color:INF.MUT});
+      s.addText(_im(d.v26),{x:bx+0.3,y:y+0.55,w:2.4,h:0.4,fontFace:INF.FONT,fontSize:20,bold:true,color:mk.col});
+      s.addText([{text:"2025 ",options:{color:INF.MUT,fontSize:9}},{text:_im(d.v25),options:{color:INF.INK,fontSize:10}}],{x:bx+0.3,y:y+0.96,w:2.4,h:0.25,fontFace:INF.FONT});
+      s.addText([{text:(d.varV===null?"—":_ip(d.varV)),options:{bold:true,fontSize:13,color:COLOR(d.varV)}},{text:"  Δ"+_imd(d.difV),options:{fontSize:10,color:COLOR(d.difV>=0?0:-1)}}],{x:bx+2.85,y:y+0.55,w:bw-3.1,h:0.35,fontFace:INF.FONT,valign:"middle"});
+      // Unidades
+      s.addText([{text:"Unds ",options:{color:INF.MUT,fontSize:9}},{text:_iuf(d.u26),options:{bold:true,color:INF.INK,fontSize:11}},{text:"  2025 "+_iuf(d.u25),options:{color:INF.MUT,fontSize:9}},{text:"  "+(d.varU===null?"—":_ip(d.varU)),options:{bold:true,color:COLOR(d.varU),fontSize:10}},{text:"  Δ"+_iud(d.difU),options:{color:COLOR(d.difU>=0?0:-1),fontSize:9}}],{x:bx+0.3,y:y+1.26,w:bw-0.6,h:0.28,fontFace:INF.FONT,valign:"middle"});
+    };
+    bloque('ACUMULADO · '+rango, mk.a, 2.45);
+    s.addShape("line",{x:bx+0.3,y:4.35,w:bw-0.6,h:0,line:{color:INF.LINE,width:0.75}});
+    bloque('CIERRE · '+mLblCierre, mk.c, 4.5);
+  });
+}
 // ── SLIDE: Ranking de segmentos (Top 20, 1 columna, V+U 25/26, + total) ──
 // ── SLIDE: Ranking de segmentos (Top 30, 1 columna, V+U 25/26, + total) ──
 function _infRankSeg(pptx, titulo, sub, rows){
