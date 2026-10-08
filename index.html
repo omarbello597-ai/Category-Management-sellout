@@ -1623,9 +1623,46 @@ function renderGerencia(){
 
   // Tamaño de burbuja ~ participación en venta.
   const vMax=Math.max(...pts.map(p=>p.v26))||1;
-  pts.forEach(p=>{ p._x=sx(p.cum); p._y=sy(p.cre); p._r=14+Math.sqrt(p.v26/vMax)*20; });
+  pts.forEach(p=>{ p._x=sx(p.cum); p._y=sy(p.cre); p._r=14+Math.sqrt(p.v26/vMax)*20; p._ox=p._x; p._oy=p._y; });
+
+  // ── Anti-solape de caritas ────────────────────────────────────────────────
+  // Cuando dos cadenas caen casi en el mismo punto, sus caritas se taparían.
+  // Se separan con un empuje radial iterativo (sin cambiar la escala), dejando
+  // un pequeño espacio entre bordes. Las posiciones quedan cerca de la real.
+  const GAP=5;                       // espacio mínimo entre bordes de caritas
+  for(let iter=0; iter<60; iter++){
+    let moved=false;
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const a=pts[i], b=pts[j];
+      let dx=b._x-a._x, dy=b._y-a._y;
+      let d=Math.hypot(dx,dy);
+      const need=a._r+b._r+GAP;
+      if(d<need){
+        if(d<0.01){ dx=(Math.random()-0.5); dy=(Math.random()-0.5); d=Math.hypot(dx,dy)||1; }
+        const push=(need-d)/2;
+        const ux=dx/d, uy=dy/d;
+        a._x-=ux*push; a._y-=uy*push;
+        b._x+=ux*push; b._y+=uy*push;
+        moved=true;
+      }
+    }
+    // Mantener dentro del área de ploteo
+    pts.forEach(p=>{
+      p._x=Math.max(mL+p._r, Math.min(mL+pw-p._r, p._x));
+      p._y=Math.max(mT+p._r, Math.min(mT+ph-p._r, p._y));
+    });
+    if(!moved) break;
+  }
 
   // ── Dibujar primero TODAS las caritas (para que las etiquetas queden encima) ──
+  // Línea tenue conectando la carita desplazada con su posición real en los ejes.
+  pts.forEach(p=>{
+    const dd=Math.hypot(p._x-p._ox, p._y-p._oy);
+    if(dd>p._r*0.9){
+      svg+=`<circle cx="${p._ox}" cy="${p._oy}" r="2" fill="${subC}" opacity="0.5"/>`;
+      svg+=`<line x1="${p._ox}" y1="${p._oy}" x2="${p._x}" y2="${p._y}" stroke="${subC}" stroke-width="0.7" opacity="0.35" stroke-dasharray="2 2"/>`;
+    }
+  });
   pts.forEach(p=>{ svg+=ggCara(p._x,p._y,p._r,p.q,GG_COL[p.q]); });
 
   // ── Anti-colisión del bloque [nombre + métricas] ─────────────────────────
