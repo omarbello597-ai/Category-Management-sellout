@@ -1838,50 +1838,80 @@ function renderGerenciaTend(){
   const axC=isLight?'#8792a6':'#44445f', gridC=isLight?'#e3e7ef':'#1b1b27';
   const txtC=isLight?'#2d3142':'#d4d4e8', subC=isLight?'#6b7280':'#8888aa';
 
-  const W=1000, H=330, mL=78, mR=30, mT=22, mB=42;
-  const pw=W-mL-mR, ph=H-mT-mB;
-  const n=meses.length;
-  const xAt=i=> n===1 ? mL+pw/2 : mL + (i/(n-1))*pw;
-  const vMax=Math.max(1, ...meses.map(m=>Math.max(si[m],so[m])));
-  const yMax=vMax*1.1;
-  const yAt=v=> mT + (1 - v/yMax)*ph;
+  // Meses completos (gráfico grande) vs mes en curso (gráfico pequeño aparte).
+  const mesesLinea = meses.filter(m=>m!==parcial);
+  const hayParcial = !!parcial && (si[parcial]>0 || so[parcial]>0);
+  const _r=(m)=> so[m]>0 ? (si[m]/so[m]) : 0;   // Sell In / Sell Out
 
-  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:360px;font-family:var(--fm);display:block;">`;
-  // Grid Y + etiquetas (en $M)
-  const yticks=5;
-  for(let i=0;i<=yticks;i++){
-    const v=yMax*i/yticks, y=yAt(v);
-    svg+=`<line x1="${mL}" y1="${y}" x2="${mL+pw}" y2="${y}" stroke="${gridC}" stroke-width="1"/>`;
-    svg+=`<text x="${mL-8}" y="${y+4}" fill="${subC}" font-size="10" text-anchor="end">${_im(v/1e6)}</text>`;
-  }
-  // Eje X + etiquetas de mes
-  svg+=`<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
-  svg+=`<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
-  meses.forEach((m,i)=>{
-    const x=xAt(i);
-    svg+=`<text x="${x}" y="${mT+ph+16}" fill="${m===parcial?subC:txtC}" font-size="10" text-anchor="middle">${MES_LBL[m]||m}${m===parcial?'*':''}</text>`;
-  });
+  // Formatea una marca del eje Y de forma compacta.
+  const fmtY=(v)=>_im(v/1e6);
 
-  // Construir polilíneas
-  function linea(obj,col){
-    const pts=meses.map((m,i)=>`${xAt(i).toFixed(1)},${yAt(obj[m]).toFixed(1)}`).join(' ');
-    let s=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
-    meses.forEach((m,i)=>{ s+=`<circle cx="${xAt(i)}" cy="${yAt(obj[m])}" r="3.2" fill="${col}" stroke="var(--bg)" stroke-width="1"/>`; });
+  // ── Constructor de un gráfico de líneas (reutilizable) ──────────────────
+  // ms: lista de meses · yMin/yMax: rango vertical · W,H: tamaño del lienzo ·
+  // etiquetaExtra: texto bajo las etiquetas de mes (p.ej. "en curso").
+  function chart(ms, yMin, yMax, W, H, opts){
+    opts=opts||{};
+    const mL=opts.mL!=null?opts.mL:72, mR=20, mT=20, mB=opts.mB!=null?opts.mB:(opts.subLbl?48:40);
+    const pw=W-mL-mR, ph=H-mT-mB, n=ms.length;
+    const xAt=i=> n<=1 ? mL+pw/2 : mL + (i/(n-1))*pw;
+    const yAt=v=> mT + (1 - (v-yMin)/(yMax-yMin))*ph;
+    let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="font-family:var(--fm);display:block;">`;
+    // grid + etiquetas Y
+    const yticks=opts.yticks||5;
+    for(let i=0;i<=yticks;i++){
+      const v=yMin+(yMax-yMin)*i/yticks, y=yAt(v);
+      s+=`<line x1="${mL}" y1="${y.toFixed(1)}" x2="${W-mR}" y2="${y.toFixed(1)}" stroke="${gridC}" stroke-width="1"/>`;
+      s+=`<text x="${mL-7}" y="${(y+4).toFixed(1)}" fill="${subC}" font-size="9.5" text-anchor="end">${fmtY(v)}</text>`;
+    }
+    // ejes
+    s+=`<line x1="${mL}" y1="${mT+ph}" x2="${W-mR}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
+    s+=`<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
+    // etiquetas de mes
+    ms.forEach((m,i)=>{
+      s+=`<text x="${xAt(i).toFixed(1)}" y="${mT+ph+15}" fill="${opts.subLbl?subC:txtC}" font-size="10" text-anchor="middle">${MES_LBL[m]||m}</text>`;
+      if(opts.subLbl) s+=`<text x="${xAt(i).toFixed(1)}" y="${mT+ph+27}" fill="${subC}" font-size="8" text-anchor="middle">${opts.subLbl}</text>`;
+    });
+    // líneas (o puntos si n==1)
+    function serie(obj,col){
+      let t='';
+      if(n>1){
+        const pts=ms.map((m,i)=>`${xAt(i).toFixed(1)},${yAt(obj[m]).toFixed(1)}`).join(' ');
+        t+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+      }
+      ms.forEach((m,i)=>{ t+=`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(obj[m]).toFixed(1)}" r="${n===1?4.5:3.2}" fill="${col}" stroke="var(--bg)" stroke-width="1.1"/>`; });
+      return t;
+    }
+    s+=serie(si,GT_SI)+serie(so,GT_SO);
+    // zonas hover
+    ms.forEach((m,i)=>{
+      const bw=pw/Math.max(1,n), x=xAt(i);
+      const etiq=(MES_LBL[m]||m)+(m===parcial?' (parcial)':'');
+      s+=`<rect class="gt-hot" x="${(x-bw/2).toFixed(1)}" y="${mT}" width="${bw.toFixed(1)}" height="${ph}" fill="transparent" style="cursor:pointer;"`
+        +` data-mes="${etiq}" data-si="${_im(si[m]/1e6)}" data-so="${_im(so[m]/1e6)}" data-ratio="${_r(m).toFixed(2)}"/>`;
+    });
+    s+=`</svg>`;
     return s;
   }
-  svg+=linea(si,GT_SI);
-  svg+=linea(so,GT_SO);
 
-  // Capa hover: franja vertical por mes con tooltip (SI, SO, ratio)
-  meses.forEach((m,i)=>{
-    const x=xAt(i), bw=pw/Math.max(1,n);
-    const r = so[m]>0 ? (si[m]/so[m]) : 0;   // Sell In / Sell Out
-    svg+=`<rect class="gt-hot" x="${x-bw/2}" y="${mT}" width="${bw}" height="${ph}" fill="transparent" style="cursor:pointer;"`
-      +` data-mes="${MES_LBL[m]||m}${m===parcial?' (parcial)':''}" data-si="${_im(si[m]/1e6)}" data-so="${_im(so[m]/1e6)}"`
-      +` data-ratio="${r.toFixed(2)}" data-x="${x.toFixed(0)}"/>`;
-  });
-  if(parcial) svg+=`<text x="${mL+pw}" y="${mT-6}" fill="${subC}" font-size="9" text-anchor="end">* mes en curso (parcial)</text>`;
-  svg+=`</svg>`;
+  // Rango del gráfico grande: arranca cerca del mínimo (no en $0) para "abrir" las líneas.
+  const vals=[]; mesesLinea.forEach(m=>{ vals.push(si[m],so[m]); });
+  const vMin=Math.min(...vals), vMaxC=Math.max(...vals);
+  const span=Math.max(1,vMaxC-vMin);
+  let yMinBig=Math.max(0, vMin-span*0.35);     // margen abajo
+  let yMaxBig=vMaxC+span*0.18;                   // margen arriba
+  // redondear a múltiplos "bonitos" de 100M
+  const step=100e6;
+  yMinBig=Math.floor(yMinBig/step)*step;
+  yMaxBig=Math.ceil(yMaxBig/step)*step;
+
+  const bigSvg = chart(mesesLinea, yMinBig, yMaxBig, 860, 330, {});
+
+  // Gráfico pequeño del mes en curso (desde $0 con su propia escala).
+  let miniSvg='';
+  if(hayParcial){
+    const vP=Math.max(si[parcial],so[parcial],1);
+    miniSvg = chart([parcial], 0, vP*1.25, 240, 330, {mL:58, subLbl:'en curso', yticks:4});
+  }
 
   // Tabla ratio SI/SO por cadena (año completo, misma vista de categoría)
   const aggC={};
@@ -1917,12 +1947,19 @@ function renderGerenciaTend(){
       background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
       box-shadow:0 6px 24px rgba(0,0,0,.35);font-family:var(--fm);font-size:10.5px;color:var(--text);white-space:nowrap;"></div>`;
 
-  body.style.position='relative';
-  body.innerHTML=svg+tip+tabla;
+  // Layout: gráfico grande (meses completos) + gráfico pequeño (mes en curso).
+  const notaParcial = hayParcial
+    ? `<div style="font-family:var(--fm);font-size:8.5px;color:var(--muted);text-align:center;padding-top:2px;">escala propia · datos parciales</div>` : '';
+  const charts=`<div style="display:flex;gap:14px;align-items:stretch;">`
+    +`<div style="flex:1 1 auto;min-width:0;">${bigSvg}</div>`
+    + (hayParcial ? `<div style="flex:0 0 clamp(150px,22%,230px);border-left:1px dashed ${axC};padding-left:12px;display:flex;flex-direction:column;justify-content:center;">${miniSvg}${notaParcial}</div>` : '')
+    +`</div>`;
 
-  // Hover: mostrar SI, SO y ratio del mes
+  body.style.position='relative';
+  body.innerHTML=charts+tip+tabla;
+
+  // Hover: mostrar SI, SO y ratio del mes (en ambos gráficos)
   const tipEl=document.getElementById('gt-tip');
-  const svgEl=body.querySelector('svg');
   function showTip(c,ev){
     const d=c.dataset;
     const rn=parseFloat(d.ratio), rc=rn>1?'#d64545':(rn>0?'#2e8b3d':'var(--sub)');
@@ -1939,13 +1976,11 @@ function renderGerenciaTend(){
     if(y+th>br.height) y=ev.clientY-br.top-th-14;
     tipEl.style.left=Math.max(2,x)+'px'; tipEl.style.top=Math.max(2,y)+'px';
   }
-  if(svgEl){
-    svgEl.querySelectorAll('.gt-hot').forEach(c=>{
-      c.addEventListener('mousemove',ev=>showTip(c,ev));
-      c.addEventListener('mouseenter',ev=>showTip(c,ev));
-      c.addEventListener('mouseleave',()=>{ tipEl.style.opacity='0'; });
-    });
-  }
+  body.querySelectorAll('.gt-hot').forEach(c=>{
+    c.addEventListener('mousemove',ev=>showTip(c,ev));
+    c.addEventListener('mouseenter',ev=>showTip(c,ev));
+    c.addEventListener('mouseleave',()=>{ tipEl.style.opacity='0'; });
+  });
 }
 
 function renderComoVamos(){
