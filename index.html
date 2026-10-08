@@ -747,11 +747,7 @@ body{
         <button class="gg-tog active" data-src="SO" onclick="ggSetSrc('SO',this)">SELL OUT</button>
         <button class="gg-tog"        data-src="SI" onclick="ggSetSrc('SI',this)">SELL IN</button>
       </div>
-      <span class="flabel" style="margin-left:10px;">Período</span>
-      <div id="gg-modo-wrap" style="display:flex;gap:3px;">
-        <button class="gg-tog active" data-modo="acum"   onclick="ggSetModo('acum',this)">ACUMULADO</button>
-        <button class="gg-tog"        data-modo="cierre" onclick="ggSetModo('cierre',this)">CIERRE MES</button>
-      </div>
+      <span class="flabel" style="margin-left:10px;color:var(--muted);">El período lo controla el selector de meses de arriba ↑</span>
       <div class="badge" id="gg-periodo" style="margin-left:auto;">—</div>
     </div>
     <div id="gg-legend" style="display:flex;gap:16px;font-family:var(--fm);font-size:9px;color:var(--sub);padding:6px 12px;flex-wrap:wrap;align-items:center;">
@@ -1457,7 +1453,7 @@ function cadLogoHtml(cad,size=28){
 //  Eje Y = % crecimiento 26 vs 25 (línea de corte en el crecimiento total de la vista).
 //  4 cuadrantes → 4 caritas/colores. Selectores: SO/SI · Total/Autos/Hogar · Acum/Cierre.
 // ══════════════════════════════════════════════════════════════════════════
-let ggSrc='SO', ggModo='acum';
+let ggSrc='SO';
 const GG_NOM={
   'ALMACENES EXITO S A':'Éxito','SODIMAC COLOMBIA S A':'Sodimac',
   'CENCOSUD COLOMBIA S A':'Cencosud','COLOMBIANA DE COMERCIO SA':'Alkosto',
@@ -1468,23 +1464,14 @@ const GG_COL={verde:'#2e8b3d',amar:'#e0a81e',azul:'#2563c9',rojo:'#d64545'};
 function ggNom(c){ return GG_NOM[c] || (c? c.replace(/\s+S\.?A\.?S?\.?$/i,'').replace(/\b\w/g,m=>m.toUpperCase()).slice(0,14) : '—'); }
 function ggNum(x){ const f=+x; return (x==null||x===''||isNaN(f))?0:f; }
 function ggSetSrc(s,el){ ggSrc=s; document.querySelectorAll('#gg-src-wrap .gg-tog').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderGerencia(); }
-function ggSetModo(m,el){ ggModo=m; document.querySelectorAll('#gg-modo-wrap .gg-tog').forEach(b=>b.classList.remove('active')); if(el)el.classList.add('active'); renderGerencia(); }
 
-// Determina el mes de cierre (último mes COMPLETO) para SO o SI.
+// Meses con venta 2026 del indicador activo (default cuando no hay meses marcados).
 function ggMesCierre(rows,src){
-  const realK=src+'_REAL_2026', dtK=src+'_DIAS_TRANSCURRIDOS', dmK=src+'_DIAS_DEL_MES';
+  const realK=src+'_REAL_2026';
   const msum={};
   rows.forEach(r=>{ msum[r.MES]=(msum[r.MES]||0)+ggNum(r[realK]); });
   const conVenta=MES_ORD.filter(m=>(msum[m]||0)>0);
-  let cierre=null;
-  for(let i=conVenta.length-1;i>=0;i--){
-    const m=conVenta[i];
-    const fr=rows.find(r=>r.MES===m);
-    const dt=ggNum(fr&&fr[dtK]), dm=ggNum(fr&&fr[dmK]);
-    if(dm>0 && dt>=dm){ cierre=m; break; }
-  }
-  if(!cierre && conVenta.length) cierre=conVenta[conVenta.length-1];
-  return {cierre, conVenta};
+  return {conVenta};
 }
 
 // Calcula por cadena: cumplimiento%, crecimiento%, y totales de la vista.
@@ -1492,8 +1479,10 @@ function ggCalc(){
   const src=ggSrc;
   const cats=catsFor(CUR_CAT);                 // TOTAL→[AUTOS,HOGAR,FERRETERIA]; AUTOS→[AUTOS,FERRETERIA]…
   const rows=(PPTO||[]).filter(r=> r && String(r.CADENA)!=='nan' && String(r.CATEGORIA)!=='nan' && cats.includes(r.CATEGORIA));
-  const {cierre, conVenta}=ggMesCierre(rows,src);
-  const per = ggModo==='acum' ? conVenta : (cierre? [cierre] : []);
+  // Período: lo manda el selector de meses de arriba (selMeses). Si no hay
+  // nada marcado, se usan todos los meses con venta del indicador activo.
+  const {conVenta}=ggMesCierre(rows,src);
+  const per = (selMeses && selMeses.size>0) ? MES_ORD.filter(m=>selMeses.has(m)) : conVenta;
   const r25K=src+'_REAL_2025', r26K=src+'_REAL_2026', ppK=src+'_PPTO_2026';
   const agg={}; let T25=0,T26=0,TPP=0;
   rows.forEach(r=>{
@@ -1518,7 +1507,7 @@ function ggCalc(){
     pts.push({cad:ggNom(c), raw:c, cum, cre, v26:a.r26, v25:a.r25, pp:a.pp, q});
   }
   pts.sort((x,y)=>y.v26-x.v26);
-  return {pts, creTot, cumTot, per, cierre, src};
+  return {pts, creTot, cumTot, per, src};
 }
 
 // Dibuja una carita SVG (feliz/neutra/triste/enojada) en (cx,cy), radio r, color col.
@@ -1550,12 +1539,15 @@ function renderGerencia(){
     if(perBadge) perBadge.textContent='—';
     return;
   }
-  const {pts, creTot, cumTot, per, cierre, src}=ggCalc();
+  const {pts, creTot, cumTot, per, src}=ggCalc();
   const srcLbl = src==='SO'?'Sell Out':'Sell In';
   const catLbl = CUR_CAT==='TOTAL'?'Total':(CUR_CAT==='AUTOS'?'Autos':'Hogar');
-  const perLbl = ggModo==='acum'
-      ? (per.length? (MES_LBL[per[0]]+'–'+MES_LBL[per[per.length-1]]+' (acum)') : 'acum')
-      : (cierre? ('Cierre '+MES_LBL[cierre]) : 'cierre');
+  // Etiqueta de período según los meses marcados arriba.
+  let perLbl;
+  if(!per.length) perLbl='sin meses';
+  else if(per.length===1) perLbl=MES_LBL[per[0]];
+  else if(per.length<=3) perLbl=per.map(m=>MES_LBL[m]).join(' · ');
+  else perLbl=MES_LBL[per[0]]+'–'+MES_LBL[per[per.length-1]]+' (acum)';
   if(perBadge) perBadge.textContent=`${srcLbl} · ${catLbl} · ${perLbl}`;
 
   if(!pts.length){
@@ -1636,58 +1628,63 @@ function renderGerencia(){
   // ── Dibujar primero TODAS las caritas (para que las etiquetas queden encima) ──
   pts.forEach(p=>{ svg+=ggCara(p._x,p._y,p._r,p.q,GG_COL[p.q]); });
 
-  // ── Anti-colisión de etiquetas de nombre ──────────────────────────────────
-  // Cada etiqueta es un bloque [nombre + métricas]. La posición ideal es el
-  // nombre justo arriba de la carita y las métricas justo abajo. Cuando dos
-  // etiquetas chocan, se desplaza el bloque y se traza una línea guía fina.
-  const LBLH=15, LBLHALF=7;          // alto de línea de texto / media
-  const estWidth=s=>Math.max(44, s.length*7.2+6); // ancho aprox del texto
-  // Rectángulos ya ocupados (caritas) para evitar que el nombre caiga sobre otra carita.
+  // ── Anti-colisión del bloque [nombre + métricas] ─────────────────────────
+  // Cada etiqueta es UN bloque de dos líneas (nombre arriba, métricas abajo)
+  // que se coloca como una sola caja. Si choca con otro bloque o con una
+  // carita, se busca otra posición alrededor y se traza una línea guía fina.
+  const BLKH=26, BLKHALF=13;          // alto del bloque de 2 líneas / media
+  pts.forEach(p=>{ p._met=`${Math.round(p.cum)}%ppto · ${p.cre>0?'+':''}${p.cre.toFixed(1)}%`; });
+  const estWidth=p=>Math.max(50, Math.max(p.cad.length, p._met.length)*6.6+8);
   const faces=pts.map(p=>({x:p._x,y:p._y,r:p._r}));
-  const placed=[];                   // etiquetas ya colocadas (nombre)
+  const placed=[];                    // bloques ya colocados
   const overlap=(a,b)=>!(a.x2<b.x1||a.x1>b.x2||a.y2<b.y1||a.y1>b.y2);
   const hitFace=(r)=>faces.some(f=>{
     const cx=Math.max(r.x1,Math.min(f.x,r.x2)), cy=Math.max(r.y1,Math.min(f.y,r.y2));
-    return (cx-f.x)**2+(cy-f.y)**2 < (f.r*0.85)**2;
+    return (cx-f.x)**2+(cy-f.y)**2 < (f.r*0.9)**2;
   });
-  // Procesar de mayor a menor burbuja (las grandes mandan y quedan en su sitio).
+  // Las burbujas grandes se colocan primero y mandan.
   const order=[...pts].sort((a,b)=>b._r-a._r);
   order.forEach(p=>{
-    const w=estWidth(p.cad), hw=w/2;
-    // candidatos: arriba, arriba-der, arriba-izq, abajo, más arriba, más abajo
+    const hw=estWidth(p)/2;
+    const gapA=p._r+BLKHALF+4, gapB=p._r+BLKHALF+6; // separación arriba/abajo
+    // candidatos: arriba, abajo, arriba-der/izq, abajo-der/izq, más lejos…
     const cands=[
-      {dx:0,  dy:-(p._r+11)}, {dx:hw+4, dy:-(p._r+11)}, {dx:-(hw+4), dy:-(p._r+11)},
-      {dx:0,  dy:-(p._r+26)}, {dx:0,    dy:(p._r+26)},   {dx:hw+4,    dy:(p._r+26)},
-      {dx:-(hw+4),dy:(p._r+26)}, {dx:0, dy:-(p._r+41)}
+      {dx:0,dy:-gapA},{dx:0,dy:gapB},
+      {dx:hw+6,dy:-gapA},{dx:-(hw+6),dy:-gapA},
+      {dx:hw+6,dy:gapB},{dx:-(hw+6),dy:gapB},
+      {dx:0,dy:-(gapA+BLKH)},{dx:0,dy:(gapB+BLKH)},
+      {dx:hw+6,dy:0},{dx:-(hw+6),dy:0},
+      {dx:0,dy:-(gapA+2*BLKH)},{dx:0,dy:(gapB+2*BLKH)}
     ];
     let chosen=null;
     for(const c of cands){
       const cx=p._x+c.dx, cy=p._y+c.dy;
-      const rect={x1:cx-hw,x2:cx+hw,y1:cy-LBLHALF,y2:cy+LBLHALF};
+      const rect={x1:cx-hw,x2:cx+hw,y1:cy-BLKHALF,y2:cy+BLKHALF};
       if(rect.x1<mL+2||rect.x2>mL+pw-2||rect.y1<mT+2||rect.y2>mT+ph-2) continue;
       if(placed.some(q=>overlap(rect,q))) continue;
       if(hitFace(rect)) continue;
       chosen={cx,cy,rect,c}; break;
     }
-    if(!chosen){ // fallback: arriba, aunque se solape un poco
-      const cx=p._x, cy=p._y-(p._r+11);
-      chosen={cx,cy,rect:{x1:cx-hw,x2:cx+hw,y1:cy-LBLHALF,y2:cy+LBLHALF},c:{dx:0,dy:-(p._r+11)}};
+    if(!chosen){
+      const cx=p._x, cy=p._y-(p._r+BLKHALF+4);
+      chosen={cx,cy,rect:{x1:cx-hw,x2:cx+hw,y1:cy-BLKHALF,y2:cy+BLKHALF},c:{dx:0,dy:-(p._r+BLKHALF+4)}};
     }
     placed.push(chosen.rect);
     p._lbl=chosen;
   });
 
-  // Dibujar líneas guía + nombre + métricas
+  // Dibujar líneas guía + bloque (nombre encima, métricas debajo)
   pts.forEach(p=>{
-    const L=p._lbl, desplazado=Math.abs(L.c.dx)>2 || Math.abs(L.c.dy)>(p._r+13);
-    if(desplazado){
-      svg+=`<line x1="${p._x}" y1="${p._y + (L.cy<p._y? -p._r : p._r)}" x2="${L.cx}" y2="${L.cy + (L.cy<p._y? LBLHALF-2 : -(LBLHALF-2))}" stroke="${subC}" stroke-width="0.8" opacity="0.5"/>`;
+    const L=p._lbl;
+    // ¿el bloque quedó lejos de su posición natural (arriba pegado)? → línea guía
+    const natural = Math.abs(L.c.dx)<2 && L.c.dy<0 && L.c.dy>-(p._r+BLKHALF+8);
+    if(!natural){
+      const edgeY = L.cy<p._y ? (L.rect.y2) : (L.rect.y1);          // borde del bloque hacia la carita
+      const faceY = p._y + (L.cy<p._y ? -p._r : p._r);
+      svg+=`<line x1="${L.cx}" y1="${edgeY}" x2="${p._x}" y2="${faceY}" stroke="${subC}" stroke-width="0.8" opacity="0.45"/>`;
     }
-    svg+=`<text x="${L.cx}" y="${L.cy+4}" fill="${txtC}" font-size="12.5" font-weight="600" text-anchor="middle" style="font-family:var(--fb);">${p.cad}</text>`;
-    // Métricas: debajo de la carita si el nombre no está ahí; si el nombre quedó abajo, van arriba.
-    const mAbajo = L.cy < p._y;  // nombre arriba → métricas abajo
-    const my = mAbajo ? (p._y + p._r + 14) : (p._y - p._r - 8);
-    svg+=`<text x="${p._x}" y="${my}" fill="${subC}" font-size="10" text-anchor="middle">${Math.round(p.cum)}%ppto · ${p.cre>0?'+':''}${p.cre.toFixed(1)}%</text>`;
+    svg+=`<text x="${L.cx}" y="${L.cy-2}" fill="${txtC}" font-size="12" font-weight="600" text-anchor="middle" style="font-family:var(--fb);">${p.cad}</text>`;
+    svg+=`<text x="${L.cx}" y="${L.cy+11}" fill="${subC}" font-size="9.5" text-anchor="middle">${p._met}</text>`;
   });
 
   svg+=`</svg>`;
