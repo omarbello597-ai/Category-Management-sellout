@@ -1851,7 +1851,10 @@ function renderGerenciaTend(){
   // etiquetaExtra: texto bajo las etiquetas de mes (p.ej. "en curso").
   function chart(ms, yMin, yMax, W, H, opts){
     opts=opts||{};
-    const mL=opts.mL!=null?opts.mL:72, mR=20, mT=20, mB=opts.mB!=null?opts.mB:(opts.subLbl?48:40);
+    // Espacio extra abajo para la tira de ratios (chips).
+    const chipH = opts.ratios ? 22 : 0;
+    const mL=opts.mL!=null?opts.mL:72, mR=20, mT=20;
+    const mB=(opts.mB!=null?opts.mB:(opts.subLbl?48:40)) + chipH;
     const pw=W-mL-mR, ph=H-mT-mB, n=ms.length;
     const xAt=i=> n<=1 ? mL+pw/2 : mL + (i/(n-1))*pw;
     const yAt=v=> mT + (1 - (v-yMin)/(yMax-yMin))*ph;
@@ -1882,6 +1885,19 @@ function renderGerenciaTend(){
       return t;
     }
     s+=serie(si,GT_SI)+serie(so,GT_SO);
+    // ── Tira de ratios SI/SO (chips bajo el eje): verde ≤1 · rojo >1 ──
+    if(opts.ratios){
+      const yChip = mT+ph + (opts.subLbl?34:26);   // debajo de las etiquetas de mes
+      const cw = Math.min(46, pw/Math.max(1,n)-4);
+      if(opts.ratioLbl){
+        s+=`<text x="${mL-7}" y="${(yChip-13).toFixed(1)}" fill="${subC}" font-size="8" text-anchor="end">SI/SO</text>`;
+      }
+      ms.forEach((m,i)=>{
+        const r=_r(m), col=r>1?'#d64545':(r>0?'#2e8b3d':subC), x=xAt(i);
+        s+=`<rect x="${(x-cw/2).toFixed(1)}" y="${(yChip-11).toFixed(1)}" width="${cw.toFixed(1)}" height="18" rx="4" fill="${col}" opacity="0.14"/>`;
+        s+=`<text x="${x.toFixed(1)}" y="${(yChip+3).toFixed(1)}" fill="${col}" font-size="10" font-weight="700" text-anchor="middle">${r>0?r.toFixed(2):'—'}</text>`;
+      });
+    }
     // zonas hover
     ms.forEach((m,i)=>{
       const bw=pw/Math.max(1,n), x=xAt(i);
@@ -1904,13 +1920,13 @@ function renderGerenciaTend(){
   yMinBig=Math.floor(yMinBig/step)*step;
   yMaxBig=Math.ceil(yMaxBig/step)*step;
 
-  const bigSvg = chart(mesesLinea, yMinBig, yMaxBig, 860, 330, {});
+  const bigSvg = chart(mesesLinea, yMinBig, yMaxBig, 860, 356, {ratios:true, ratioLbl:true});
 
   // Gráfico pequeño del mes en curso (desde $0 con su propia escala).
   let miniSvg='';
   if(hayParcial){
     const vP=Math.max(si[parcial],so[parcial],1);
-    miniSvg = chart([parcial], 0, vP*1.25, 240, 330, {mL:58, subLbl:'en curso', yticks:4});
+    miniSvg = chart([parcial], 0, vP*1.25, 240, 356, {mL:58, subLbl:'en curso', yticks:4, ratios:true});
   }
 
   // Tabla ratio SI/SO por cadena (año completo, misma vista de categoría)
