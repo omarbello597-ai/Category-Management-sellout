@@ -1797,7 +1797,7 @@ function renderGerencia(){
 // ══════════════════════════════════════════════════════════════════════════
 //  GERENCIA GENERAL — Gráfico 2: Tendencia Sell In vs Sell Out en el tiempo
 //  Eje X = meses (año completo), eje Y = venta en $. Dos líneas: SI y SO.
-//  Selector de cadena (default total). Tabla debajo con ratio SO/SI por cadena.
+//  Selector de cadena (default total). Tabla debajo con ratio SI/SO por cadena.
 // ══════════════════════════════════════════════════════════════════════════
 const GT_SI='#2563c9', GT_SO='#F5A623';
 
@@ -1875,7 +1875,7 @@ function renderGerenciaTend(){
   // Capa hover: franja vertical por mes con tooltip (SI, SO, ratio)
   meses.forEach((m,i)=>{
     const x=xAt(i), bw=pw/Math.max(1,n);
-    const r = si[m]>0 ? (so[m]/si[m]) : 0;
+    const r = so[m]>0 ? (si[m]/so[m]) : 0;   // Sell In / Sell Out
     svg+=`<rect class="gt-hot" x="${x-bw/2}" y="${mT}" width="${bw}" height="${ph}" fill="transparent" style="cursor:pointer;"`
       +` data-mes="${MES_LBL[m]||m}${m===parcial?' (parcial)':''}" data-si="${_im(si[m]/1e6)}" data-so="${_im(so[m]/1e6)}"`
       +` data-ratio="${r.toFixed(2)}" data-x="${x.toFixed(0)}"/>`;
@@ -1883,32 +1883,34 @@ function renderGerenciaTend(){
   if(parcial) svg+=`<text x="${mL+pw}" y="${mT-6}" fill="${subC}" font-size="9" text-anchor="end">* mes en curso (parcial)</text>`;
   svg+=`</svg>`;
 
-  // Tabla ratio SO/SI por cadena (año completo, misma vista de categoría)
+  // Tabla ratio SI/SO por cadena (año completo, misma vista de categoría)
   const aggC={};
   PPTO.filter(r=>r&&String(r.CADENA)!=='nan'&&String(r.CATEGORIA)!=='nan'&&cats.includes(r.CATEGORIA))
     .forEach(r=>{ const c=String(r.CADENA); (aggC[c]||(aggC[c]={si:0,so:0})); aggC[c].si+=ggNum(r.SI_REAL_2026); aggC[c].so+=ggNum(r.SO_REAL_2026); });
-  const filas=Object.keys(aggC).map(c=>({cad:ggNom(c),raw:c,si:aggC[c].si,so:aggC[c].so,ratio:aggC[c].si>0?aggC[c].so/aggC[c].si:0}))
+  const filas=Object.keys(aggC).map(c=>({cad:ggNom(c),raw:c,si:aggC[c].si,so:aggC[c].so,ratio:aggC[c].so>0?aggC[c].si/aggC[c].so:0}))
     .sort((a,b)=>b.so-a.so);
   let trs='';
   filas.forEach(f=>{
-    const alerta = f.ratio>0 && f.ratio<1;      // entra más de lo que sale → sobrestock
-    const rc = f.ratio>=1 ? '#2e8b3d' : (f.ratio>0?'#d64545':subC);
+    // ratio = Sell In / Sell Out.  >1 entra más de lo que sale (sobrestock → alerta);
+    // ≤1 sale igual o más de lo que entra (sano).
+    const rc = f.ratio>1 ? '#d64545' : (f.ratio>0?'#2e8b3d':subC);
+    const lectura = f.ratio>1 ? '⚠ Entra > lo que sale' : (f.ratio>0?'Sale ≥ lo que entra':'—');
     const sel = f.raw===gtSelCad;
     trs+=`<tr style="border-bottom:1px solid ${gridC};color:${txtC};${sel?'background:'+(isLight?'#eef2fb':'#1a1a28')+';':''}cursor:pointer;" onclick="gtSelCad='${f.raw.replace(/'/g,"\\'")}';var s=document.getElementById('gt-cad');if(s)s.value='${f.raw.replace(/'/g,"\\'")}';renderGerenciaTend();">
       <td style="text-align:left;padding:5px 10px;font-weight:600;white-space:nowrap;">${f.cad}</td>
       <td style="text-align:right;padding:5px 10px;white-space:nowrap;color:${GT_SI};">${_im(f.si/1e6)}</td>
       <td style="text-align:right;padding:5px 10px;white-space:nowrap;color:${GT_SO};">${_im(f.so/1e6)}</td>
       <td style="text-align:right;padding:5px 10px;white-space:nowrap;font-weight:700;color:${rc};">${f.ratio.toFixed(2)}</td>
-      <td style="text-align:left;padding:5px 10px;color:${subC};font-size:9px;white-space:nowrap;">${f.ratio>=1?'Sale ≥ lo que entra':(f.ratio>0?'⚠ Entra > lo que sale':'—')}</td></tr>`;
+      <td style="text-align:left;padding:5px 10px;color:${subC};font-size:9px;white-space:nowrap;">${lectura}</td></tr>`;
   });
   const tabla=`<div style="overflow-x:auto;margin-top:14px;">
-    <div style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:1px;padding:0 2px 6px;">RATIO SELL OUT / SELL IN POR CADENA (año) — >1 sale más de lo que entra · <1 se acumula inventario · clic para filtrar el gráfico</div>
+    <div style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:1px;padding:0 2px 6px;">RATIO SELL IN / SELL OUT POR CADENA (año) — >1 entra más de lo que sale (se acumula inventario) · ≤1 sale más de lo que entra · clic para filtrar el gráfico</div>
     <table style="width:100%;border-collapse:collapse;font-family:var(--fm);font-size:10.5px;">
     <thead><tr style="color:${subC};border-bottom:1px solid ${gridC};">
       <th style="text-align:left;padding:5px 10px;">CADENA</th>
       <th style="text-align:right;padding:5px 10px;">SELL IN</th>
       <th style="text-align:right;padding:5px 10px;">SELL OUT</th>
-      <th style="text-align:right;padding:5px 10px;">SO/SI</th>
+      <th style="text-align:right;padding:5px 10px;">SI/SO</th>
       <th style="text-align:left;padding:5px 10px;">LECTURA</th></tr></thead><tbody>${trs}</tbody></table></div>`;
 
   const tip=`<div id="gt-tip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;
@@ -1923,12 +1925,12 @@ function renderGerenciaTend(){
   const svgEl=body.querySelector('svg');
   function showTip(c,ev){
     const d=c.dataset;
-    const rn=parseFloat(d.ratio), rc=rn>=1?'#2e8b3d':(rn>0?'#d64545':'var(--sub)');
+    const rn=parseFloat(d.ratio), rc=rn>1?'#d64545':(rn>0?'#2e8b3d':'var(--sub)');
     tipEl.innerHTML=
       `<div style="font-family:var(--fb);font-weight:700;font-size:12px;margin-bottom:3px;">${d.mes}</div>`
       +`<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:${GT_SI};">Sell In</span><b>${d.si}</b></div>`
       +`<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:${GT_SO};">Sell Out</span><b>${d.so}</b></div>`
-      +`<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:var(--sub);">Ratio SO/SI</span><b style="color:${rc};">${d.ratio}</b></div>`;
+      +`<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:var(--sub);">Ratio SI/SO</span><b style="color:${rc};">${d.ratio}</b></div>`;
     tipEl.style.opacity='1';
     const br=body.getBoundingClientRect();
     let x=ev.clientX-br.left+14, y=ev.clientY-br.top+14;
