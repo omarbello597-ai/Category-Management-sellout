@@ -757,6 +757,22 @@ body{
       <span><span style="color:#d64545;font-size:13px;">●</span> Ni cumple ppto ni crece sobre el total</span>
     </div>
     <div id="gg-body" style="padding:10px 12px;"></div>
+
+    <!-- ── Segundo gráfico: tendencia Sell In vs Sell Out en el tiempo ── -->
+    <div style="border-top:1px solid var(--border);margin:18px 12px 0;padding-top:14px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0 0 8px;">
+        <span style="font-family:var(--ff);font-size:16px;letter-spacing:1px;color:var(--text);">TENDENCIA SELL IN vs SELL OUT</span>
+        <span class="flabel">Cadena</span>
+        <select id="gt-cad" onchange="gtSelCad=this.value;renderGerenciaTend()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--fm);font-size:9px;letter-spacing:.5px;cursor:pointer;">
+          <option value="">Total (todas las cadenas)</option>
+        </select>
+        <div id="gt-legend" style="display:flex;gap:14px;font-family:var(--fm);font-size:9px;color:var(--sub);align-items:center;margin-left:auto;">
+          <span><span style="color:#2563c9;font-size:16px;vertical-align:middle;">▬</span> Sell In</span>
+          <span><span style="color:#F5A623;font-size:16px;vertical-align:middle;">▬</span> Sell Out</span>
+        </div>
+      </div>
+      <div id="gt-body" style="padding:4px 0;"></div>
+    </div>
   </div>
 
   <!-- DASHBOARD -->
@@ -1038,7 +1054,7 @@ function showPage(page,el){
   if(el) el.classList.add('active');
   if(page==='dashboard') renderDashboard();
   else if(page==='comovamos') renderComoVamos();
-  else if(page==='gerencia') renderGerencia();
+  else if(page==='gerencia'){ renderGerencia(); gtInitCadenas(); renderGerenciaTend(); }
   else if(page==='resultados') initResultados();
   else if(page==='explorer') initExplorer();
   else if(page==='segmentos') renderSegmentos();
@@ -1066,7 +1082,7 @@ function setCat(cat,el){
 function refreshAll(){
   if(CUR_PAGE==='dashboard') renderDashboard();
   else if(CUR_PAGE==='comovamos') renderComoVamos();
-  else if(CUR_PAGE==='gerencia') renderGerencia();
+  else if(CUR_PAGE==='gerencia'){ renderGerencia(); gtInitCadenas(); renderGerenciaTend(); }
   else if(CUR_PAGE==='explorer') initExplorer();
   else if(CUR_PAGE==='segmentos') renderSegmentos();
   else if(CUR_PAGE==='arbol') renderArbol();
@@ -1454,6 +1470,7 @@ function cadLogoHtml(cad,size=28){
 //  4 cuadrantes → 4 caritas/colores. Selectores: SO/SI · Total/Autos/Hogar · Acum/Cierre.
 // ══════════════════════════════════════════════════════════════════════════
 let ggSrc='SO';
+let gtSelCad='';   // cadena seleccionada en el gráfico de tendencia ('' = total)
 const GG_NOM={
   'ALMACENES EXITO S A':'Éxito','SODIMAC COLOMBIA S A':'Sodimac',
   'CENCOSUD COLOMBIA S A':'Cencosud','COLOMBIANA DE COMERCIO SA':'Alkosto',
@@ -1770,6 +1787,158 @@ function renderGerencia(){
   }
   if(svgEl){
     svgEl.querySelectorAll('.gg-hot').forEach(c=>{
+      c.addEventListener('mousemove',ev=>showTip(c,ev));
+      c.addEventListener('mouseenter',ev=>showTip(c,ev));
+      c.addEventListener('mouseleave',()=>{ tipEl.style.opacity='0'; });
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GERENCIA GENERAL — Gráfico 2: Tendencia Sell In vs Sell Out en el tiempo
+//  Eje X = meses (año completo), eje Y = venta en $. Dos líneas: SI y SO.
+//  Selector de cadena (default total). Tabla debajo con ratio SO/SI por cadena.
+// ══════════════════════════════════════════════════════════════════════════
+const GT_SI='#2563c9', GT_SO='#F5A623';
+
+// Llena el desplegable de cadenas (una sola vez por render de la página).
+function gtInitCadenas(){
+  const sel=document.getElementById('gt-cad');
+  if(!sel || !PPTO) return;
+  const cur=sel.value;
+  const cads=[...new Set(PPTO.filter(r=>r&&String(r.CADENA)!=='nan').map(r=>String(r.CADENA)))]
+    .sort((a,b)=>ggNom(a).localeCompare(ggNom(b)));
+  sel.innerHTML='<option value="">Total (todas las cadenas)</option>'
+    + cads.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${ggNom(c)}</option>`).join('');
+  if(cads.includes(cur)) sel.value=cur;
+}
+
+function renderGerenciaTend(){
+  const body=document.getElementById('gt-body');
+  if(!body) return;
+  if(!PPTO || !PPTO.length){ body.innerHTML=''; return; }
+  const cats=catsFor(CUR_CAT);
+  const rows=PPTO.filter(r=> r && String(r.CADENA)!=='nan' && String(r.CATEGORIA)!=='nan'
+      && cats.includes(r.CATEGORIA) && (!gtSelCad || String(r.CADENA)===gtSelCad));
+
+  // Serie mensual: SI y SO reales 2026 por mes (año completo).
+  const si={}, so={};
+  MES_ORD.forEach(m=>{ si[m]=0; so[m]=0; });
+  rows.forEach(r=>{ si[r.MES]+=ggNum(r.SI_REAL_2026); so[r.MES]+=ggNum(r.SO_REAL_2026); });
+  const meses=MES_ORD.filter(m=> si[m]>0 || so[m]>0 );
+  if(!meses.length){ body.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted);font-family:var(--fm);font-size:10px;">SIN DATOS</div>'; return; }
+
+  // Mes en curso (parcial): el último con datos cuyos días transcurridos < días del mes.
+  let parcial=null;
+  const ultimo=meses[meses.length-1];
+  const frU=rows.find(r=>r.MES===ultimo);
+  if(frU){ const dt=ggNum(frU.SO_DIAS_TRANSCURRIDOS), dm=ggNum(frU.SO_DIAS_DEL_MES); if(dm>0 && dt<dm) parcial=ultimo; }
+
+  const isLight=document.documentElement.classList.contains('light');
+  const axC=isLight?'#8792a6':'#44445f', gridC=isLight?'#e3e7ef':'#1b1b27';
+  const txtC=isLight?'#2d3142':'#d4d4e8', subC=isLight?'#6b7280':'#8888aa';
+
+  const W=1000, H=330, mL=78, mR=30, mT=22, mB=42;
+  const pw=W-mL-mR, ph=H-mT-mB;
+  const n=meses.length;
+  const xAt=i=> n===1 ? mL+pw/2 : mL + (i/(n-1))*pw;
+  const vMax=Math.max(1, ...meses.map(m=>Math.max(si[m],so[m])));
+  const yMax=vMax*1.1;
+  const yAt=v=> mT + (1 - v/yMax)*ph;
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:360px;font-family:var(--fm);display:block;">`;
+  // Grid Y + etiquetas (en $M)
+  const yticks=5;
+  for(let i=0;i<=yticks;i++){
+    const v=yMax*i/yticks, y=yAt(v);
+    svg+=`<line x1="${mL}" y1="${y}" x2="${mL+pw}" y2="${y}" stroke="${gridC}" stroke-width="1"/>`;
+    svg+=`<text x="${mL-8}" y="${y+4}" fill="${subC}" font-size="10" text-anchor="end">${_im(v/1e6)}</text>`;
+  }
+  // Eje X + etiquetas de mes
+  svg+=`<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
+  svg+=`<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
+  meses.forEach((m,i)=>{
+    const x=xAt(i);
+    svg+=`<text x="${x}" y="${mT+ph+16}" fill="${m===parcial?subC:txtC}" font-size="10" text-anchor="middle">${MES_LBL[m]||m}${m===parcial?'*':''}</text>`;
+  });
+
+  // Construir polilíneas
+  function linea(obj,col){
+    const pts=meses.map((m,i)=>`${xAt(i).toFixed(1)},${yAt(obj[m]).toFixed(1)}`).join(' ');
+    let s=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    meses.forEach((m,i)=>{ s+=`<circle cx="${xAt(i)}" cy="${yAt(obj[m])}" r="3.2" fill="${col}" stroke="var(--bg)" stroke-width="1"/>`; });
+    return s;
+  }
+  svg+=linea(si,GT_SI);
+  svg+=linea(so,GT_SO);
+
+  // Capa hover: franja vertical por mes con tooltip (SI, SO, ratio)
+  meses.forEach((m,i)=>{
+    const x=xAt(i), bw=pw/Math.max(1,n);
+    const r = si[m]>0 ? (so[m]/si[m]) : 0;
+    svg+=`<rect class="gt-hot" x="${x-bw/2}" y="${mT}" width="${bw}" height="${ph}" fill="transparent" style="cursor:pointer;"`
+      +` data-mes="${MES_LBL[m]||m}${m===parcial?' (parcial)':''}" data-si="${_im(si[m]/1e6)}" data-so="${_im(so[m]/1e6)}"`
+      +` data-ratio="${r.toFixed(2)}" data-x="${x.toFixed(0)}"/>`;
+  });
+  if(parcial) svg+=`<text x="${mL+pw}" y="${mT-6}" fill="${subC}" font-size="9" text-anchor="end">* mes en curso (parcial)</text>`;
+  svg+=`</svg>`;
+
+  // Tabla ratio SO/SI por cadena (año completo, misma vista de categoría)
+  const aggC={};
+  PPTO.filter(r=>r&&String(r.CADENA)!=='nan'&&String(r.CATEGORIA)!=='nan'&&cats.includes(r.CATEGORIA))
+    .forEach(r=>{ const c=String(r.CADENA); (aggC[c]||(aggC[c]={si:0,so:0})); aggC[c].si+=ggNum(r.SI_REAL_2026); aggC[c].so+=ggNum(r.SO_REAL_2026); });
+  const filas=Object.keys(aggC).map(c=>({cad:ggNom(c),raw:c,si:aggC[c].si,so:aggC[c].so,ratio:aggC[c].si>0?aggC[c].so/aggC[c].si:0}))
+    .sort((a,b)=>b.so-a.so);
+  let trs='';
+  filas.forEach(f=>{
+    const alerta = f.ratio>0 && f.ratio<1;      // entra más de lo que sale → sobrestock
+    const rc = f.ratio>=1 ? '#2e8b3d' : (f.ratio>0?'#d64545':subC);
+    const sel = f.raw===gtSelCad;
+    trs+=`<tr style="border-bottom:1px solid ${gridC};color:${txtC};${sel?'background:'+(isLight?'#eef2fb':'#1a1a28')+';':''}cursor:pointer;" onclick="gtSelCad='${f.raw.replace(/'/g,"\\'")}';var s=document.getElementById('gt-cad');if(s)s.value='${f.raw.replace(/'/g,"\\'")}';renderGerenciaTend();">
+      <td style="text-align:left;padding:5px 10px;font-weight:600;white-space:nowrap;">${f.cad}</td>
+      <td style="text-align:right;padding:5px 10px;white-space:nowrap;color:${GT_SI};">${_im(f.si/1e6)}</td>
+      <td style="text-align:right;padding:5px 10px;white-space:nowrap;color:${GT_SO};">${_im(f.so/1e6)}</td>
+      <td style="text-align:right;padding:5px 10px;white-space:nowrap;font-weight:700;color:${rc};">${f.ratio.toFixed(2)}</td>
+      <td style="text-align:left;padding:5px 10px;color:${subC};font-size:9px;white-space:nowrap;">${f.ratio>=1?'Sale ≥ lo que entra':(f.ratio>0?'⚠ Entra > lo que sale':'—')}</td></tr>`;
+  });
+  const tabla=`<div style="overflow-x:auto;margin-top:14px;">
+    <div style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:1px;padding:0 2px 6px;">RATIO SELL OUT / SELL IN POR CADENA (año) — >1 sale más de lo que entra · <1 se acumula inventario · clic para filtrar el gráfico</div>
+    <table style="width:100%;border-collapse:collapse;font-family:var(--fm);font-size:10.5px;">
+    <thead><tr style="color:${subC};border-bottom:1px solid ${gridC};">
+      <th style="text-align:left;padding:5px 10px;">CADENA</th>
+      <th style="text-align:right;padding:5px 10px;">SELL IN</th>
+      <th style="text-align:right;padding:5px 10px;">SELL OUT</th>
+      <th style="text-align:right;padding:5px 10px;">SO/SI</th>
+      <th style="text-align:left;padding:5px 10px;">LECTURA</th></tr></thead><tbody>${trs}</tbody></table></div>`;
+
+  const tip=`<div id="gt-tip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;
+      background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
+      box-shadow:0 6px 24px rgba(0,0,0,.35);font-family:var(--fm);font-size:10.5px;color:var(--text);white-space:nowrap;"></div>`;
+
+  body.style.position='relative';
+  body.innerHTML=svg+tip+tabla;
+
+  // Hover: mostrar SI, SO y ratio del mes
+  const tipEl=document.getElementById('gt-tip');
+  const svgEl=body.querySelector('svg');
+  function showTip(c,ev){
+    const d=c.dataset;
+    const rn=parseFloat(d.ratio), rc=rn>=1?'#2e8b3d':(rn>0?'#d64545':'var(--sub)');
+    tipEl.innerHTML=
+      `<div style="font-family:var(--fb);font-weight:700;font-size:12px;margin-bottom:3px;">${d.mes}</div>`
+      +`<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:${GT_SI};">Sell In</span><b>${d.si}</b></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:${GT_SO};">Sell Out</span><b>${d.so}</b></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:var(--sub);">Ratio SO/SI</span><b style="color:${rc};">${d.ratio}</b></div>`;
+    tipEl.style.opacity='1';
+    const br=body.getBoundingClientRect();
+    let x=ev.clientX-br.left+14, y=ev.clientY-br.top+14;
+    const tw=tipEl.offsetWidth, th=tipEl.offsetHeight;
+    if(x+tw>br.width) x=ev.clientX-br.left-tw-14;
+    if(y+th>br.height) y=ev.clientY-br.top-th-14;
+    tipEl.style.left=Math.max(2,x)+'px'; tipEl.style.top=Math.max(2,y)+'px';
+  }
+  if(svgEl){
+    svgEl.querySelectorAll('.gt-hot').forEach(c=>{
       c.addEventListener('mousemove',ev=>showTip(c,ev));
       c.addEventListener('mouseenter',ev=>showTip(c,ev));
       c.addEventListener('mouseleave',()=>{ tipEl.style.opacity='0'; });
