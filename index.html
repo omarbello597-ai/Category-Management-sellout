@@ -1665,6 +1665,15 @@ function renderGerencia(){
   });
   pts.forEach(p=>{ svg+=ggCara(p._x,p._y,p._r,p.q,GG_COL[p.q]); });
 
+  // Capa invisible para hover (tooltip con la venta en valor y el detalle).
+  const _qN={verde:'Cumple ppto y crece',amar:'Crece pero no cumple ppto',azul:'Cumple ppto pero decrece',rojo:'Ni cumple ni crece'};
+  pts.forEach(p=>{
+    svg+=`<circle class="gg-hot" cx="${p._x}" cy="${p._y}" r="${p._r}" fill="transparent" style="cursor:pointer;"`
+      +` data-cad="${p.cad}" data-v26="${_im(p.v26/1e6)}" data-v25="${_im(p.v25/1e6)}" data-pp="${_im(p.pp/1e6)}"`
+      +` data-cum="${Math.round(p.cum)}" data-cre="${p.cre>0?'+':''}${p.cre.toFixed(1)}" data-col="${GG_COL[p.q]}"`
+      +` data-est="${_qN[p.q]}" data-src="${src}"/>`;
+  });
+
   // ── Anti-colisión del bloque [nombre + métricas] ─────────────────────────
   // Cada etiqueta es UN bloque de dos líneas (nombre arriba, métricas abajo)
   // que se coloca como una sola caja. Si choca con otro bloque o con una
@@ -1747,7 +1756,43 @@ function renderGerencia(){
   });
   tabla+=`</tbody></table></div>`;
 
-  body.innerHTML=svg+tabla;
+  // Tooltip (oculto por defecto) + contenedor relativo para posicionarlo.
+  const tip=`<div id="gg-tip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;
+      background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
+      box-shadow:0 6px 24px rgba(0,0,0,.35);font-family:var(--fm);font-size:10.5px;color:var(--text);white-space:nowrap;"></div>`;
+  body.style.position='relative';
+  body.innerHTML=svg+tip+tabla;
+
+  // ── Interacción hover: muestra la venta en valor y el detalle ──────────────
+  const tipEl=document.getElementById('gg-tip');
+  const svgEl=body.querySelector('svg');
+  function showTip(c,ev){
+    const d=c.dataset;
+    tipEl.innerHTML=
+      `<div style="font-family:var(--fb);font-weight:700;font-size:12px;margin-bottom:3px;">`
+      +`<span style="color:${d.col};">●</span> ${d.cad}</div>`
+      +`<div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:var(--sub);">Venta ${d.src} 26</span><b>${d.v26}</b></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:var(--sub);">Venta ${d.src} 25</span><span style="color:var(--sub);">${d.v25}</span></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:var(--sub);">Presupuesto</span><span style="color:var(--sub);">${d.pp}</span></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:14px;margin-top:2px;"><span style="color:var(--sub);">Cumplimiento</span><b>${d.cum}%</b></div>`
+      +`<div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:var(--sub);">Crecimiento</span><b style="color:${parseFloat(d.cre)>=0?GG_COL.verde:GG_COL.rojo};">${d.cre}%</b></div>`
+      +`<div style="margin-top:4px;color:${d.col};font-size:9.5px;">${d.est}</div>`;
+    tipEl.style.opacity='1';
+    // Posicionar relativo a #gg-body
+    const br=body.getBoundingClientRect();
+    let x=ev.clientX-br.left+14, y=ev.clientY-br.top+14;
+    const tw=tipEl.offsetWidth, th=tipEl.offsetHeight;
+    if(x+tw>br.width) x=ev.clientX-br.left-tw-14;
+    if(y+th>br.height) y=ev.clientY-br.top-th-14;
+    tipEl.style.left=Math.max(2,x)+'px'; tipEl.style.top=Math.max(2,y)+'px';
+  }
+  if(svgEl){
+    svgEl.querySelectorAll('.gg-hot').forEach(c=>{
+      c.addEventListener('mousemove',ev=>showTip(c,ev));
+      c.addEventListener('mouseenter',ev=>showTip(c,ev));
+      c.addEventListener('mouseleave',()=>{ tipEl.style.opacity='0'; });
+    });
+  }
 }
 
 function renderComoVamos(){
