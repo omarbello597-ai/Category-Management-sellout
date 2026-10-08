@@ -751,10 +751,10 @@ body{
       <div class="badge" id="gg-periodo" style="margin-left:auto;">—</div>
     </div>
     <div id="gg-legend" style="display:flex;gap:16px;font-family:var(--fm);font-size:9px;color:var(--sub);padding:6px 12px;flex-wrap:wrap;align-items:center;">
-      <span><span style="color:#2e8b3d;font-size:13px;">●</span> Cumple ppto y crece sobre el total</span>
-      <span><span style="color:#e0a81e;font-size:13px;">●</span> Crece sobre el total pero no cumple ppto</span>
-      <span><span style="color:#2563c9;font-size:13px;">●</span> Cumple ppto pero crece bajo el total</span>
-      <span><span style="color:#d64545;font-size:13px;">●</span> Ni cumple ppto ni crece sobre el total</span>
+      <span><span style="color:#2e8b3d;font-size:13px;">●</span> Cumple ppto y crece</span>
+      <span><span style="color:#e0a81e;font-size:13px;">●</span> Crece pero no cumple ppto</span>
+      <span><span style="color:#2563c9;font-size:13px;">●</span> Cumple ppto pero decrece</span>
+      <span><span style="color:#d64545;font-size:13px;">●</span> Ni cumple ppto ni crece (decrece)</span>
     </div>
     <div id="gg-body" style="padding:10px 12px;"></div>
 
@@ -1516,10 +1516,11 @@ function ggCalc(){
     if(a.r26<=0 && a.pp<=0) continue;
     const cum = a.pp>0 ? a.r26/a.pp*100 : 0;
     const cre = a.r25>0 ? (a.r26-a.r25)/a.r25*100 : (a.r26>0?100:0);
+    // Corte del eje Y en 0% (crece / decrece), no en el promedio de la vista.
     let q;
-    if(cum>=100 && cre>=creTot) q='verde';
-    else if(cum>=100 && cre<creTot) q='azul';
-    else if(cum<100 && cre>=creTot) q='amar';
+    if(cum>=100 && cre>=0) q='verde';
+    else if(cum>=100 && cre<0) q='azul';
+    else if(cum<100 && cre>=0) q='amar';
     else q='rojo';
     pts.push({cad:ggNom(c), raw:c, cum, cre, v26:a.r26, v25:a.r25, pp:a.pp, q});
   }
@@ -1576,7 +1577,7 @@ function renderGerencia(){
   //    rango se auto-ajusta a los datos para que las burbujas no se amontonen.
   const cums=pts.map(p=>p.cum), cres=pts.map(p=>p.cre);
   let xMin=Math.min(100,...cums), xMax=Math.max(110,...cums);
-  let yMin=Math.min(creTot,...cres), yMax=Math.max(creTot,...cres);
+  let yMin=Math.min(0,...cres), yMax=Math.max(0,...cres);
   const padX=Math.max(5,(xMax-xMin)*0.12), padY=Math.max(5,(yMax-yMin)*0.14);
   xMin-=padX; xMax+=padX; yMin-=padY; yMax+=padY;
 
@@ -1599,7 +1600,7 @@ function renderGerencia(){
   const pw=W-mL-mR, ph=H-mT-mB;
   const sx=v=>mL + (v-xMin)/(xMax-xMin)*pw;
   const sy=v=>mT + (yMax-v)/(yMax-yMin)*ph;
-  const x100=sx(100), yCut=sy(creTot);
+  const x100=sx(100), yCut=sy(0);
 
   // Ticks
   function niceTicks(lo,hi,n){
@@ -1628,11 +1629,17 @@ function renderGerencia(){
   svg+=`<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
   svg+=`<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="${axC}" stroke-width="1.5"/>`;
 
-  // Líneas de corte (100% ppto y crecimiento total)
+  // Líneas de corte: 100% ppto (X) y 0% crecimiento (Y, crece/decrece).
   svg+=`<line x1="${x100}" y1="${mT}" x2="${x100}" y2="${mT+ph}" stroke="${cutC}" stroke-width="1.6" stroke-dasharray="7 5"/>`;
   svg+=`<line x1="${mL}" y1="${yCut}" x2="${mL+pw}" y2="${yCut}" stroke="${cutC}" stroke-width="1.6" stroke-dasharray="7 5"/>`;
   svg+=`<text x="${x100+5}" y="${mT+11}" fill="${cutC}" font-size="10">100% ppto</text>`;
-  svg+=`<text x="${mL+pw-4}" y="${yCut-6}" fill="${cutC}" font-size="10" text-anchor="end">crec. total ${creTot>0?'+':''}${creTot.toFixed(1)}%</text>`;
+  svg+=`<text x="${mL+pw-4}" y="${yCut-6}" fill="${cutC}" font-size="10" text-anchor="end">crece / decrece (0%)</text>`;
+  // Referencia tenue: crecimiento promedio de la vista (solo contexto, no corta cuadrantes).
+  if(creTot>yMin && creTot<yMax && Math.abs(creTot)>0.3){
+    const yRef=sy(creTot);
+    svg+=`<line x1="${mL}" y1="${yRef}" x2="${mL+pw}" y2="${yRef}" stroke="${cutC}" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>`;
+    svg+=`<text x="${mL+6}" y="${yRef-5}" fill="${cutC}" font-size="9" opacity="0.8">prom. vista ${creTot>0?'+':''}${creTot.toFixed(1)}%</text>`;
+  }
 
   // Títulos de ejes
   svg+=`<text x="${mL+pw/2}" y="${H-14}" fill="${txtC}" font-size="12" text-anchor="middle" letter-spacing="1">% CUMPLIMIENTO PRESUPUESTO  →</text>`;
