@@ -1594,7 +1594,7 @@ function renderGerencia(){
   }
   const xTicks=niceTicks(xMin,xMax,6), yTicks=niceTicks(yMin,yMax,6);
 
-  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:calc(100vh - 230px);font-family:var(--fm);display:block;">`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:calc(100vh - 215px);font-family:var(--fm);display:block;">`;
   // Fondos de cuadrante (verde=AR-DER, amar=AR-IZQ, azul=AB-DER, rojo=AB-IZQ)
   svg+=`<rect x="${x100}" y="${mT}" width="${mL+pw-x100}" height="${yCut-mT}" fill="${qFill.verde}"/>`;
   svg+=`<rect x="${mL}" y="${mT}" width="${x100-mL}" height="${yCut-mT}" fill="${qFill.amar}"/>`;
@@ -1735,33 +1735,40 @@ function renderGerencia(){
 
   svg+=`</svg>`;
 
-  // Tabla resumen debajo de la matriz
+  // Tabla resumen (a la derecha del gráfico). Compacta: CADENA · venta26 ·
+  // cumpl · crec · estado (con punto de color). SO25/PPTO están en el tooltip.
   const qName={verde:'Cumple y crece',amar:'Crece, no cumple',azul:'Cumple, decrece',rojo:'Alerta'};
-  let tabla=`<div style="overflow-x:auto;margin-top:12px;"><table style="width:100%;border-collapse:collapse;font-family:var(--fm);font-size:10.5px;">
-    <thead><tr style="color:${subC};text-align:right;border-bottom:1px solid ${gridC};">
-      <th style="text-align:left;padding:5px 8px;">CADENA</th>
-      <th style="padding:5px 8px;">${src} 26</th><th style="padding:5px 8px;">${src} 25</th>
-      <th style="padding:5px 8px;">PPTO</th><th style="padding:5px 8px;">CUMPL.</th>
-      <th style="padding:5px 8px;">CREC.</th><th style="text-align:center;padding:5px 8px;">ESTADO</th></tr></thead><tbody>`;
+  const qShort={verde:'Cumple/crece',amar:'Crece, no cumple',azul:'Cumple/decrece',rojo:'Alerta'};
+  let filas='';
   pts.forEach(p=>{
     const col=GG_COL[p.q];
-    tabla+=`<tr style="text-align:right;border-bottom:1px solid ${gridC};color:${txtC};">
-      <td style="text-align:left;padding:5px 8px;font-weight:600;">${p.cad}</td>
-      <td style="padding:5px 8px;">${_im(p.v26/1e6)}</td>
-      <td style="padding:5px 8px;color:${subC};">${_im(p.v25/1e6)}</td>
-      <td style="padding:5px 8px;color:${subC};">${_im(p.pp/1e6)}</td>
-      <td style="padding:5px 8px;">${Math.round(p.cum)}%</td>
-      <td style="padding:5px 8px;color:${p.cre>=0?GG_COL.verde:GG_COL.rojo};">${p.cre>0?'+':''}${p.cre.toFixed(1)}%</td>
-      <td style="text-align:center;padding:5px 8px;"><span style="color:${col};">●</span> <span style="color:${subC};">${qName[p.q]}</span></td></tr>`;
+    filas+=`<tr style="border-bottom:1px solid ${gridC};color:${txtC};">
+      <td style="text-align:left;padding:4px 6px;font-weight:600;white-space:nowrap;"><span style="color:${col};font-size:11px;">●</span> ${p.cad}</td>
+      <td style="text-align:right;padding:4px 6px;white-space:nowrap;">${_im(p.v26/1e6)}</td>
+      <td style="text-align:right;padding:4px 6px;white-space:nowrap;">${Math.round(p.cum)}%</td>
+      <td style="text-align:right;padding:4px 6px;white-space:nowrap;color:${p.cre>=0?GG_COL.verde:GG_COL.rojo};">${p.cre>0?'+':''}${p.cre.toFixed(1)}%</td>
+      <td style="text-align:left;padding:4px 6px;color:${subC};font-size:9px;white-space:nowrap;">${qShort[p.q]}</td></tr>`;
   });
-  tabla+=`</tbody></table></div>`;
+  const tabla=`<table style="width:100%;border-collapse:collapse;font-family:var(--fm);font-size:10px;">
+    <thead><tr style="color:${subC};border-bottom:1px solid ${gridC};">
+      <th style="text-align:left;padding:4px 6px;">CADENA</th>
+      <th style="text-align:right;padding:4px 6px;">${src} 26</th>
+      <th style="text-align:right;padding:4px 6px;">CUMPL</th>
+      <th style="text-align:right;padding:4px 6px;">CREC</th>
+      <th style="text-align:left;padding:4px 6px;">ESTADO</th></tr></thead><tbody>${filas}</tbody></table>`;
 
-  // Tooltip (oculto por defecto) + contenedor relativo para posicionarlo.
+  // Tooltip (oculto por defecto).
   const tip=`<div id="gg-tip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;
       background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
       box-shadow:0 6px 24px rgba(0,0,0,.35);font-family:var(--fm);font-size:10.5px;color:var(--text);white-space:nowrap;"></div>`;
+
+  // Layout de dos columnas: gráfico a la izquierda, tabla a la derecha.
   body.style.position='relative';
-  body.innerHTML=svg+tip+tabla;
+  body.innerHTML=
+    `<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">`
+    +`<div style="flex:1 1 560px;min-width:0;">${svg}</div>`
+    +`<div style="flex:0 1 360px;min-width:260px;overflow-x:auto;align-self:center;">${tabla}</div>`
+    +`</div>`+tip;
 
   // ── Interacción hover: muestra la venta en valor y el detalle ──────────────
   const tipEl=document.getElementById('gg-tip');
