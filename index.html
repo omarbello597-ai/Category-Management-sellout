@@ -22,7 +22,7 @@ if('serviceWorker' in navigator){
 <style>
 :root{
   --bg:#08080f;--surf:#111119;--card:#16161f;--border:#1e1e2c;
-  --acc:#F5C800;--blue:#1A3FA3;--pos:#0DB75B;--neg:#E5192C;
+  --acc:#F5C800;--blue:#1A3FA3;--pos:#0DB75B;--neg:#E5192C;--warn:#F5C800;
   --posL:#0a2e1a;--negL:#2e0a0a;
   --white:#fff;--muted:#5a5a7a;--text:#d4d4e8;--sub:#8888aa;
   --ff:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
@@ -86,6 +86,8 @@ nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;
 .cat-pill.active.hogar{background:var(--blue);color:#fff;border-color:var(--blue);}
 .cat-pill.active.ferreteria{background:#9b59b6;color:#fff;border-color:#9b59b6;}
 .cat-pill.active.total{background:#444;color:#fff;border-color:#555;}
+#mes-bar .cat-pills{flex-shrink:0;}
+#mes-bar .cat-pill{padding:5px 14px;font-size:10px;}
 .badge{font-family:var(--fm);font-size:9px;padding:3px 9px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--sub);white-space:nowrap;}
 .btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;}
 .btn:hover{border-color:var(--acc);color:var(--acc);}
@@ -333,7 +335,7 @@ tr.nr td:first-child{border-left:2px solid var(--neg);}
 
 :root.light{
   --bg:#e8ecf2;--surf:#ffffff;--card:#ffffff;--border:#b0baca;
-  --acc:#1A3FA3;--blue:#1A3FA3;--pos:#0a9649;--neg:#c91524;
+  --acc:#1A3FA3;--blue:#1A3FA3;--pos:#0a9649;--neg:#c91524;--warn:#8A5A00;
   --posL:#e6f7ee;--negL:#fdecea;
   --white:#1a1a2e;--muted:#7a8499;--text:#2d3142;--sub:#6b7280;
   --ff:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--fm:'DM Mono',monospace;
@@ -445,20 +447,20 @@ nav.cat-total,#mes-bar.cat-total{background:rgba(245,130,31,.14);border-bottom:2
 :root.light nav.cat-total,:root.light #mes-bar.cat-total{background:rgba(245,130,31,.13);border-bottom:2px solid rgba(245,130,31,.5);}
 /* AUTOS: botones activos negro + amarillo para contraste sobre fondo amarillo */
 nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
-nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
+nav.cat-autos .cat-pill.active,#mes-bar.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
 nav.cat-autos .mes-btn.active,#mes-bar.cat-autos .mes-btn.active{background:#111;color:#F5C800;border-color:#111;}
 nav.cat-autos .brand{color:#111;}
 :root.light nav.cat-autos .main-tab.active{background:#111;color:#F5C800;border-color:#111;}
-:root.light nav.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
+:root.light nav.cat-autos .cat-pill.active,:root.light #mes-bar.cat-autos .cat-pill.active{background:#111;color:#F5C800;border-color:#111;}
 :root.light #mes-bar.cat-autos .mes-btn.active{background:#111;color:#F5C800;border-color:#111;}
 :root.light nav.cat-autos .brand{color:#111;}
 /* TOTAL: botones activos gris oscuro Simonizco + naranja */
 nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+nav.cat-total .cat-pill.active,#mes-bar.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 nav.cat-total .mes-btn.active,#mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 nav.cat-total .brand{color:#4a4a4a;}
 :root.light nav.cat-total .main-tab.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
-:root.light nav.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
+:root.light nav.cat-total .cat-pill.active,:root.light #mes-bar.cat-total .cat-pill.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light #mes-bar.cat-total .mes-btn.active{background:#4a4a4a;color:#F5821F;border-color:#4a4a4a;}
 :root.light nav.cat-total .brand{color:#4a4a4a;}
 
@@ -712,13 +714,6 @@ body{
       <div class="main-tab"        onclick="showPage('segmentos',this)">📦 SEGMENTOS</div>
       <div class="main-tab"        onclick="showPage('arbol',this)">🌳 ÁRBOL</div>
     </div>
-    <div class="nav-sep"></div>
-    <div class="cat-pills">
-      <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
-      <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
-      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)" style="display:none">🔧 FERRETERÍA</div>
-      <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
-    </div>
     <div style="flex:1"></div>
     <div class="badge" id="data-badge">—</div>
     <button id="theme-btn" onclick="toggleTheme()" title="Cambiar tema" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:20px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -728,7 +723,15 @@ body{
 
   <div id="mes-bar">
     <span class="flabel">Meses</span>
-    <div id="mes-wrap" style="display:flex;gap:3px;flex:1;"></div>
+    <div id="mes-wrap" style="display:flex;gap:3px;flex:0 0 auto;"></div>
+    <div class="nav-sep" style="margin:0 6px;"></div>
+    <div class="cat-pills">
+      <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
+      <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
+      <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)" style="display:none">🔧 FERRETERÍA</div>
+      <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
+    </div>
+    <div style="flex:1"></div>
     <button class="btn" onclick="selAllMeses()">✓ TODOS</button>
     <button class="btn red" onclick="clearMeses()">✕ LIMPIAR</button>
   </div>
@@ -1294,8 +1297,8 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
   const daysLeft=daysTotal-daysElapsed;
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
-  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
-  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
+  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'var(--warn)':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'var(--warn)':'var(--neg)';
   const cls=isSO?'so':'si';
   const typeColor=isSO?'var(--acc)':'#6699ff';
   const barColor=isSO?'var(--acc)':'#6699ff';
@@ -1306,8 +1309,8 @@ function cvProyCard(tipo,real,proy,ppto,acento,mesLabel,daysElapsed,daysTotal,fe
         ${fechaCorte?`<div class="cv-pc-corte">Corte: ${fechaCorte}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
-        <span class="pill ${isPos?'pos':'neg'}" style="font-size:9px;">Proy: ${cumplProy.toFixed(1)}%</span>
+        <span class="pill ${cumplReal>=75?'pos':'neg'}" style="font-size:11px;padding:3px 9px;">Hoy: ${cumplReal.toFixed(1)}%</span>
+        <span class="pill ${isPos?'pos':'neg'}" style="font-size:11px;padding:3px 9px;font-weight:700;">Proy: ${cumplProy.toFixed(1)}%</span>
       </div>
     </div>
     <div class="cv-pc-metrics">
@@ -1354,8 +1357,8 @@ function cvMiniProy(tipo,real,proy,ppto,ddi,ddiClsV,fechaCorte){
   const barColor=isSO?'var(--acc)':'#6699ff';
   const cumplReal=ppto>0?real/ppto*100:0;
   const cumplProy=ppto>0?proy/ppto*100:0;
-  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'#F5C800':'var(--neg)';
-  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'#F5C800':'var(--neg)';
+  const cumplColor=cumplProy>=90?'var(--pos)':cumplProy>=75?'var(--warn)':'var(--neg)';
+  const realColor=cumplReal>=90?'var(--pos)':cumplReal>=75?'var(--warn)':'var(--neg)';
   const barReal=ppto>0?Math.min(real/ppto*100,100):0;
   const barProy=ppto>0?Math.min(proy/ppto*100,100):0;
   const gap=proy-ppto;
@@ -2192,7 +2195,7 @@ function renderComoVamos(){
     </div>
     <div class="cv-kpi" style="border-top:2px solid ${brand.color}">
       <div class="cv-kpi-l">Cumpl. SO Acum.</div>
-      <div class="cv-kpi-v" style="color:${cumplAcum>=90?'var(--pos)':cumplAcum>=75?'#F5C800':'var(--neg)'}">${cumplAcum.toFixed(1)}%</div>
+      <div class="cv-kpi-v" style="color:${cumplAcum>=90?'var(--pos)':cumplAcum>=75?'var(--warn)':'var(--neg)'}">${cumplAcum.toFixed(1)}%</div>
       <div class="cv-kpi-s"><span class="pill ${cumplAcum>=75?'pos':'neg'}">gap ${sg(totSOReal26-totSOPpto26)}${fmtM(totSOReal26-totSOPpto26)}</span></div>
     </div>
     <div class="cv-kpi" style="border-top:2px solid #6699ff">
@@ -2202,12 +2205,12 @@ function renderComoVamos(){
     </div>
     <div class="cv-kpi" style="border-top:2px solid var(--pos)">
       <div class="cv-kpi-l">DDI Promedio</div>
-      <div class="cv-kpi-v" style="color:${ddiTot===null?'var(--muted)':ddiTot<30?'var(--neg)':ddiTot<60?'#F5C800':'var(--pos)'}">${ddiLbl(ddiTot)}</div>
+      <div class="cv-kpi-v" style="color:${ddiTot===null?'var(--muted)':ddiTot<30?'var(--neg)':ddiTot<60?'var(--warn)':'var(--pos)'}">${ddiLbl(ddiTot)}</div>
       <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">Inventario actual</div>
     </div>
     <div class="cv-kpi" style="border-top:2px solid var(--neg)">
       <div class="cv-kpi-l">Proyección mes</div>
-      <div class="cv-kpi-v" style="color:${soProyMes/soPptoMes>=.9?'var(--pos)':soProyMes/soPptoMes>=.75?'#F5C800':'var(--neg)'}">${(soPptoMes>0?soProyMes/soPptoMes*100:0).toFixed(0)}%</div>
+      <div class="cv-kpi-v" style="color:${soProyMes/soPptoMes>=.9?'var(--pos)':soProyMes/soPptoMes>=.75?'var(--warn)':'var(--neg)'}">${(soPptoMes>0?soProyMes/soPptoMes*100:0).toFixed(0)}%</div>
       <div class="cv-kpi-s" style="font-size:9px;color:var(--muted)">${mesLabel} · día ${soDias} de ${soDiasT}</div>
     </div>
   </div>`;
@@ -2984,14 +2987,14 @@ function renderDashboard(){
   const soPrSG=dDiasSG>0?cvCalcProy(soRealMesActSG,dDiasSG,_dTotalMulti):0;
   const pacePosSG=_dTotalMulti>0?Math.min(dDiasSG/_dTotalMulti,1):0; // fracción días transcurridos
   const proyPctTotalSG=soPptoMesActSG>0?soPrSG/soPptoMesActSG*100:0;
-  const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'#F5C800':'var(--neg)';
+  const proyColorSG=proyPctTotalSG>=90?'var(--pos)':proyPctTotalSG>=75?'var(--warn)':'var(--neg)';
   const gapSG=soPrSG-soPptoMesActSG;
   const fechaISO_sg=rowF_sg?rowF_sg.FECHA_SO_ACTUAL:null;
   const corteHtml=fechaISO_sg?'<div style="font-family:var(--fm);font-size:7px;color:var(--muted);margin-top:1px;">Al '+fmtFechaCorte(fechaISO_sg)+'</div>':'';
-  const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+'">'+fmtM(soPrSG)+'</div></div>':'';
+  const proyRowHtml=soPrSG>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColorSG+';font-size:17px;font-weight:700;">'+fmtM(soPrSG)+'</div></div>':'';
   const pptoRowHtml=soPptoMesActSG>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted)">'+fmtM(soPptoMesActSG)+'</div></div>':'';
   const gapRowHtml=gapSG!==0?'<span style="font-family:var(--fm);font-size:8px;color:'+(gapSG>=0?'var(--pos)':'var(--neg)')+';">gap '+sg(gapSG)+fmtM(gapSG)+'</span>':'';
-  const proyPillStyle=proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+  const proyPillStyle=proyPctTotalSG>=75&&proyPctTotalSG<90?'background:rgba(245,200,0,.22);color:var(--warn);border-color:rgba(200,150,0,.55);font-weight:700;':'';
   const proyPillCls=proyPctTotalSG>=90?'pos':proyPctTotalSG>=75?'':'neg';
 
   const soTrendH='<div style="display:grid;grid-template-columns:500px 1fr;gap:8px;align-items:stretch;">'
@@ -3006,8 +3009,8 @@ function renderDashboard(){
       +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(245,200,0,.15);">'
         +'<div><div style="font-family:var(--ff);font-size:16px;letter-spacing:1.5px;color:var(--acc);">SELL OUT</div>'+corteHtml+'</div>'
         +'<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">'
-          +'<span class="pill '+(cumplTotal>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplTotal.toFixed(1)+'%</span>'
-          +'<span class="pill '+proyPillCls+'" style="font-size:8px;'+proyPillStyle+'">Proy: '+proyPctTotalSG.toFixed(1)+'%</span>'
+          +'<span class="pill '+(cumplTotal>=75?'pos':'neg')+'" style="font-size:10px;padding:3px 9px;">Hoy: '+cumplTotal.toFixed(1)+'%</span>'
+          +'<span class="pill '+proyPillCls+'" style="font-size:10px;padding:3px 9px;'+proyPillStyle+'">Proy: '+proyPctTotalSG.toFixed(1)+'%</span>'
         +'</div>'
       +'</div>'
       +'<div style="padding:8px 12px;">'
@@ -3063,12 +3066,12 @@ function renderDashboard(){
       const soP=dDiasSG>0?cvCalcProy(soRealMes2,dDiasSG,_dTotalMulti):0;
       const gap=soP-soPptoMes2;
       const proyPct=soPptoMes2>0?soP/soPptoMes2*100:0;
-      const proyColor=proyPct>=90?'var(--pos)':proyPct>=75?'#F5C800':'var(--neg)';
+      const proyColor=proyPct>=90?'var(--pos)':proyPct>=75?'var(--warn)':'var(--neg)';
       const gapColor=gap>=0?'var(--pos)':'var(--neg)';
-      const cumplPill='<span class="pill '+(cumplPct>=75?'pos':'neg')+'" style="font-size:8px;">Hoy: '+cumplPct.toFixed(1)+'%</span>';
-      const pPS=proyPct>=75&&proyPct<90?'background:rgba(245,200,0,.1);color:#F5C800;border-color:rgba(245,200,0,.3);':'';
+      const cumplPill='<span class="pill '+(cumplPct>=75?'pos':'neg')+'" style="font-size:10px;padding:3px 9px;">Hoy: '+cumplPct.toFixed(1)+'%</span>';
+      const pPS=proyPct>=75&&proyPct<90?'background:rgba(245,200,0,.22);color:var(--warn);border-color:rgba(200,150,0,.55);font-weight:700;':'';
       const pPC=proyPct>=90?'pos':proyPct>=75?'':'neg';
-      const proyPill='<span class="pill '+pPC+'" style="font-size:8px;'+pPS+'">Proy: '+proyPct.toFixed(1)+'%</span>';
+      const proyPill='<span class="pill '+pPC+'" style="font-size:10px;padding:3px 9px;'+pPS+'">Proy: '+proyPct.toFixed(1)+'%</span>';
       const barHtml=soPptoMes2>0
         ?'<div class="pace-bar-wrap">'
           +'<div class="pace-bar-real" style="width:'+Math.min(c.v26/soPptoMes2*100,100)+'%;background:'+(c.v26/soPptoMes2>=pacePosSG?'var(--pos)':'var(--neg)')+';"></div>'
@@ -3095,7 +3098,7 @@ function renderDashboard(){
             +'<div style="padding:8px 12px;">'
               +'<div class="cv-mini-rows" style="margin-bottom:6px;grid-template-columns:1fr 1fr 1fr 1fr;">'
                 +'<div><div class="cv-mini-l">Real</div><div class="cv-mini-v" style="color:var(--acc);font-size:14px;">'+fmtM(c.v26)+'</div></div>'
-                +(soP>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColor+';font-size:14px;">'+fmtM(soP)+'</div></div>':'')
+                +(soP>0?'<div><div class="cv-mini-l">Proy.</div><div class="cv-mini-v" style="color:'+proyColor+';font-size:16px;font-weight:700;">'+fmtM(soP)+'</div></div>':'')
                 +(soPptoMes2>0?'<div><div class="cv-mini-l">Ppto</div><div class="cv-mini-v" style="color:var(--muted);font-size:14px;">'+fmtM(soPptoMes2)+'</div></div>':'')
                 +'<div><div class="cv-mini-l">vs 2025</div><div class="cv-mini-v" style="color:'+(c.varV>=0?'var(--pos)':'var(--neg)')+';font-size:14px;">'+sg(c.varV)+c.varV.toFixed(1)+'%</div></div>'
               +'</div>'+barHtml
