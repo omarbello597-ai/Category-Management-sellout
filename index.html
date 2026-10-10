@@ -86,8 +86,18 @@ nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 16px;
 .cat-pill.active.hogar{background:var(--blue);color:#fff;border-color:var(--blue);}
 .cat-pill.active.ferreteria{background:#9b59b6;color:#fff;border-color:#9b59b6;}
 .cat-pill.active.total{background:#444;color:#fff;border-color:#555;}
-#mes-bar .cat-pills{flex-shrink:0;}
-#mes-bar .cat-pill{padding:5px 14px;font-size:10px;}
+#mes-bar .cat-pills{flex-shrink:0;gap:6px;align-items:center;}
+#mes-bar .cat-pill.logo,#mes-bar .cat-pill.logo.active{display:flex;align-items:center;justify-content:center;height:32px;padding:0 12px;
+  background:#fff !important;border:2px solid #d5d9e2 !important;border-radius:9px;opacity:.72;transition:opacity .15s,box-shadow .15s,border-color .15s;}
+#mes-bar .cat-pill.logo img{height:20px;width:auto;display:block;pointer-events:none;}
+#mes-bar .cat-pill.logo.autos img{height:24px;}
+#mes-bar .cat-pill.logo.hogar img{height:16px;}
+#mes-bar .cat-pill.logo.total img{height:23px;}
+#mes-bar .cat-pill.logo:hover{opacity:.9;}
+#mes-bar .cat-pill.logo.active{opacity:1;}
+#mes-bar .cat-pill.logo.autos.active{border-color:#111 !important;box-shadow:0 0 0 2px #F5C800;}
+#mes-bar .cat-pill.logo.hogar.active{border-color:#1A3FA3 !important;box-shadow:0 0 0 2px rgba(26,63,163,.35);}
+#mes-bar .cat-pill.logo.total.active{border-color:#F5821F !important;box-shadow:0 0 0 2px rgba(245,130,31,.35);}
 .badge{font-family:var(--fm);font-size:9px;padding:3px 9px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--sub);white-space:nowrap;}
 .btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--fm);font-size:9px;letter-spacing:1px;transition:all .15s;white-space:nowrap;}
 .btn:hover{border-color:var(--acc);color:var(--acc);}
@@ -726,10 +736,10 @@ body{
     <div id="mes-wrap" style="display:flex;gap:3px;flex:0 0 auto;"></div>
     <div class="nav-sep" style="margin:0 6px;"></div>
     <div class="cat-pills">
-      <div class="cat-pill active"     onclick="setCat('AUTOS',this)">🚗 AUTOS</div>
-      <div class="cat-pill hogar"      onclick="setCat('HOGAR',this)">🏠 HOGAR</div>
+      <div class="cat-pill logo autos active" onclick="setCat('AUTOS',this)" title="Autos · Simoniz"><img src="pill_simoniz.png" alt="Simoniz (Autos)"></div>
+      <div class="cat-pill logo hogar"        onclick="setCat('HOGAR',this)" title="Hogar · Binner"><img src="pill_binner.png" alt="Binner (Hogar)"></div>
       <div class="cat-pill ferreteria" onclick="setCat('FERRETERIA',this)" style="display:none">🔧 FERRETERÍA</div>
-      <div class="cat-pill total"      onclick="setCat('TOTAL',this)">🌐 TOTAL</div>
+      <div class="cat-pill logo total"        onclick="setCat('TOTAL',this)" title="Total · Simonizco"><img src="pill_simonizco.png" alt="Simonizco (Total)"></div>
     </div>
     <div style="flex:1"></div>
     <button class="btn" onclick="selAllMeses()">✓ TODOS</button>
