@@ -15,9 +15,50 @@
 <meta name="apple-mobile-web-app-title" content="Category Mgmt">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
-}
+// ── Versión de la app ── Súbela (cambia el texto) cada vez que publiques un cambio.
+const APP_VERSION='2026-10-10.1';
+(function(){
+  let _swReg=null, _avisado=false;
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{
+      navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{_swReg=r;}).catch(()=>{});
+    });
+  }
+  function enLogin(){ const l=document.getElementById('login-screen'); return !l || l.style.display!=='none'; }
+  function recargar(v){
+    try{ sessionStorage.setItem('cm_reload_to',v); }catch(e){}
+    location.replace(location.pathname+'?v='+encodeURIComponent(v));
+  }
+  function aviso(v){
+    if(_avisado) return; _avisado=true;
+    let seg=60;
+    const d=document.createElement('div');
+    d.id='upd-banner';
+    d.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100000;background:#111;color:#fff;'+
+      'border:2px solid #F5C800;border-radius:12px;padding:12px 16px;display:flex;gap:14px;align-items:center;'+
+      'font-family:system-ui,sans-serif;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:calc(100vw - 32px);';
+    d.innerHTML='<span>🔄 Hay una nueva versión del dashboard. Se actualizará en <b id="upd-s">60</b> s.</span>'+
+      '<button id="upd-btn" style="background:#F5C800;color:#111;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:14px;">Actualizar ahora</button>';
+    document.body.appendChild(d);
+    document.getElementById('upd-btn').onclick=()=>recargar(v);
+    const t=setInterval(()=>{ seg--; const e=document.getElementById('upd-s'); if(e) e.textContent=seg; if(seg<=0){ clearInterval(t); recargar(v);} },1000);
+  }
+  async function revisar(){
+    try{
+      if(_swReg) _swReg.update().catch(()=>{});
+      const r=await fetch('index.html?chk='+Date.now(),{cache:'no-store'});
+      if(!r.ok) return;
+      const m=(await r.text()).match(/const APP_VERSION='([^']+)'/);
+      if(!m || m[1]===APP_VERSION) return;
+      let ya=null; try{ ya=sessionStorage.getItem('cm_reload_to'); }catch(e){}
+      if(ya===m[1]) return;               // ya se intentó recargar a esa versión: evita bucles
+      if(enLogin()) recargar(m[1]); else aviso(m[1]);
+    }catch(e){ /* sin conexión: no hacer nada */ }
+  }
+  window.addEventListener('load',()=>setTimeout(revisar,1500));
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') revisar(); });
+  setInterval(revisar,5*60*1000);
+})();
 </script>
 <style>
 :root{
