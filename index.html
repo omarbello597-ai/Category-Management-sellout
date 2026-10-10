@@ -1501,11 +1501,17 @@ function ggCalc(){
   const {conVenta}=ggMesCierre(rows,src);
   const per = (selMeses && selMeses.size>0) ? MES_ORD.filter(m=>selMeses.has(m)) : conVenta;
   const r25K=src+'_REAL_2025', r26K=src+'_REAL_2026', ppK=src+'_PPTO_2026';
+  const dtK=src+'_DIAS_TRANSCURRIDOS', dmK=src+'_DIAS_DEL_MES';
   const agg={}; let T25=0,T26=0,TPP=0;
   rows.forEach(r=>{
     if(!per.includes(r.MES)) return;
     const a=agg[r.CADENA]||(agg[r.CADENA]={r25:0,r26:0,pp:0});
-    const v25=ggNum(r[r25K]), v26=ggNum(r[r26K]), pp=ggNum(r[ppK]);
+    const v25=ggNum(r[r25K]), v26=ggNum(r[r26K]);
+    // Mes en curso: prorratear el ppto por (días transcurridos / días del mes)
+    // para comparar venta parcial contra ppto parcial (cumplimiento justo).
+    const dt=ggNum(r[dtK]), dm=ggNum(r[dmK]);
+    const factor=(dt>0 && dm>0 && dt<dm) ? dt/dm : 1;
+    const pp=ggNum(r[ppK])*factor;
     a.r25+=v25; a.r26+=v26; a.pp+=pp; T25+=v25; T26+=v26; TPP+=pp;
   });
   const creTot = T25>0 ? (T26-T25)/T25*100 : 0;
@@ -1674,6 +1680,13 @@ function renderGerencia(){
     pts.forEach(p=>{
       p._x=Math.max(mL+p._r, Math.min(mL+pw-p._r, p._x));
       p._y=Math.max(mT+p._r, Math.min(mT+ph-p._r, p._y));
+      // El centro de la carita nunca cruza la línea de corte Y (0%): quien crece
+      // queda arriba y quien decrece queda abajo, para que color y lado concuerden.
+      if(p.cre>=0 && p._y>yCut-1) p._y=yCut-1;
+      else if(p.cre<0 && p._y<yCut+1) p._y=yCut+1;
+      // Igual con la línea de corte X (100% ppto): cumple→derecha, no cumple→izquierda.
+      if(p.cum>=100 && p._x<x100+1) p._x=x100+1;
+      else if(p.cum<100 && p._x>x100-1) p._x=x100-1;
     });
     if(!moved) break;
   }
